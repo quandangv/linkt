@@ -1,0 +1,29 @@
+# Maintainer: Quan Dang Van <quandangv at gmail dot com>
+pkgname=lini
+pkgver=1.0.0
+pkgrel=1
+pkgdesc=""
+arch=("i686" "x86_64")
+url="https://github.com/DRKblade/lini"
+license=("GPL3")
+depends=("gcc-libs")
+makedepends=("cmake" "git" "pkg-config")
+install="${pkgname}.install"
+source=(${url}/releases/download/v${pkgver}/lini-${pkgver}.tar)
+sha256sums=('')
+
+prepare() {
+  mkdir -p "$srcdir/${pkgname}/build"
+}
+
+build() {
+  cd "$srcdir/${pkgname}/build" || exit 1
+  cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release ..
+  cmake --build .
+}
+
+package() {
+  cmake --build "${pkgname}/build" --target install -- DESTDIR="${pkgdir}"
+  install -Dm644 "${pkgname}/LICENSE" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}
+
