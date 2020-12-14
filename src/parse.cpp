@@ -10,8 +10,10 @@ constexpr const char excluded_chars[] = "\"'=;#[](){}:.$\\%";
 constexpr const char comment_chars[] = ";#";
 constexpr const char quote_chars[] = "'\"";
 
+using std::move;
+
 // Returns if the name is invalid
-inline bool check_name(fixed_string& name, errorlist& err, int linecount) {
+inline bool check_name(tmp_fixed_string& name, errorlist& err, int linecount) {
   auto invalid = std::find_if(name.begin(), name.end(), [](unsigned char ch) {
     return std::isspace(ch) || strchr(excluded_chars, ch);
   });
@@ -23,11 +25,11 @@ inline bool check_name(fixed_string& name, errorlist& err, int linecount) {
 }
 
 void parse(std::istream& is, document& doc, errorlist& err) {
-  auto current_sec = &doc[""];
+  auto current_sec = &doc.emplace(fixed_string(""), section{}).first->second;
   std::vector<char> line_space(256);
   string raw;
   for (int linecount = 1; std::getline(is, raw); linecount++, raw.clear()) {
-    fixed_string line(raw.data(), 0, raw.size());
+    tmp_fixed_string line(raw);
 
     // trim spaces
     line.trim();
@@ -46,7 +48,7 @@ void parse(std::istream& is, document& doc, errorlist& err) {
       if (check_name(line, err, linecount))
         continue;
 
-      current_sec = &doc.emplace(static_cast<string>(line), section{}).first->second;
+      current_sec = &doc[fixed_string(line)];
       continue;
     }
 
@@ -63,7 +65,10 @@ void parse(std::istream& is, document& doc, errorlist& err) {
         line.erase_front();
         line.erase_back();
       }
-      (*current_sec)[static_cast<string>(key)] = static_cast<string>(line);
+      auto fixed_key = fixed_string(key);
+      if (!current_sec->emplace(fixed_key, fixed_string(line)).second) {
+        err[linecount] = "Duplicate key: " + key.to_string() + ", Existing value: " + (*current_sec)[fixed_key].to_string();
+      }
     }
   }
 }
