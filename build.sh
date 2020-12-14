@@ -1,5 +1,6 @@
 #!/usr/bin/env bash 
- 
+PROJECT=lini
+
 readonly SELF=${0##*/} 
 declare -rA COLORS=( 
   [RED]=$'\033[0;31m' 
@@ -11,11 +12,11 @@ declare -rA COLORS=(
   [YELLOW]=$'\033[0;33m' 
   [BOLD]=$'\033[1m' 
   [OFF]=$'\033[0m' 
-) 
+)
  
 usage() { 
   echo " 
-  Builds and installs cspace. 
+  Builds and installs $PROJECT.
  
   ${COLORS[GREEN]}${COLORS[BOLD]}Usage:${COLORS[OFF]} 
       ${COLORS[CYAN]}${SELF}${COLORS[OFF]} [options]
@@ -24,11 +25,13 @@ usage() {
       ${COLORS[GREEN]}-A, --auto${COLORS[OFF]}
           Use defaults for every options
       ${COLORS[GREEN]}-I, --noinstall${COLORS[OFF]}
-          Execute 'sudo make install' and install cspace
+          Execute 'sudo make install' and install $PROJECT
       ${COLORS[GREEN]}-t, --tests${COLORS[OFF]}
           Build unit tests into './build/test'
       ${COLORS[GREEN]}-p, --purge${COLORS[OFF]}
-          Build unit tests into './build/test'
+          Delete './build' directory before building
+      ${COLORS[GREEN]}-s, --scopes${COLORS[OFF]}
+          Add scopes for debug logging
       ${COLORS[GREEN]}-h, --help${COLORS[OFF]}
           Show this help message
 "
@@ -43,30 +46,43 @@ msg() {
   echo -e "${COLORS[GREEN]}${COLORS[BOLD]}** ${COLORS[OFF]}$*\n"
 }
 
+branch_switches() {
+  case "$1" in
+    -A|--auto)
+      [[ -z "$INSTALL" ]] && INSTALL=ON;
+      [[ -z "$BUILD_TESTS" ]] && BUILD_TESTS=OFF;
+      ;;
+    -s|--scopes)
+      DEBUG_SCOPES=$2
+      ;;
+    -I|--noinstall)
+      INSTALL=OFF; ;;
+    -t|--test)
+      BUILD_TESTS=ON; ;;
+    -p|--purge)
+      PURGE_BUILD_DIR=ON; ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      [[ ${#1} -le 2 ]] && {
+        usage
+        msg_err "Unknown switch '$1'"
+      }
+
+      joined_param=$1
+      shift
+      branch_switches "${joined_param:0:2}" $@
+      branch_switches "-${joined_param:2}" $@
+      ;;
+  esac
+}
+
 parse() {
   while [[ "$1" == -* ]]; do
-    case "$1" in
-      -A|--auto)
-        [[ -z "$INSTALL" ]] && INSTALL=ON;
-        [[ -z "$BUILD_TESTS" ]] && BUILD_TESTS=OFF;
-        shift
-        ;;
-      -I|--noinstall)
-        INSTALL=OFF; shift ;;
-      -t|--test)
-        BUILD_TESTS=ON; shift ;;
-      -p|--purge)
-        PURGE_BUILD_DIR=ON; shift ;;
-      -h|--help)
-        usage
-        exit 0
-        ;;
-      --) shift; break ;;
-      *)
-        usage
-        [[ "$1" =~ ^-[0-9a-zA-Z]{2,}$ ]] && msg_err "Don't combine options: ie do [-c -i] instead of [-ci]" || msg_err "Unknown option [$1]"
-        ;;
-    esac
+    branch_switches $@
+    shift
   done
 }
 
@@ -105,8 +121,10 @@ main() {
   mkdir -p ./build || msg_err "Failed to create build dir"
   cd ./build || msg_err "Failed to enter build dir"
 
+  [[ -z "$DEBUG_SCOPES" ]] || msg "Using debug scopes: $DEBUG_SCOPES"
   msg "Executing CMake command"
   cmake -DBUILD_TESTS=${BUILD_TESTS} \
+        -DDEBUG_SCOPES=${DEBUG_SCOPES} \
         -DPLATFORM_LINUX=ON \
         .. || msg_err "Failed to compile project..."
 
