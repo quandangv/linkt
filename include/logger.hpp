@@ -13,9 +13,16 @@ namespace logger {
   void debug(const string& text);
 
   template<const char* scope>
+  constexpr bool has_scope() {
+    return DEBUG_SCOPES.find(scope) != std::string_view::npos;
+  }
+
+  template<const char* scope>
   void debug(const string& text) {
-    if constexpr(DEBUG_SCOPES.find(scope) != std::string_view::npos)
+    if constexpr(has_scope<scope>())
       debug(text);
   }
   constexpr const char* dumb = "dumb";
 }
+
+constexpr char copy_scope[] = "copy";

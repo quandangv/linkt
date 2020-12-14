@@ -8,8 +8,8 @@
 
 using std::string;
 
-using section = std::map<fixed_string, fixed_string>;
-using document = std::map<fixed_string, section>;
+using section = std::map<string, fixed_string>;
+using document = std::map<string, section>;
 using errorlist = std::map<int, string>;
 
 DEFINE_ERROR(key_not_found_error)

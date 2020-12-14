@@ -8,7 +8,7 @@ using std::endl;
 string to_string(const document& doc) {
   std::stringstream ss;
   auto print_keyval = [&](const section::value_type& keyval) {
-    ss << keyval.first.to_string() << " = ";
+    ss << keyval.first << " = ";
     if (keyval.second.empty())
       ss << endl;
     else if (keyval.second.front() == ' ' || keyval.second.back() == ' ')
@@ -16,13 +16,13 @@ string to_string(const document& doc) {
     else 
       ss << keyval.second.to_string() << endl;
   };
-  if(doc.find(fixed_string()) != doc.end())
-    for(auto& keyval : doc.at(fixed_string()))
+  if(doc.find("") != doc.end())
+    for(auto& keyval : doc.at(""))
       print_keyval(keyval);
 
   for(auto& sec : doc) {
     if(sec.first.empty()) continue;
-    ss << endl << '[' << sec.first.to_string() << ']' << endl;
+    ss << endl << '[' << sec.first << ']' << endl;
     for(auto& keyval : sec.second)
       print_keyval(keyval);
   }

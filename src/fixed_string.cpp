@@ -120,9 +120,11 @@ string operator+(const tmp_fixed_string& a, const string& b) {
   return a.to_string() + b;
 }
 
-constexpr char copy_scope[] = "copy";
+int fixed_string::copy_count = 0;
 const char* clone(const char* str, size_t length) {
-  logger::debug("COPY\n");
+  if constexpr(logger::has_scope<copy_scope>()) {
+    fixed_string::copy_count++;
+  }
   char* result = new char[length];
   memcpy(result, str, length*sizeof(char));
   return result;

@@ -3,6 +3,8 @@
 
 #include <algorithm>
 
+#include "logger.hpp"
+
 using namespace std;
 struct parse_result {
   vector<tuple<string, string, string>> keys;
@@ -55,10 +57,14 @@ key-a = '    a\"",
 INSTANTIATE_TEST_SUITE_P(Parse, GetTest, ::testing::ValuesIn(parse_tests));
 
 TEST_P(GetTest, parse_string) {
+  fixed_string::copy_count = 0;
   stringstream ss{GetParam().first};
   document doc;
   errorlist err;
   parse(ss, doc, err);
+  if constexpr(logger::has_scope<copy_scope>())
+    // Copy count = key count + section count
+    EXPECT_EQ(fixed_string::copy_count, 12);
   // cout << to_string(doc);
   auto expected = GetParam().second;
   for(auto& line : expected.err) {
@@ -73,20 +79,19 @@ TEST_P(GetTest, parse_string) {
       << "Message: " << e.second;
   }
   for(auto& key : expected.keys) {
-    auto sec_fix = fixed_string(string(get<0>(key)));
-    auto key_fix = fixed_string(string(get<1>(key)));
-    auto val_fix = fixed_string(string(get<2>(key)));
-    auto& section = doc[sec_fix];
-    EXPECT_TRUE(section.find(key_fix) != section.end())
+    auto& section = doc[get<0>(key)];
+    EXPECT_TRUE(section.find(get<1>(key)) != section.end())
         << "Key: " << get<0>(key) << "." << get<1>(key);
-    EXPECT_EQ(section[key_fix].to_string(), get<2>(key))
+    EXPECT_EQ(section[get<1>(key)].to_string(), get<2>(key))
         << "Key: " << get<0>(key) << "." << get<1>(key);
-    section.erase(fixed_string(key_fix));
+    section.erase(get<1>(key));
   }
   for(auto& section : doc) {
     for(auto& keyval : section.second) {
       EXPECT_FALSE(true)
-          << "Key: " << section.first.to_string() << "." << keyval.first.to_string();
+          << "Key: " << section.first << "." << keyval.first;
     }
   }
+  if constexpr(logger::has_scope<copy_scope>())
+    EXPECT_EQ(fixed_string::copy_count, 12);
 }

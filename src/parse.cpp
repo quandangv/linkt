@@ -25,7 +25,7 @@ inline bool check_name(tmp_fixed_string& name, errorlist& err, int linecount) {
 }
 
 void parse(std::istream& is, document& doc, errorlist& err) {
-  auto current_sec = &doc.emplace(fixed_string(""), section{}).first->second;
+  auto current_sec = &doc.emplace("", section{}).first->second;
   std::vector<char> line_space(256);
   string raw;
   for (int linecount = 1; std::getline(is, raw); linecount++, raw.clear()) {
@@ -48,7 +48,7 @@ void parse(std::istream& is, document& doc, errorlist& err) {
       if (check_name(line, err, linecount))
         continue;
 
-      current_sec = &doc[fixed_string(line)];
+      current_sec = &doc[line.to_string()];
       continue;
     }
 
@@ -65,9 +65,8 @@ void parse(std::istream& is, document& doc, errorlist& err) {
         line.erase_front();
         line.erase_back();
       }
-      auto fixed_key = fixed_string(key);
-      if (!current_sec->emplace(fixed_key, fixed_string(line)).second) {
-        err[linecount] = "Duplicate key: " + key.to_string() + ", Existing value: " + (*current_sec)[fixed_key].to_string();
+      if (!current_sec->emplace(key.to_string(), fixed_string(line)).second) {
+        err[linecount] = "Duplicate key: " + key.to_string() + ", Existing value: " + (*current_sec)[key.to_string()].to_string();
       }
     }
   }

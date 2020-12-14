@@ -68,4 +68,6 @@ public:
 
   fixed_string& operator=(const fixed_string&);
   fixed_string& operator=(fixed_string&&);
+
+  static int copy_count;
 };
