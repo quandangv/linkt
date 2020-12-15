@@ -68,6 +68,35 @@ TEST_P(TrimTest, trim_equality) {
     EXPECT_EQ(fixed_string::copy_count, 0);
 }
 
+struct cut_test {
+  const char *src, *front, *back, *result;
+  bool match;
+};
+class CutTest : public ::testing::Test, public ::testing::WithParamInterface<cut_test> {};
+
+vector<cut_test> cut_tests = {
+  {"${abcedg}", "${", "}", "abcedg", true},
+  {"${abcedg]", "${", "}", "${abcedg]", false},
+  {"/*abcdef*/", "/*", "*/", "abcdef", true},
+  {"/*abcdef", "/*", "*/", "/*abcdef", false},
+  {"rgb:FF0000", "rgb:", "", "FF0000", true},
+  {"hsl:", "hsl:", "", "", true},
+  {".cpp", "", ".cpp", "", true},
+  {"hsl:", "hsl!", "", "hsl:", false},
+  {".cpp", "", ".cpP", ".cpp", false},
+  {"rgb::hsl", "rgb:", ":hsl", "", true},
+  {"", "", "", "", true},
+  {"abcdef", "", "", "abcdef", true},
+};
+INSTANTIATE_TEST_SUITE_P(FixedString, CutTest, ::testing::ValuesIn(cut_tests));
+TEST_P(CutTest, cut) {
+  auto& test_set = GetParam();
+  tmp_fixed_string src(test_set.src);
+  EXPECT_EQ(src.cut_front_back(test_set.front, test_set.back), test_set.match)
+      << "Source: " << test_set.src;
+  EXPECT_EQ(src.to_string(), test_set.result);
+}
+
 using erase_test = tuple<string, int, string>;
 class EraseTest : public ::testing::Test, public ::testing::WithParamInterface<erase_test> {};
 

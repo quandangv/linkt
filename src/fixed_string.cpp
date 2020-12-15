@@ -6,40 +6,39 @@
 
 #include "logger.hpp"
 
-tmp_fixed_string::tmp_fixed_string(const char* data, size_t off, size_t end_off) : data(data), off(off), end_off(end_off) {}
+tmp_fixed_string::tmp_fixed_string(const char* begin, const char* end) : _begin(begin), _end(end) {}
 
-tmp_fixed_string::tmp_fixed_string(const char* data, size_t length) : off(0), end_off(length), data(data) {}
+tmp_fixed_string::tmp_fixed_string(const char* data, size_t length) : tmp_fixed_string(data, data + length) {}
 
-tmp_fixed_string::tmp_fixed_string(const tmp_fixed_string& s) : tmp_fixed_string(s.data + s.off, s.end_off - s.off) {}
+tmp_fixed_string::tmp_fixed_string(const tmp_fixed_string& s) : tmp_fixed_string(s._begin, s._end) {}
 
 tmp_fixed_string::tmp_fixed_string(const char* data) : tmp_fixed_string(data, strlen(data)) {}
 
 tmp_fixed_string::tmp_fixed_string(const string& s) : tmp_fixed_string(s.c_str(), s.size()) {}
 
 tmp_fixed_string& tmp_fixed_string::erase_front(size_t count) {
-  off += std::min(length(), count);
+  _begin += std::min(length(), count);
   return *this;
 }
 
 tmp_fixed_string& tmp_fixed_string::erase_back(size_t count) {
-  end_off -= std::min(length(), count);
+  _end -= std::min(length(), count);
   return *this;
 }
 
 tmp_fixed_string& tmp_fixed_string::ltrim() {
-  for(; !empty() && std::isspace(front()); off++);
+  for(; !empty() && std::isspace(front()); _begin++);
   return *this;
 }
 
 tmp_fixed_string& tmp_fixed_string::rtrim() {
-  for(; !empty() && std::isspace(back()); end_off--);
+  for(; !empty() && std::isspace(back()); _end--);
   return *this;
 }
 
 tmp_fixed_string& tmp_fixed_string::trim() {
   ltrim();
-  rtrim();
-  return *this;
+  return rtrim();
 }
 
 bool tmp_fixed_string::empty() const {
@@ -47,42 +46,42 @@ bool tmp_fixed_string::empty() const {
 }
 
 char tmp_fixed_string::front() const {
-  return data[off];
+  return *_begin;
 }
 
 char tmp_fixed_string::back() const {
-  return data[end_off - 1];
+  return *(_end -1);
 }
 
 const char* tmp_fixed_string::begin() const {
-  return data + off;
+  return _begin;
 }
 
 const char* tmp_fixed_string::end() const {
-  return data + end_off;
+  return _end;
 }
 
 size_t tmp_fixed_string::length() const {
-  return end_off - off;
+  return _end - _begin;
 }
 
 char tmp_fixed_string::operator[](size_t index) const {
-  return data[index + off];
+  return _begin[index];
 }
 
 tmp_fixed_string tmp_fixed_string::substr(size_t pos, size_t length) const {
-  return tmp_fixed_string(data + off + pos, length);
+  return tmp_fixed_string(_begin + pos, length);
 }
 
 size_t tmp_fixed_string::find(char ch) const {
-  for(size_t i = off; i < end_off; i++)
-    if (data[i] == ch)
-      return i - off;
+  for(auto p = _begin; p < _end; p++)
+    if (*p == ch)
+      return p - _begin;
   return npos;
 }
 
 string tmp_fixed_string::to_string() const {
-  return string(data + off, length());
+  return string(_begin, length());
 }
 
 template<typename T>
@@ -130,34 +129,52 @@ const char* clone(const char* str, size_t length) {
   return result;
 }
 
-fixed_string::fixed_string(const char* _data, size_t _length) : tmp_fixed_string(clone(_data, _length), _length) {}
+fixed_string::fixed_string(const char* data, size_t length) : tmp_fixed_string(clone(data, length), length), _data(_begin) {}
 
-fixed_string::fixed_string(fixed_string&& s) : tmp_fixed_string(s.data, s.off, s.end_off) {
-  s.data = nullptr;
-  s.off = 0;
-  s.end_off = 0;
+fixed_string::fixed_string(fixed_string&& s) : tmp_fixed_string(s._begin, s._end), _data(s._data) {
+  s._data = s._begin = s._end = nullptr;
 }
 
+fixed_string::fixed_string(const tmp_fixed_string& s) : fixed_string(s.begin(), s.length()) {}
+fixed_string::fixed_string(const char* data) : fixed_string(data, strlen(data)) {}
+fixed_string::fixed_string(const string& s) : fixed_string(s.c_str(), s.size()) {}
+
 fixed_string& fixed_string::operator=(const fixed_string& other) {
-  if (data) delete[] data;
-  end_off = other.length();
-  data = clone(other.data + other.off, end_off);
-  off = 0;
+  if (_data != nullptr) delete[] _data;
+  _data = clone(other._begin, other.length());
+  _begin = _data;
+  _end = _begin + other.length();
   return *this;
 }
 
 fixed_string& fixed_string::operator=(fixed_string&& other) {
-  if (data) delete[] data;
-  end_off = other.end_off;
-  data = other.data;
-  off = other.off;
-  other.data = nullptr;
-  other.off = 0;
-  other.end_off = 0;
+  if (_data != nullptr) delete[] _data;
+  _data = other._data;
+  _begin = other._begin;
+  _end = other._end;
+  other._data = other._begin = other._end = nullptr;
   return *this;
 }
 
 fixed_string::~fixed_string() {
-  delete[] data;
+  if (_data != nullptr) delete[] _data;
 }
 
+bool tmp_fixed_string::cut_front_back(const char* fs, const char* bs) {
+  const char* fp = begin(), *bp = end();
+  auto fs_length = strlen(fs);
+  if (fs_length > length()) return false;
+  for(; *fs; fp++, fs++)
+    if(*fs != *fp)
+      return false;
+
+  auto bs_length = strlen(bs);
+  bp -= bs_length;
+  if (fp > bp) return false;
+  for(; *bs; bp++, bs++)
+    if(*bs != *bp)
+      return false;
+  erase_front(fs_length);
+  erase_back(bs_length);
+  return true;
+}

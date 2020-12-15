@@ -3,7 +3,9 @@
 void delink(document& doc, errorlist& err) {
   for(auto& sec_key : doc) {
     auto& section = sec_key.second;
-    for(auto& key_val : section) {
+    for(auto& keyval : section) {
+      auto& value = keyval.second;
+        
     }
   }
 }
