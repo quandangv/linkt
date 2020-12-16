@@ -51,7 +51,7 @@ function(add_unit_test source_file)
   add_dependencies(all_unit_tests ${name})
 endfunction()
 
-add_unit_test(fixed_string)
+add_unit_test(tstring)
 add_unit_test(parse)
 
 # Run make check to build and run all unit tests

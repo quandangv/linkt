@@ -4,16 +4,15 @@
 #include <iostream>
 #include <vector>
 
-#include "fixed_string.hpp"
+#include "tstring.hpp"
 
 constexpr const char excluded_chars[] = "\"'=;#[](){}:.$\\%";
 constexpr const char comment_chars[] = ";#";
-constexpr const char quote_chars[] = "'\"";
 
 using std::move;
 
 // Returns if the name is invalid
-inline bool check_name(tmp_fixed_string& name, errorlist& err, int linecount) {
+inline bool check_name(tstring& name, errorlist& err, int linecount) {
   auto invalid = std::find_if(name.begin(), name.end(), [](unsigned char ch) {
     return std::isspace(ch) || strchr(excluded_chars, ch);
   });
@@ -29,7 +28,7 @@ void parse(std::istream& is, document& doc, errorlist& err) {
   std::vector<char> line_space(256);
   string raw;
   for (int linecount = 1; std::getline(is, raw); linecount++, raw.clear()) {
-    tmp_fixed_string line(raw);
+    tstring line(raw);
 
     // trim spaces
     line.trim();
@@ -38,22 +37,15 @@ void parse(std::istream& is, document& doc, errorlist& err) {
     if (line.empty() || strchr(comment_chars, line.front())) continue;
 
     // detect section headers
-    if (line.front() == '[') {
-      if (line.back() != ']') {
-        err[linecount] = "Expected ']' at the end of a header line";
-        continue;
-      }
-      line.erase_front();
-      line.erase_back();
+    if (line.cut_front_back("[", "]")) {
       if (check_name(line, err, linecount))
         continue;
-
-      current_sec = &doc[line.to_string()];
+      current_sec = &doc[line];
       continue;
     }
 
     // detect key lines
-    if (auto sep = line.find('='); sep != fixed_string::npos) {
+    if (auto sep = line.find('='); sep != tstring::npos) {
       auto key = line.substr(0, sep);
       key.trim();
       if (check_name(key, err, linecount))
@@ -61,13 +53,13 @@ void parse(std::istream& is, document& doc, errorlist& err) {
 
       line.erase_front(sep + 1);
       line.trim();
-      if (strchr(quote_chars, line.front()) && line.front() == line.back()) {
-        line.erase_front();
-        line.erase_back();
+      line.cut_front_back("'", "'");
+      line.cut_front_back("\"", "\"");
+      if (!current_sec->emplace(key, line).second) {
+        err[linecount] = "Duplicate key: " + key.to_string() + ", Existing value: " + (*current_sec)[key];
       }
-      if (!current_sec->emplace(key.to_string(), fixed_string(line)).second) {
-        err[linecount] = "Duplicate key: " + key.to_string() + ", Existing value: " + (*current_sec)[key.to_string()].to_string();
-      }
+      continue;
     }
+    err[linecount] = "Unparsed line";
   }
 }

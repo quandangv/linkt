@@ -12,9 +12,9 @@ string to_string(const document& doc) {
     if (keyval.second.empty())
       ss << endl;
     else if (keyval.second.front() == ' ' || keyval.second.back() == ' ')
-      ss << '"' << keyval.second.to_string() << '"' << endl;
+      ss << '"' << keyval.second << '"' << endl;
     else 
-      ss << keyval.second.to_string() << endl;
+      ss << keyval.second << endl;
   };
   if(doc.find("") != doc.end())
     for(auto& keyval : doc.at(""))
