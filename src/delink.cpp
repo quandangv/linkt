@@ -1,42 +1,46 @@
 #include "delink.hpp"
 
-void delink(document& doc, str_errorlist& err) {
-  auto delink = [&](const string& sec, const string& key, fixed_string& src) {
-    auto report_err = [&](const string& msg) {
-      err[sec + "." + key] = msg;
-    };
+#include "tstring.hpp"
 
-    fixed_string backup(move(src));
-    if (src.cut_front_back("${", "}")) {
-      tmp_fixed_string mod(backup);
-      auto sep = mod.find('.');
-      if (sep == tmp_fixed_string::npos) {
-        report_err("Unparsed link: " + backup.to_string());
-        return;
-      }
-      auto new_sec = mod.sustr(0, sep).to_string();
-      mod.erase_front(sep + 1);
-
-      fixed_string* fallback;
-      string new_key;
-//      sep = mod.find(':');
-      if (sep == tmp_fixed_string::npos) {
-        fallback = &original;
-//        new_key = mod.to_string();
-      } else {
-        new_key = mod.substr(0, sep).to_string();
-//        mod.erase_front(sep + 1);
-        fallback = &value;
-      }
-//
-      if (auto new_value = find(doc, new_sec, new_key); new_value != nullptr) {
-        src = move(*new_value);
-//      } else src = 
-    }
+void delink(document& doc, str_errlist& err, const string& sec, const string& key, string& src) {
+  auto report_err = [&](const string& msg) {
+    err[sec + "." + key] = msg;
   };
-//  for(auto& sec_key : doc) {
-    auto& section = sec_key.second;
-    for(auto& keyval : section) {
-//    }
+
+  tstring mod(src);
+  if (mod.cut_front_back("${", "}")) {
+    auto sep = mod.find('.');
+    string new_sec, new_key;
+    if (sep == tstring::npos) {
+      new_sec = sec;
+    } else {
+      new_sec = mod.substr(0, sep).to_string();
+      mod.erase_front(sep + 1);
+    }
+
+    sep = mod.find(':');
+    if (sep == tstring::npos) {
+      new_key = mod.to_string();
+      mod = tstring(src);
+    } else {
+      new_key = mod.substr(0, sep).to_string();
+      mod.erase_front(sep + 1);
+    }
+
+    if (auto new_value = find(doc, new_sec, new_key); new_value != nullptr) {
+      // Clear to avoid cyclical linking
+      src.clear();
+      delink(doc, err, new_sec, new_key, *new_value);
+      src = *new_value;
+    } else src = mod.to_string();
   }
-//}
+}
+
+void delink(document& doc, str_errlist& err) {
+  for(auto& seckey : doc) {
+    auto& section = seckey.second;
+    for(auto& keyval : section) {
+      delink(doc, err, seckey.first, keyval.first, keyval.second);
+    }
+  }
+}

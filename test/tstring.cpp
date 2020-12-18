@@ -8,11 +8,6 @@
 
 using namespace std;
 
-TEST(FixedString, copy_count) {
-  if constexpr(!logger::has_scope<copy_scope>())
-    logger::warn("Fixed-string: Copy count not tested, use '--scopes copy' to enable");
-}
-
 struct substr_test {
   string src;
   size_t pos, end_pos, index, length;
@@ -25,7 +20,7 @@ vector<substr_test> substr_tests = {
   {"123456789", 0, 9, 10, 1, ""},
   {"123456789", 5, 8, 1, 5, "78"},
 };
-INSTANTIATE_TEST_SUITE_P(FixedString, SubstrTest, ::testing::ValuesIn(substr_tests));
+INSTANTIATE_TEST_SUITE_P(TString, SubstrTest, ::testing::ValuesIn(substr_tests));
 
 TEST_P(SubstrTest, substr) {
   auto test_set = GetParam();
@@ -45,7 +40,7 @@ vector<comp_test> comp_tests = {
   {"123456789", "213456789"},
   {"423456789", "123456789"},
 };
-INSTANTIATE_TEST_SUITE_P(FixedString, CompTest, ::testing::ValuesIn(comp_tests));
+INSTANTIATE_TEST_SUITE_P(TString, CompTest, ::testing::ValuesIn(comp_tests));
 TEST_P(CompTest, comp_equality) {
   auto a = tstring(GetParam().second);
   auto b = tstring(GetParam().first);
@@ -75,7 +70,7 @@ vector<trim_test> trim_tests = {
   { "     \t   \t   ", "" },
   { "abc def_   ", "abc def_" },
 };
-INSTANTIATE_TEST_SUITE_P(FixedString, TrimTest, ::testing::ValuesIn(trim_tests));
+INSTANTIATE_TEST_SUITE_P(TString, TrimTest, ::testing::ValuesIn(trim_tests));
 TEST_P(TrimTest, trim_equality) {
   auto expect = tstring(GetParam().second);
   auto reality = tstring(GetParam().first);
@@ -104,7 +99,7 @@ vector<cut_test> cut_tests = {
   {"", "", "", "", true},
   {"abcdef", "", "", "abcdef", true},
 };
-INSTANTIATE_TEST_SUITE_P(FixedString, CutTest, ::testing::ValuesIn(cut_tests));
+INSTANTIATE_TEST_SUITE_P(TString, CutTest, ::testing::ValuesIn(cut_tests));
 TEST_P(CutTest, cut) {
   auto& test_set = GetParam();
   tstring src(test_set.src);
@@ -125,7 +120,7 @@ vector<erase_test> erase_tests = {
   { "123456", 9, "" },
   { "123456", -9, "" },
 };
-INSTANTIATE_TEST_SUITE_P(FixedString, EraseTest, ::testing::ValuesIn(erase_tests));
+INSTANTIATE_TEST_SUITE_P(TString, EraseTest, ::testing::ValuesIn(erase_tests));
 TEST_P(EraseTest, trim_equality) {
   auto expect = tstring(get<2>(GetParam()));
   auto reality = tstring(get<0>(GetParam()));
@@ -138,7 +133,7 @@ TEST_P(EraseTest, trim_equality) {
   EXPECT_EQ(expect, reality);
 }
 
-TEST(FixedString, other) {
+TEST(TString, other) {
   string str;
 
   str = "123456789";
