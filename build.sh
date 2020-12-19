@@ -131,11 +131,14 @@ main() {
   msg "Building project"
   make || msg_err "Failed to build project"
 
+  # Call tests from inside the test directory so that file dependencies work
+  cd test
   if [[ "$BUILD_TESTS" == ON ]]; then
-    for file in ./test/unit_test.*; do
+    for file in ./unit_test.*; do
       eval "$file" || msg_err "Unit test failed"
     done
   fi
+  cd ..
 
   install
   msg "Build complete!"

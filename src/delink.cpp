@@ -1,6 +1,10 @@
 #include "delink.hpp"
 
+#include <cstdlib>
+#include <fstream>
+
 #include "tstring.hpp"
+#include "logger.hpp"
 
 void delink(document& doc, str_errlist& err, const string& sec, const string& key, string& src) {
   auto report_err = [&](const string& msg) {
@@ -9,30 +13,55 @@ void delink(document& doc, str_errlist& err, const string& sec, const string& ke
 
   tstring mod(src);
   if (mod.cut_front_back("${", "}")) {
-    auto sep = mod.find('.');
-    string new_sec, new_key;
-    if (sep == tstring::npos) {
-      new_sec = sec;
-    } else {
-      new_sec = mod.substr(0, sep).to_string();
-      mod.erase_front(sep + 1);
-    }
+    tstring fallback;
+    auto take_fallback = [&] {
+      auto sep = mod.rfind(':');
+      if (sep != tstring::npos) {
+        fallback = mod.substr(sep + 1);
+        mod.set_length(sep);
+      }
+    };
 
-    sep = mod.find(':');
-    if (sep == tstring::npos) {
-      new_key = mod.to_string();
-      mod = tstring(src);
+    if (mod.cut_front_back("file:", "")) {
+      take_fallback();
+      // Copy the string because the original string have to be returned if the operation fail and no fallback provided
+      std::ifstream ifs(mod.to_string().data());
+      if (!ifs.fail()) {
+        src.assign(std::istreambuf_iterator<char>{ifs}, {});
+        ifs.close();
+        auto last_line = src.find_last_not_of("\r\n");
+        src.erase(last_line + 1);
+        return;
+      }
+    } else if (mod.cut_front_back("env:", "")) {
+      take_fallback();
+      if (auto new_value = std::getenv(mod.to_string().data()); new_value != nullptr) {
+        src = string(new_value);
+        return;
+      }
     } else {
-      new_key = mod.substr(0, sep).to_string();
-      mod.erase_front(sep + 1);
-    }
+      take_fallback();
+      string new_sec, new_key;
+      auto sep = mod.find('.');
+      if (sep == tstring::npos) {
+        new_key = mod.to_string();
+        new_sec = sec;
+      } else {
+        new_sec = mod.substr(0, sep).to_string();
+        new_key = mod.substr(sep + 1).to_string();
+      }
 
-    if (auto new_value = find(doc, new_sec, new_key); new_value != nullptr) {
-      // Clear to avoid cyclical linking
-      src.clear();
-      delink(doc, err, new_sec, new_key, *new_value);
-      src = *new_value;
-    } else src = mod.to_string();
+      if (auto new_value = find(doc, new_sec, new_key); new_value != nullptr) {
+        // Clear to avoid cyclical linking
+        src.clear();
+        delink(doc, err, new_sec, new_key, *new_value);
+        src = *new_value;
+        return;
+      }
+    }
+    if (fallback.untouched())
+      report_err("De-linking failed and no fallback was found");
+    else src = fallback.to_string();
   }
 }
 

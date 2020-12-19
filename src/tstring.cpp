@@ -32,23 +32,32 @@ tstring& tstring::erase_back(size_t count) {
   return *this;
 }
 
-tstring& tstring::ltrim() {
-  for(; !empty() && std::isspace(front()); pos++);
+tstring& tstring::set_length(size_t length) {
+  end_pos = pos + length;
   return *this;
 }
 
-tstring& tstring::rtrim() {
-  for(; !empty() && std::isspace(back()); end_pos--);
+tstring& tstring::ltrim(const char* trim_char) {
+  for(; !empty() && strchr(trim_char, front()) != nullptr; pos++);
   return *this;
 }
 
-tstring& tstring::trim() {
-  ltrim();
-  return rtrim();
+tstring& tstring::rtrim(const char* trim_char) {
+  for(; !empty() && strchr(trim_char, back()) != nullptr; end_pos--);
+  return *this;
+}
+
+tstring& tstring::trim(const char* trim_char) {
+  ltrim(trim_char);
+  return rtrim(trim_char);
 }
 
 bool tstring::empty() const {
   return length() == 0;
+}
+
+bool tstring::untouched() const {
+  return data == nullptr;
 }
 
 char tstring::front() const {
@@ -81,8 +90,23 @@ tstring tstring::substr(size_t index, size_t len) const {
   return tstring(data + pos + index, std::min(len, length() - index));
 }
 
+tstring tstring::substr(size_t index) const {
+  return substr(index, length() - index);
+}
+
+size_t tstring:: get_end_pos() const {
+  return end_pos;
+}
+
 size_t tstring::find(char ch) const {
   for(auto p = begin(); p < end(); p++)
+    if (*p == ch)
+      return p - begin();
+  return npos;
+}
+
+size_t tstring::rfind(char ch) const {
+  for(auto p = end() - 1; p >= begin(); p--)
     if (*p == ch)
       return p - begin();
   return npos;

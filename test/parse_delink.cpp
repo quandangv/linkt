@@ -9,8 +9,9 @@
 using namespace std;
 struct parse_result {
   vector<tuple<string, string, string>> keys;
-  vector<tuple<string, string, string>> delinked_keys;
   vector<int> err;
+  vector<tuple<string, string, string>> delinked_keys;
+  vector<string> delinked_err;
 };
 using TestSet = pair<string, parse_result>;
 
@@ -45,6 +46,12 @@ ref-nexist   = ${test.key-nexist:failed} \n\
 ref-fallback-a = ${test.key-a:failed} \n\
 ref-fail   = ${test.key-fail} \n\
 ref-fake   = {test.key-a} \n\
+file-delink = ${file:delink_file.txt}\n\
+file-default = ${file:delink_file.txt:fail}\n\
+file-nexist = ${file:nexist.txt:fail}\n\
+file-fail = ${file:nexist.txt}\n\
+env = ${env:test_env:fail}\n\
+env-nexist = ${env:nexist:fail}\n\
 key-a = '    a\"",
     {
       { // keys
@@ -66,7 +73,16 @@ key-a = '    a\"",
         {"test2", "ref-fallback-a", "${test.key-a:failed}"},
         {"test2", "ref-fail", "${test.key-fail}"},
         {"test2", "ref-fake", "{test.key-a}"},
+        {"test2", "file-delink", "${file:delink_file.txt}"},
+        {"test2", "file-default", "${file:delink_file.txt:fail}"},
+        {"test2", "file-nexist", "${file:nexist.txt:fail}"},
+        {"test2", "file-fail", "${file:nexist.txt}"},
+        {"test2", "env", "${env:test_env:fail}"},
+        {"test2", "env-nexist", "${env:nexist:fail}"},
         {"test2", "key-a", "'    a\""},
+      },
+      { // err
+        2, 3, 6, 8, 12, 20, 22
       },
       { // delinked_keys
         {"", "key-rogue", "rogue"},
@@ -87,12 +103,18 @@ key-a = '    a\"",
         {"test2", "ref-fallback-a", "a"},
         {"test2", "ref-fail", "${test.key-fail}"},
         {"test2", "ref-fake", "{test.key-a}"},
-        {"test2", "key-a", "'    a\""},
         {"test2", "ref-a", "a"},
+        {"test2", "file-delink", "content"},
+        {"test2", "file-default", "content"},
+        {"test2", "file-nexist", "fail"},
+        {"test2", "file-fail", "${file:nexist.txt}"},
+        {"test2", "env", "test_env"},
+        {"test2", "env-nexist", "fail"},
+        {"test2", "key-a", "'    a\""},
       },
-      { // err
-        2, 3, 6, 8, 12, 20, 22
-      }
+      { // delinked_err
+        "test2.ref-fail", "test2.file-fail",
+      },
     }
   }
 };
@@ -137,7 +159,20 @@ TEST_P(GetTest, parse_string) {
   found.clear();
 
   str_errlist str_err;
+  setenv("test_env", "test_env", true);
+  unsetenv("nexist");
   delink(doc, str_err);
+  for(auto& line : expected.delinked_err) {
+    auto pos = find_if(str_err.begin(), str_err.end(), [&](auto it) { return it.first == line; });
+    EXPECT_NE(pos, str_err.end()) << "line = " << line;
+    if (pos != str_err.end())
+      str_err.erase(pos);
+  }
+  for(auto& e : str_err) {
+    EXPECT_FALSE(true)
+      << "Key: " << e.first << endl
+      << "Message: " << e.second;
+  }
   for(auto& key : expected.delinked_keys) {
     auto& section = doc[get<0>(key)];
     auto fullkey = get<0>(key) + "." + get<1>(key);

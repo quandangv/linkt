@@ -51,8 +51,14 @@ function(add_unit_test source_file)
   add_dependencies(all_unit_tests ${name})
 endfunction()
 
+function(add_test_file file)
+  configure_file(${file} ${file} COPYONLY)
+endfunction()
+
 add_unit_test(tstring)
-add_unit_test(parse)
+add_unit_test(parse_delink)
+
+add_test_file(delink_file.txt)
 
 # Run make check to build and run all unit tests
 add_custom_target(check

@@ -25,16 +25,20 @@ public:
   size_t length() const;
   tstring& erase_front(size_t = 1);
   tstring& erase_back(size_t = 1);
-  tstring& ltrim();
-  tstring& rtrim();
-  tstring& trim();
+  tstring& set_length(size_t);
+  tstring& ltrim(const char* trim_char = "\r\n\t\v\f ");
+  tstring& rtrim(const char* trim_char = "\r\n\t\v\f ");
+  tstring& trim(const char* trim_char = "\r\n\t\v\f ");
   bool cut_front_back(const char* front, const char* back = "");
   bool empty() const;
+  bool untouched() const;
   char front() const;
   char back() const;
   const char* begin() const;
   const char* end() const;
   tstring substr(size_t pos, size_t length) const;
+  tstring substr(size_t pos) const;
+  size_t get_end_pos() const;
   char operator[](size_t) const;
 
   // linear time operations
@@ -47,6 +51,7 @@ public:
   static constexpr size_t npos = -1;
 
   size_t find(char) const;
+  size_t rfind(char) const;
   string to_string() const;
   operator string() const { return to_string(); }
 };
