@@ -29,6 +29,7 @@ public:
   tstring& ltrim(const char* trim_char = "\r\n\t\v\f ");
   tstring& rtrim(const char* trim_char = "\r\n\t\v\f ");
   tstring& trim(const char* trim_char = "\r\n\t\v\f ");
+  tstring& trim_quotes();
   bool cut_front_back(const char* front, const char* back = "");
   bool empty() const;
   bool untouched() const;

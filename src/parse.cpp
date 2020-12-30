@@ -52,9 +52,7 @@ void parse(std::istream& is, document& doc, errorlist& err) {
         continue;
 
       line.erase_front(sep + 1);
-      line.trim();
-      line.cut_front_back("'", "'");
-      line.cut_front_back("\"", "\"");
+      line.trim_quotes();
       if (!current_sec->emplace(key, line).second) {
         err[linecount] = "Duplicate key: " + key.to_string() + ", Existing value: " + (*current_sec)[key];
       }

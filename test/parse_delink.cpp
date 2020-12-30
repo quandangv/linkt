@@ -43,15 +43,19 @@ key-c = \"dup\"   \n\
 ref-a = ${test.key-a} \n\
 ref-rogue= ${.key-rogue} \n\
 ref-nexist   = ${test.key-nexist:failed} \n\
-ref-fallback-a = ${test.key-a:failed} \n\
+ref-fallback-a = ${ test.key-a : failed } \n\
 ref-fail   = ${test.key-fail} \n\
 ref-fake   = {test.key-a} \n\
-file-delink = ${file:delink_file.txt}\n\
+file-delink = ${file: delink_file.txt }\n\
 file-default = ${file:delink_file.txt:fail}\n\
-file-nexist = ${file:nexist.txt:fail}\n\
+file-nexist = ${file:nexist.txt: \" f a i l ' }\n\
 file-fail = ${file:nexist.txt}\n\
-env = ${env:test_env:fail}\n\
-env-nexist = ${env:nexist:fail}\n\
+env = ${env: test_env: fail}\n\
+env-nexist = ${env:nexist: \" f a i l \" }\n\
+color = ${color: #123456 }\n\
+color-hsv = ${color: hsv(180, 1, 0.75)}\n\
+color-ref = ${color: $color}\n\
+color-mod = ${color: cielch: lum * 1.5, hue + 60; $color}\n\
 key-a = '    a\"",
     {
       { // keys
@@ -70,15 +74,19 @@ key-a = '    a\"",
         {"test2", "ref-a", "${test.key-a}"},
         {"test2", "ref-rogue", "${.key-rogue}"},
         {"test2", "ref-nexist", "${test.key-nexist:failed}"},
-        {"test2", "ref-fallback-a", "${test.key-a:failed}"},
+        {"test2", "ref-fallback-a", "${ test.key-a : failed }"},
         {"test2", "ref-fail", "${test.key-fail}"},
         {"test2", "ref-fake", "{test.key-a}"},
-        {"test2", "file-delink", "${file:delink_file.txt}"},
+        {"test2", "file-delink", "${file: delink_file.txt }"},
         {"test2", "file-default", "${file:delink_file.txt:fail}"},
-        {"test2", "file-nexist", "${file:nexist.txt:fail}"},
+        {"test2", "file-nexist", "${file:nexist.txt: \" f a i l ' }"},
         {"test2", "file-fail", "${file:nexist.txt}"},
-        {"test2", "env", "${env:test_env:fail}"},
-        {"test2", "env-nexist", "${env:nexist:fail}"},
+        {"test2", "env", "${env: test_env: fail}"},
+        {"test2", "env-nexist", "${env:nexist: \" f a i l \" }"},
+        {"test2", "color", "${color: #123456 }"},
+        {"test2", "color-hsv", "${color: hsv(180, 1, 0.75)}"},
+        {"test2", "color-ref", "${color: $color}"},
+        {"test2", "color-mod", "${color: cielch: lum * 1.5, hue + 60; $color}"},
         {"test2", "key-a", "'    a\""},
       },
       { // err
@@ -106,10 +114,14 @@ key-a = '    a\"",
         {"test2", "ref-a", "a"},
         {"test2", "file-delink", "content"},
         {"test2", "file-default", "content"},
-        {"test2", "file-nexist", "fail"},
+        {"test2", "file-nexist", "\" f a i l '"},
         {"test2", "file-fail", "${file:nexist.txt}"},
         {"test2", "env", "test_env"},
-        {"test2", "env-nexist", "fail"},
+        {"test2", "env-nexist", " f a i l " },
+        {"test2", "color", "#123456"},
+        {"test2", "color-hsv", "#00BFBF"},
+        {"test2", "color-ref", "#123456"},
+        {"test2", "color-mod", "#633E5C"},
         {"test2", "key-a", "'    a\""},
       },
       { // delinked_err
@@ -129,7 +141,7 @@ TEST_P(GetTest, parse_string) {
   auto expected = GetParam().second;
   for(auto& line : expected.err) {
     auto pos = find_if(err.begin(), err.end(), [&](auto it) { return it.first == line; });
-    EXPECT_NE(pos, err.end()) << "line = " << line;
+    EXPECT_NE(pos, err.end()) << "Expected parsing error: " << line;
     if (pos != err.end())
       err.erase(pos);
   }
@@ -164,7 +176,7 @@ TEST_P(GetTest, parse_string) {
   delink(doc, str_err);
   for(auto& line : expected.delinked_err) {
     auto pos = find_if(str_err.begin(), str_err.end(), [&](auto it) { return it.first == line; });
-    EXPECT_NE(pos, str_err.end()) << "line = " << line;
+    EXPECT_NE(pos, str_err.end()) << "Expected delinking error: " << line;
     if (pos != str_err.end())
       str_err.erase(pos);
   }

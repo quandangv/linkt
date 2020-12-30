@@ -98,6 +98,8 @@ vector<cut_test> cut_tests = {
   {"rgb::hsl", "rgb:", ":hsl", "", true},
   {"", "", "", "", true},
   {"abcdef", "", "", "abcdef", true},
+  {"' f a i l '", "'", "'", " f a i l ", true},
+  {"\" f a i l '", "'", "'", "\" f a i l '", false},
 };
 INSTANTIATE_TEST_SUITE_P(TString, CutTest, ::testing::ValuesIn(cut_tests));
 TEST_P(CutTest, cut) {
@@ -106,6 +108,26 @@ TEST_P(CutTest, cut) {
   EXPECT_EQ(src.cut_front_back(test_set.front, test_set.back), test_set.match)
       << "Source: " << test_set.src;
   EXPECT_EQ(src.to_string(), test_set.result);
+}
+
+struct trim_quotes_test {
+  const char *src, *result;
+};
+class TrimQuotesTest : public ::testing::Test, public ::testing::WithParamInterface<trim_quotes_test> {};
+
+vector<trim_quotes_test> trim_quotes_tests = {
+  {"123456", "123456"},
+  {"", ""},
+  {"  123456  ", "123456"},
+  {"  ' 1 2 3' ", " 1 2 3"},
+  {" ' 12345 6 \"", "' 12345 6 \""},
+};
+INSTANTIATE_TEST_SUITE_P(TString, TrimQuotesTest, ::testing::ValuesIn(trim_quotes_tests));
+TEST_P(TrimQuotesTest, trim) {
+  auto& test_set = GetParam();
+  tstring src(test_set.src);
+  EXPECT_EQ(src.trim_quotes().to_string(), test_set.result)
+      << "Source: " << test_set.src;
 }
 
 using erase_test = tuple<string, int, string>;

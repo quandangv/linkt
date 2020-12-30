@@ -52,6 +52,13 @@ tstring& tstring::trim(const char* trim_char) {
   return rtrim(trim_char);
 }
 
+tstring& tstring::trim_quotes() {
+  trim();
+  cut_front_back("'", "'");
+  cut_front_back("\"", "\"");
+  return *this;
+}
+
 bool tstring::empty() const {
   return length() == 0;
 }
@@ -152,16 +159,15 @@ string operator+(const tstring& a, const string& b) {
 }
 
 bool tstring::cut_front_back(const char* fs, const char* bs) {
-  const char* fp = begin(), *bp = end();
   auto fs_length = strlen(fs);
-  if (fs_length > length()) return false;
+  auto bs_length = strlen(bs);
+  if (fs_length + bs_length > length()) return false;
+  const char* fp = begin(), *bp = end();
   for(; *fs; fp++, fs++)
     if(*fs != *fp)
       return false;
 
-  auto bs_length = strlen(bs);
   bp -= bs_length;
-  if (fp > bp) return false;
   for(; *bs; bp++, bs++)
     if(*bs != *bp)
       return false;
