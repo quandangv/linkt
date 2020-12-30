@@ -3,8 +3,6 @@
 
 #include <algorithm>
 
-#include "logger.hpp"
-
 using namespace std;
 using namespace lini;
 
@@ -138,7 +136,6 @@ TEST_P(GetTest, parse_string) {
   document doc;
   errorlist err;
   parse(ss, doc, err);
-  // cout << to_string(doc);
   auto expected = GetParam().second;
   for(auto& line : expected.err) {
     auto pos = find_if(err.begin(), err.end(), [&](auto it) { return it.first == line; });

@@ -1,4 +1,3 @@
-include_directories(${dirs})
 include_directories(${CMAKE_CURRENT_LIST_DIR})
 
 # Download and unpack googletest at configure time {{{

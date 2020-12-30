@@ -15,7 +15,7 @@ GLOBAL_NAMESPACE
 
 inline void delink(document& doc, str_errlist& err, const string& sec, const string& key, string& src) {
   auto report_err = [&](const string& msg) {
-    err[sec + "." + key] = msg;
+    err.emplace_back(sec + "." + key, msg);
   };
 
   tstring mod(src);
