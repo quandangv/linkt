@@ -5,6 +5,7 @@
 #include <sstream>
 #include <functional>
 #include <cspace/interface.hpp>
+#include <stdexcept>
 
 #include "tstring.hpp"
 #include "logger.hpp"
@@ -14,7 +15,6 @@ inline void delink(document& doc, str_errlist& err, const string& sec, const str
   auto report_err = [&](const string& msg) {
     err[sec + "." + key] = msg;
   };
-  cspace::interface intf;
 
   tstring mod(src);
   if (!mod.cut_front_back("${", "}")) return;
@@ -32,7 +32,7 @@ inline void delink(document& doc, str_errlist& err, const string& sec, const str
       report_err("De-linking failed and no fallback was found. Reason: " + failmsg);
     } else src = fallback.to_string();
   };
-  std::function<bool()> subroutine = [&]() {
+  std::function<void()> subroutine = [&]() {
     if (mod.cut_front_back("file:", "")) {
       // Delink file
       take_fallback();
@@ -43,26 +43,22 @@ inline void delink(document& doc, str_errlist& err, const string& sec, const str
         ifs.close();
         auto last_line = src.find_last_not_of("\r\n");
         src.erase(last_line + 1);
-        return true;
-      } else return use_fallback("Can't read file: " + mod.to_string()), false;
+      } else use_fallback("Can't read file: " + mod.to_string());
     } else if (mod.cut_front_back("env:", "")) {
       // Delink environment variable
       take_fallback();
       if (auto new_value = std::getenv(mod.trim_quotes().to_string().data()); new_value != nullptr) {
         src = string(new_value);
-        return true;
-      } else return use_fallback("Environment variable doesn't exist: " + mod.to_string()), false;
+      } else use_fallback("Environment variable doesn't exist: " + mod.to_string());
     } else if (mod.cut_front_back("color:", "")) {
       // Delink color
       auto sep = mod.find(';');
-      intf.modifications.clear();
+      cspace::processor cp;
       if (sep != tstring::npos) {
         auto sep2 = mod.find(':');
-        if (sep2 != tstring::npos) {
-          intf.inter = cspace::stospace(mod.substr(0,sep2).trim());
-        } else
-          intf.inter = cspace::colorspaces::cielab;
-        intf.add_modification(mod.substr(sep2 + 1, sep - sep2 - 1).to_string());
+        if (sep2 != tstring::npos)
+          cp.inter = cspace::stospace(mod.substr(0,sep2++).trim());
+        cp.add_modification(mod.substr(sep2, sep - sep2).to_string());
         mod.erase_front(sep + 1);
       }
       take_fallback();
@@ -72,30 +68,10 @@ inline void delink(document& doc, str_errlist& err, const string& sec, const str
         subroutine();
         mod = tstring(src);
       }
-      if (mod[0] == '#') {
-        mod.erase_front();
-        src = intf.operate_hex(mod.to_string());
-        logger::debug(src);
-        return true;
-      } else {
-        auto pos = mod.find('(');
-        if (pos != tstring::npos && mod.back() == ')') {
-          auto colorspace = mod.substr(0, pos);
-          intf.add_term(colorspace + ":");
-          mod.erase_front(pos + 1);
-          mod.erase_back();
-          std::stringstream ss(mod.to_string());
-          for(double d; ss >> d;) {
-            if (ss.peek() == ',')
-              ss.ignore();
-            if ((src = intf.add_data(d)) != "") {
-              if (ss >> d)
-                report_err("Excess color component: " + ss.str());
-              break;
-            }
-          }
-          return true;
-      } else return use_fallback("Color string is invalid: " + mod.to_string()), false;
+      try {
+        src = cp.operate(mod.to_string());
+      } catch (const std::exception& e) {
+        use_fallback("Color conversion failed: " + string(e.what()));
       }
     } else {
       // Delink local value
@@ -113,8 +89,8 @@ inline void delink(document& doc, str_errlist& err, const string& sec, const str
         src.clear();
         delink(doc, err, new_sec, new_key, *new_value);
         src = *new_value;
-        return true;
-      } else return use_fallback("Referenced key doesn't exist: " + new_sec + "." + new_key), false;
+      } else
+        return use_fallback("Referenced key doesn't exist: " + new_sec + "." + new_key);
     }
   };
   subroutine();

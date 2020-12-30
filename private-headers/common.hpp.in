@@ -1,6 +1,9 @@
 #pragma once
 
 #include <string_view>
+#include <string>
+
+#include "error.hpp"
 
 using namespace std::literals;
 

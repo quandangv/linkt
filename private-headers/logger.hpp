@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "option.hpp"
+#include "common.hpp"
 
 namespace logger {
   using std::string;

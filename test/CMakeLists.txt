@@ -45,7 +45,23 @@ function(add_unit_test source_file)
   add_executable(${name} ${source_file}.cpp)
 
   # Link against gmock (this automatically links against gtest)
-  target_link_libraries(${name} ini gmock_main)
+  target_link_libraries(${name} lini gmock_main)
+  add_test(NAME ${name} COMMAND ${name})
+
+  add_dependencies(all_unit_tests ${name})
+endfunction()
+
+add_library(liblini SHARED IMPORTED)
+set_property(TARGET liblini PROPERTY IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/src/liblini.so)
+function(add_lib_test source_file)
+  string(REPLACE "/" "_" testname ${source_file})
+  set(name "unit_test.${testname}")
+
+  add_executable(${name} ${source_file}.cpp)
+
+  # Link against gmock (this automatically links against gtest)
+  target_link_libraries(${name} liblini gmock_main)
+  target_include_directories(${name} PUBLIC ${PROJECT_SOURCE_DIR}/include)
   add_test(NAME ${name} COMMAND ${name})
 
   add_dependencies(all_unit_tests ${name})
@@ -56,7 +72,7 @@ function(add_test_file file)
 endfunction()
 
 add_unit_test(tstring)
-add_unit_test(parse_delink)
+add_lib_test(parse_delink)
 
 add_test_file(delink_file.txt)
 
