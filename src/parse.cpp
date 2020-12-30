@@ -31,8 +31,6 @@ void parse(std::istream& is, document& doc, errorlist& err) {
       }
       return false;
     };
-
-    // trim spaces
     line.trim();
 
     // skip empty and comment lines
