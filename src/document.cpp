@@ -1,7 +1,10 @@
 #include "document.hpp"
+#include "logger.hpp"
 
 #include <sstream>
 #include <iostream>
+
+GLOBAL_NAMESPACE
 
 using std::endl;
 
@@ -28,3 +31,5 @@ string to_string(const document& doc) {
   }
   return ss.str();
 }
+
+GLOBAL_NAMESPACE_END

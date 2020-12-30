@@ -1,10 +1,13 @@
-#include "parse.hpp"
+#include "parse_delink.hpp"
+#include "logger.hpp"
 
 #include <cstring>
 #include <iostream>
 #include <vector>
 
 #include "tstring.hpp"
+
+GLOBAL_NAMESPACE
 
 constexpr const char excluded_chars[] = "\"'=;#[](){}:.$\\%";
 constexpr const char comment_chars[] = ";#";
@@ -61,3 +64,5 @@ void parse(std::istream& is, document& doc, errorlist& err) {
     err[linecount] = "Unparsed line";
   }
 }
+
+GLOBAL_NAMESPACE_END

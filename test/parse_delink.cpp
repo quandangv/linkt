@@ -1,5 +1,4 @@
-#include "parse.hpp"
-#include "delink.hpp"
+#include "parse_delink.hpp"
 #include "test.h"
 
 #include <algorithm>
@@ -7,6 +6,8 @@
 #include "logger.hpp"
 
 using namespace std;
+using namespace lini;
+
 struct parse_result {
   vector<tuple<string, string, string>> keys;
   vector<int> err;

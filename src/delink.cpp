@@ -1,4 +1,5 @@
-#include "delink.hpp"
+#include "parse_delink.hpp"
+#include "logger.hpp"
 
 #include <cstdlib>
 #include <fstream>
@@ -8,8 +9,9 @@
 #include <stdexcept>
 
 #include "tstring.hpp"
-#include "logger.hpp"
 #include "error.hpp"
+
+GLOBAL_NAMESPACE
 
 inline void delink(document& doc, str_errlist& err, const string& sec, const string& key, string& src) {
   auto report_err = [&](const string& msg) {
@@ -104,3 +106,5 @@ void delink(document& doc, str_errlist& err) {
     }
   }
 }
+
+GLOBAL_NAMESPACE_END
