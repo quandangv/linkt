@@ -126,10 +126,10 @@ string tstring::to_string() const {
 template<typename T>
 std::strong_ordering tstring::compare(const T& other) const {
   auto len = length();
-  if (auto diff = other.length() <=> len; diff != std::strong_ordering::equal)
+  if (auto diff = other.length() <=> len; diff != 0)
     return diff;
   for(size_t i = 0; i < len; i++)
-    if (auto diff = other[i] <=> (*this)[i]; diff != std::strong_ordering::equal)
+    if (auto diff = other[i] <=> (*this)[i]; diff != 0)
       return diff;
   return std::strong_ordering::equal;
 }
@@ -143,15 +143,15 @@ std::strong_ordering tstring::operator<=>(const string& other) const {
 }
 
 bool tstring::operator==(const tstring& other) const {
-  return compare(other) == std::strong_ordering::equal;
+  return compare(other) == 0;
 }
 
 bool tstring::operator<(const tstring& other) const {
-  return compare(other) == std::strong_ordering::less;
+  return compare(other) < 0;
 }
 
 bool tstring::operator>(const tstring& other) const {
-  return compare(other) == std::strong_ordering::greater;
+  return compare(other) > 0;
 }
 
 string operator+(const tstring& a, const string& b) {

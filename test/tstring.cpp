@@ -44,9 +44,6 @@ INSTANTIATE_TEST_SUITE_P(TString, CompTest, ::testing::ValuesIn(comp_tests));
 TEST_P(CompTest, comp_equality) {
   auto a = tstring(GetParam().second);
   auto b = tstring(GetParam().first);
-  EXPECT_EQ(GetParam().first <=> GetParam().second, a <=> b)
-      << "First: " << GetParam().first << endl
-      << "Second: " << GetParam().second;
   EXPECT_EQ(GetParam().first < GetParam().second, a < b)
       << "First: " << GetParam().first << endl
       << "Second: " << GetParam().second;

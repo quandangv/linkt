@@ -3,6 +3,7 @@
 
 #include <string>
 #include <cstring>
+#include <compare>
 
 using std::string;
 
