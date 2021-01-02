@@ -13,7 +13,6 @@ namespace lini {
   using str_errlist = std::vector<std::pair<string, string>>;
 
   string to_string(const document&);
-
   string* find(document&, const string& section, const string& key);
   const string* find(const document&, const string& section, const string& key);
   bool try_get(const document&, const string& section, const string& key, string& result);

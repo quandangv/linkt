@@ -14,11 +14,10 @@ constexpr const char comment_chars[] = ";#";
 
 using std::move;
 
-void parse(std::istream& is, document& doc, errorlist& err) {
-  auto current_sec = &doc.emplace("", section{}).first->second;
-  std::vector<char> line_space(256);
+std::istream& parse(std::istream& is, document& doc, errorlist& err, const string& initial_section, char line_separator) {
+  auto current_sec = &doc.emplace(initial_section, section{}).first->second;
   string raw;
-  for (int linecount = 1; std::getline(is, raw); linecount++, raw.clear()) {
+  for (int linecount = 1; std::getline(is, raw, line_separator); linecount++, raw.clear()) {
     tstring line(raw);
     // Determines if the name is invalid
     auto check_name = [&](const tstring& name) {
@@ -60,6 +59,7 @@ void parse(std::istream& is, document& doc, errorlist& err) {
     }
     err.emplace_back(linecount, "Unparsed line");
   }
+  return is;
 }
 
 GLOBAL_NAMESPACE_END

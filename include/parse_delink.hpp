@@ -6,5 +6,5 @@
 
 namespace lini {
   void delink(document&, str_errlist&);
-  void parse(std::istream& is, document&, errorlist&);
+  std::istream& parse(std::istream&, document&, errorlist&, const std::string& initial_section = "", char line_separator = '\n');
 }
