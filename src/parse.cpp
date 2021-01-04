@@ -12,10 +12,10 @@ GLOBAL_NAMESPACE
 constexpr const char excluded_chars[] = "\"'=;#[](){}:.$\\%";
 constexpr const char comment_chars[] = ";#";
 
-using std::move;
+using namespace std;
 
 std::istream& parse(std::istream& is, document& doc, errorlist& err, const string& initial_section, char line_separator) {
-  auto current_sec = &doc.emplace(initial_section, section{}).first->second;
+  auto current_sec = &doc.map.emplace(initial_section, document::sec_map{}).first->second;
   string raw;
   for (int linecount = 1; std::getline(is, raw, line_separator); linecount++, raw.clear()) {
     tstring line(raw);
@@ -39,7 +39,7 @@ std::istream& parse(std::istream& is, document& doc, errorlist& err, const strin
     if (line.cut_front_back("[", "]")) {
       if (check_name(line))
         continue;
-      current_sec = &doc[line];
+      current_sec = &doc.map[line];
       continue;
     }
 
@@ -52,8 +52,10 @@ std::istream& parse(std::istream& is, document& doc, errorlist& err, const strin
 
       line.erase_front(sep + 1);
       line.trim_quotes();
-      if (!current_sec->emplace(key, line).second) {
-        err.emplace_back(linecount, "Duplicate key: " + key.to_string() + ", Existing value: " + (*current_sec)[key]);
+      if (current_sec->emplace(key, doc.values.size()).second) {
+        doc.values.emplace_back(make_unique<onetime_string>(line));
+      } else {
+        err.emplace_back(linecount, "Duplicate key: " + key.to_string() + ", Existing value: " + doc.values[(*current_sec)[key]]->get());
       }
       continue;
     }

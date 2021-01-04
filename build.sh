@@ -130,6 +130,7 @@ main() {
 
   msg "Building project"
   make || msg_err "Failed to build project"
+  install
 
   # Call tests from inside the test directory so that file dependencies work
   cd test
@@ -140,7 +141,6 @@ main() {
   fi
   cd ..
 
-  install
   msg "Build complete!"
 
   exit 0

@@ -13,13 +13,6 @@ struct ParseSet {
   string initial_section;
   char line_separator;
 };
-struct delink_result {
-  string section, key, value, delinked;
-};
-struct DelinkSet {
-  vector<delink_result> delinked_keys;
-  vector<string> delinked_err;
-};
 
 vector<ParseSet> parse_tests = {
   {
@@ -84,34 +77,6 @@ key-a = '    a\"",
     }, {}, "styles", ' '
   }
 };
-DelinkSet delink_test{
-  {
-    {"", "key-rogue", "rogue", "rogue"},
-    {"test", "key-a", "a", "a"},
-    {"test", "ref-ref-a", "${test2.ref-a:failed}", "a"},
-    {"test", "ref-self-a", "${key-a:failed}", "a"},
-    {"test", "ref-cyclic-1", "${ref-cyclic-2}", ""},
-    {"test", "ref-cyclic-2", "${ref-cyclic-1}", ""},
-    {"test2", "ref-a", "${test.key-a}", "a"},
-    {"test2", "ref-rogue", "${.key-rogue}", "rogue"},
-    {"test2", "ref-nexist", "${test.key-nexist: \" f a i l ' }", "\" f a i l '"},
-    {"test2", "ref-fallback-a", "${ test.key-a : fail }", "a"},
-    {"test2", "ref-fail", "${test.key-fail}", "${test.key-fail}"},
-    {"test2", "ref-fake", "{test.key-a}", "{test.key-a}"},
-    {"test2", "file-delink", "${file: delink_file.txt }", "content"},
-    {"test2", "file-default", "${file:delink_file.txt:fail}", "content"},
-    {"test2", "file-nexist", "${file:nexist.txt: \" f a i l ' }", "\" f a i l '"},
-    {"test2", "file-fail", "${file:nexist.txt}", "${file:nexist.txt}"},
-    {"test2", "env", "${env: test_env: fail}", "test_env"},    {"test2", "env-nexist", "${env:nexist: \" f a i l \" }", " f a i l "},
-    {"test2", "color", "${color: #123456 }", "#123456"},
-    {"test2", "color-hsv", "${color: hsv(180, 1, 0.75)}", "#00BFBF"},
-    {"test2", "color-ref", "${color: $color}", "#123456"},
-    {"test2", "color-mod", "${color: cielch: lum * 1.5, hue + 60; $color}", "#633E5C"},
-  }, 
-  {
-    "test2.ref-fail", "test2.file-fail",
-  }
-};
 
 TEST(Parse, general) {
   for(auto& parse_test : parse_tests) {
@@ -132,15 +97,15 @@ TEST(Parse, general) {
     }
     vector<string> found;
     for(auto& key : parse_test.keys) {
-      auto& section = doc[get<0>(key)];
+      auto& section = doc.map[get<0>(key)];
       auto fullkey = get<0>(key) + "." + get<1>(key);
       EXPECT_TRUE(section.find(get<1>(key)) != section.end())
           << "Parse, find: Key: " << fullkey << endl;
-      EXPECT_EQ(section[get<1>(key)], get<2>(key))
+      EXPECT_EQ(doc.values[section[get<1>(key)]]->get(), get<2>(key))
           << "Parse, compare: Key: " << fullkey << endl;
       found.emplace_back(fullkey);
     }
-    for(auto& section : doc) {
+    for(auto& section : doc.map) {
       for(auto& keyval : section.second) {
         auto fullkey = section.first + "." + keyval.first;
         EXPECT_NE(std::find(found.begin(), found.end(), fullkey), found.end())
@@ -151,28 +116,68 @@ TEST(Parse, general) {
   }
 }
 
-TEST(Delink, general) {
-  str_errlist str_err;
+struct delink_test_single {
+  string section, key, value, delinked;
+  bool fail;
+};
+using delink_test = vector<delink_test_single>;
+vector<delink_test> delink_tests = {
+  {
+    {"", "key-rogue", "rogue", "rogue", false},
+    {"test", "ref-rogue", "${.key-rogue}", "rogue", false},
+  },
+  {
+    {"test", "key-a", "a", "a", false},
+    {"test2", "ref-a", "${test.key-a}", "a", false},
+    {"test", "ref-ref-a", "${test2.ref-a:failed}", "a", false},
+    {"test", "ref-self-a", "${key-a:failed}", "a", false},
+    {"test2", "ref-fallback-a", "${ test.key-a : fail }", "a", false},
+    {"test2", "ref-nexist", "${test.key-nexist: \" f a i l ' }", "\" f a i l '", false},
+    {"test2", "ref-fail", "${test.key-fail}", "${test.key-fail}", true},
+    {"test2", "ref-fake", "{test.key-a}", "{test.key-a}", false},
+  },
+  {
+    {"test", "ref-cyclic-1", "${ref-cyclic-2}", "${ref-cyclic-1}", false},
+    {"test", "ref-cyclic-2", "${ref-cyclic-1}", "${ref-cyclic-1}", true}
+  },
+  {{"test2", "file-delink", "${file: delink_file.txt }", "content", false}},
+  {{"test2", "file-default", "${file:delink_file.txt:fail}", "content", false}},
+  {{"test2", "file-nexist", "${file:nexist.txt: \" f a i l ' }", "\" f a i l '", false}},
+  {{"test2", "file-fail", "${file:nexist.txt}", "${file:nexist.txt}", true}},
+  {{"test2", "env", "${env: test_env: fail}", "test_env"},    {"test2", "env-nexist", "${env:nexist: \" f a i l \" }", " f a i l ", false}},
+  {
+    {"test2", "color", "${color: #123456 }", "#123456", false},
+    {"test2", "color-hsv", "${color: hsv(180, 1, 0.75)}", "#00BFBF", false},
+    {"test2", "color-ref", "${color: $color}", "#123456", false},
+    {"test2", "color-mod", "${color: cielch: lum * 1.5, hue + 60; $color}", "#633E5C", false},
+  },
+};
+class DelinkTest : public ::testing::Test, public ::testing::WithParamInterface<delink_test> {};
+INSTANTIATE_TEST_SUITE_P(TString, DelinkTest, ::testing::ValuesIn(delink_tests));
+TEST_P(DelinkTest, general) {
+  str_errlist err;
   setenv("test_env", "test_env", true);
   unsetenv("nexist");
   document doc;
-  for(auto& tup : delink_test.delinked_keys) {
-    doc[tup.section][tup.key] = tup.value;
-  }
-  delink(doc, str_err);
-  for(auto& line : delink_test.delinked_err) {
-    auto pos = find_if(str_err.begin(), str_err.end(), [&](auto it) { return it.first == line; });
-    EXPECT_NE(pos, str_err.end()) << "Expected delinking error: " << line;
-    if (pos != str_err.end())
-      str_err.erase(pos);
-  }
-  for(auto& e : str_err) {
-    EXPECT_FALSE(true)
-      << "Excess delinking error, key: " << e.first << endl
-      << "Message: " << e.second;
-  }
-  for(auto& tup : delink_test.delinked_keys) {
-    EXPECT_EQ(tup.delinked, doc[tup.section][tup.key])
-      << "Key: " << tup.section << '.' << tup.key << endl;
+  auto testset = GetParam();
+  for(auto test : testset)
+    doc.add_onetime(test.section, test.key, move(test.value));
+  delink(doc, err);
+  for(auto test : testset) {
+    auto fullkey = test.section + "." + test.key;
+    auto pos = find_if(err.begin(), err.end(), [&](auto it) { return it.first == fullkey; });
+    try {
+      EXPECT_TRUE(doc.get(test.section, test.key))
+          << "Key: " << fullkey;
+      EXPECT_EQ(*doc.get(test.section, test.key), test.delinked)
+          << "Key: " << fullkey;
+      EXPECT_EQ(pos != err.end(), test.fail)
+          << "Key: " << fullkey << endl
+          << (pos == err.end() ? "Expected error" : "Unexpected error: " + pos->second);
+    } catch (const exception&) {
+      EXPECT_TRUE(test.fail)
+          << "Key: " << fullkey << endl
+          << "Exception got thrown, but the test is not expected to fail";
+    }
   }
 }
