@@ -6,26 +6,39 @@
 
 GLOBAL_NAMESPACE
 
+using namespace std;
 DEFINE_ERROR(document_error)
 
 using std::endl;
 
-string to_string(const document& doc) {
-  std::stringstream ss;
-  auto print_keyval = [&](const section::value_type& keyval) {
+bool document::add(const string& section, const string& key, string&& value) {
+  auto existing = find(section, key);
+  if (existing) {
+    values[*existing] = make_unique<const_string>(move(value));
+    return false;
+  }
+  map[section][key] = values.size();
+  values.emplace_back(make_unique<const_string>(move(value)));
+  return true;
+}
+
+string document::to_string() const {
+  stringstream ss;
+  auto print_keyval = [&](const sec_map::value_type& keyval) {
     ss << keyval.first << " = ";
-    if (keyval.second.empty())
+    auto value = values[keyval.second]->get();
+    if (value.empty())
       ss << endl;
-    else if (keyval.second.front() == ' ' || keyval.second.back() == ' ')
-      ss << '"' << keyval.second << '"' << endl;
+    else if (value.front() == ' ' || value.back() == ' ')
+      ss << '"' << value << '"' << endl;
     else 
-      ss << keyval.second << endl;
+      ss << value << endl;
   };
-  if(doc.find("") != doc.end())
-    for(auto& keyval : doc.at(""))
+  if(map.find("") != map.end())
+    for(auto& keyval : map.at(""))
       print_keyval(keyval);
 
-  for(auto& sec : doc) {
+  for(auto& sec : map) {
     if(sec.first.empty()) continue;
     ss << endl << '[' << sec.first << ']' << endl;
     for(auto& keyval : sec.second)
@@ -34,35 +47,25 @@ string to_string(const document& doc) {
   return ss.str();
 }
 
-string* find(document& doc, const string& section, const string& key) {
-  if (auto sec_it = doc.find(section); sec_it != doc.end())
-    if (auto key_it = sec_it->second.find(key); key_it != sec_it->second.end())
-      return &key_it->second;
-  return nullptr;
-}
-
-const string* find(const document& doc, const string& section, const string& key) {
-  if (auto sec_it = doc.find(section); sec_it != doc.end())
-    if (auto key_it = sec_it->second.find(key); key_it != sec_it->second.end())
-      return &key_it->second;
-  return nullptr;
-}
-
-bool try_get(const document& doc, const string& section, const string& key, string& result) {
-  if (auto result_ptr = find(doc, section, key); result_ptr != nullptr){
-    result = *result_ptr;
-    return true;
+optional<size_t> document::find(const string& section, const string& key) const {
+  if (auto sec_it = map.find(section); sec_it != map.end()) {
+    if (auto key_it = sec_it->second.find(key); key_it != sec_it->second.end()) {
+      return key_it->second;
+    }
   }
-  return false;
+  return {};
 }
 
-string get(const document& doc, const string& section, const string& key) {
-  if (string result; try_get(doc, section, key, result)) return result;
-  throw document_error("Key not found: " + section + "." + key);
+opt_str document::get(const string& section, const string& key) const {
+  if (auto index = find(section, key); index)
+    return values.at(*index)->get();
+  return {};
 }
 
-string get(const document& doc, const string& section, const string& key, string&& fallback) {
-  if (string result; try_get(doc, section, key, result)) return result;
-  return std::forward<string>(fallback);
+string document::get(const string& section, const string& key, string&& fallback) const {
+  if (auto result = get(section, key); result)
+    return *result;
+  return forward<string>(fallback);
 }
+
 GLOBAL_NAMESPACE_END

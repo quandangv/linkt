@@ -30,7 +30,6 @@ TEST_P(SubstrTest, substr) {
 }
 
 using comp_test = pair<string, string>;
-class CompTest : public ::testing::Test, public ::testing::WithParamInterface<comp_test> {};
 
 vector<comp_test> comp_tests = {
   {"", ""},
@@ -40,6 +39,7 @@ vector<comp_test> comp_tests = {
   {"123456789", "213456789"},
   {"423456789", "123456789"},
 };
+class CompTest : public ::testing::Test, public ::testing::WithParamInterface<comp_test> {};
 INSTANTIATE_TEST_SUITE_P(TString, CompTest, ::testing::ValuesIn(comp_tests));
 TEST_P(CompTest, comp_equality) {
   auto a = tstring(GetParam().second);
