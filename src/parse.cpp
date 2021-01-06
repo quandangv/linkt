@@ -29,7 +29,7 @@ std::istream& parse(std::istream& is, document& doc, errorlist& err, const strin
     };
     line.trim();
     // skip empty and comment lines
-    if (!line.empty() || !strchr(comment_chars, line.front())) {
+    if (!line.empty() && !strchr(comment_chars, line.front())) {
       if (line.cut_front_back("[", "]")) {
         // detected section header
         if (check_name(line))

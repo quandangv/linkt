@@ -44,6 +44,7 @@ ref-nexist   = ${test.key-nexist: \" f a i l ' } \n\
 ref-fallback-a = ${ test.key-a : failed } \n\
 ref-fail   = ${test.key-fail} \n\
 ref-fake   = {test.key-a} \n\
+\n\
 key-a = '    a\"",
     { // keys
       {"", "key-rogue", "rogue"},
