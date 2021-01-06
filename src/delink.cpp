@@ -12,7 +12,6 @@ GLOBAL_NAMESPACE
 using namespace std;
 constexpr char scope[] = "delink";
 
-
 void delink(document& doc, str_errlist& err) {
   std::function<void(const string&, const string&, string_ref_p&)> delink_key = [&](const string& sec, const string& key, string_ref_p& value) {
     auto report_err = [&](const string& msg) { err.emplace_back(sec + "." + key, msg); };

@@ -7,7 +7,6 @@
 GLOBAL_NAMESPACE
 
 using namespace std;
-DEFINE_ERROR(document_error)
 
 using std::endl;
 
@@ -48,11 +47,9 @@ string document::to_string() const {
 }
 
 optional<size_t> document::find(const string& section, const string& key) const {
-  if (auto sec_it = map.find(section); sec_it != map.end()) {
-    if (auto key_it = sec_it->second.find(key); key_it != sec_it->second.end()) {
+  if (auto sec_it = map.find(section); sec_it != map.end())
+    if (auto key_it = sec_it->second.find(key); key_it != sec_it->second.end())
       return key_it->second;
-    }
-  }
   return {};
 }
 
