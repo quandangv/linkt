@@ -28,10 +28,12 @@ usage() {
           Execute 'sudo make install' and install $PROJECT
       ${COLORS[GREEN]}-t, --tests${COLORS[OFF]}
           Build unit tests into './build/test'
-      ${COLORS[GREEN]}-p, --purge${COLORS[OFF]}
+      ${COLORS[GREEN]}-P, --purge${COLORS[OFF]}
           Delete './build' directory before building
       ${COLORS[GREEN]}-s, --scopes${COLORS[OFF]}
           Add scopes for debug logging
+      ${COLORS[GREEN]}-p, --use-PREFIX${COLORS[OFF]}
+          Set cmake variable CMAKE_INSTALL_PREFIX to \$PREFIX
       ${COLORS[GREEN]}-h, --help${COLORS[OFF]}
           Show this help message
 "
@@ -59,8 +61,10 @@ branch_switches() {
       INSTALL=OFF; ;;
     -t|--test)
       BUILD_TESTS=ON; ;;
-    -p|--purge)
+    -P|--purge)
       PURGE_BUILD_DIR=ON; ;;
+    -p|--use-PREFIX)
+      USE_PREFIX=ON; ;;
     -h|--help)
       usage
       exit 0
@@ -99,7 +103,12 @@ install() {
     [[ "${p^^}" != "Y" ]] && INSTALL="OFF" || INSTALL="ON"
   fi
   if [[ "$INSTALL" == ON ]]; then
-    sudo make install || msg_err "Failed to install executables"
+    if ! command -v sudo > /dev/null; then
+      msg "Skipping unsupported command: sudo"
+      make install || msg_err "Failed to install executables"
+    else
+      sudo make install || msg_err "Failed to install executables"
+    fi
   fi
 }
 
@@ -121,11 +130,17 @@ main() {
   mkdir -p ./build || msg_err "Failed to create build dir"
   cd ./build || msg_err "Failed to enter build dir"
 
+  if [[ "$USE_PREFIX" == ON ]]; then
+    msg 'Setting CMAKE_INSTALL_PREFIX variable to $PREFIX'
+    USE_PREFIX_OPTION="-DCMAKE_INSTALL_PREFIX='$PREFIX'"
+  fi
+
   [[ -z "$DEBUG_SCOPES" ]] || msg "Using debug scopes: $DEBUG_SCOPES"
   msg "Executing CMake command"
   cmake -DBUILD_TESTS=${BUILD_TESTS} \
         -DDEBUG_SCOPES=${DEBUG_SCOPES} \
         -DPLATFORM_LINUX=ON \
+        ${USE_PREFIX_OPTION} \
         .. || msg_err "Failed to compile project..."
 
   msg "Building project"
