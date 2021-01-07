@@ -28,10 +28,12 @@ void delink(document& doc, str_errlist& err) {
       return;
     }
 
-    auto take_fallback = [&](opt_str& fallback) {
-      auto sep = mod.rfind(':');
-      if (sep != tstring::npos) {
-        fallback = mod.substr(sep + 1).trim_quotes().to_string();
+    auto take_fallback = [&](string_ref_p& fallback) {
+      if (auto sep = mod.rfind('?'); sep != tstring::npos) {
+        fallback = make_unique<onetime_string>(mod.substr(sep + 1).trim_quotes().to_string());
+        logger::debug(fallback->get());
+        delink_key(sec, key, fallback);
+        logger::debug(fallback->get());
         mod.set_length(sep);
       }
     };
@@ -68,7 +70,7 @@ void delink(document& doc, str_errlist& err) {
         value = move(newval);
       } else {
         // Delink local value
-        opt_str fallback;
+        string_ref_p fallback;
         take_fallback(fallback);
 
         string new_sec, new_key;
@@ -90,7 +92,7 @@ void delink(document& doc, str_errlist& err) {
             value = std::make_unique<local_string>(ref_val);
           }
         } else if (fallback)
-          value = std::make_unique<const_string>(move(*fallback));
+          value = move(fallback);
         else {
           value = make_unique<const_string>(move(src));
           return report_err("Referenced key doesn't exist: " + new_sec + "." + new_key);

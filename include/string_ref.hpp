@@ -52,7 +52,7 @@ namespace lini {
   };
 
   struct fallback_string : public string_ref {
-    opt_str fallback;
+    string_ref_p fallback;
 
     string use_fallback(const string& error_message) const;
   };

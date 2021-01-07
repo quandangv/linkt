@@ -9,7 +9,7 @@ DEFINE_ERROR(stringref_error)
 
 string fallback_string::use_fallback(const string& msg) const {
   if (fallback)
-    return *fallback;
+    return fallback->get();
   throw stringref_error("Reference failed: " + msg + ". And no fallback was found");
 }
 
