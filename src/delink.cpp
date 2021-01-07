@@ -31,9 +31,7 @@ void delink(document& doc, str_errlist& err) {
     auto take_fallback = [&](string_ref_p& fallback) {
       if (auto sep = mod.rfind('?'); sep != tstring::npos) {
         fallback = make_unique<onetime_string>(mod.substr(sep + 1).trim_quotes().to_string());
-        logger::debug(fallback->get());
         delink_key(sec, key, fallback);
-        logger::debug(fallback->get());
         mod.set_length(sep);
       }
     };

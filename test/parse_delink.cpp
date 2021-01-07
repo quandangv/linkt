@@ -128,9 +128,12 @@ vector<delink_test> delink_tests = {
     {"test", "ref-rogue", "${.key-rogue}", "rogue", false},
   },
   {
+    {"test2", "ref-file-default-before", "${file: nexist.txt ? ${test.ref-ref-a}}", "a", false},
+    {"test2", "ref-before", "${test2.ref-a}", "a", false},
     {"test", "key-a", "a", "a", false},
     {"test2", "ref-a", "${test.key-a}", "a", false},
-    {"test2", "ref-default-a", "${tets.key-nexist?${test.key-a}}", "a", false},
+    {"test2", "ref-default-a", "${test.key-nexist?${test.key-a}}", "a", false},
+    {"test2", "ref-file-default", "${file: nexist.txt ? ${test.key-a}}", "a", false},
     {"test", "ref-ref-a", "${test2.ref-a?failed}", "a", false},
     {"test", "ref-self-a", "${key-a?failed}", "a", false},
     {"test2", "ref-fallback-a", "${ test.key-a ? fail }", "a", false},
