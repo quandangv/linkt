@@ -44,6 +44,7 @@ ref-nexist   = ${test.key-nexist: \" f a i l ' } \n\
 ref-fallback-a = ${ test.key-a : failed } \n\
 ref-fail   = ${test.key-fail} \n\
 ref-fake   = {test.key-a} \n\
+\n\
 key-a = '    a\"",
     { // keys
       {"", "key-rogue", "rogue"},
@@ -124,7 +125,7 @@ using delink_test = vector<delink_test_single>;
 vector<delink_test> delink_tests = {
   {
     {"", "key-rogue", "rogue", "rogue", false},
-    {"test2", "ref-rogue", "${.key-rogue}", "rogue", false},
+    {"test", "ref-rogue", "${.key-rogue}", "rogue", false},
   },
   {
     {"test", "key-a", "a", "a", false},
@@ -137,18 +138,20 @@ vector<delink_test> delink_tests = {
     {"test2", "ref-fake", "{test.key-a}", "{test.key-a}", false},
   },
   {
-    {"test", "ref-cyclic-1", "${ref-cyclic-2}", "", true},
-    {"test", "ref-cyclic-2", "${ref-cyclic-1}", "", false}
+    {"test", "ref-cyclic-1", "${ref-cyclic-2}", "${ref-cyclic-1}", false},
+    {"test", "ref-cyclic-2", "${ref-cyclic-1}", "${ref-cyclic-1}", true}
   },
   {{"test2", "file-delink", "${file: delink_file.txt }", "content", false}},
   {{"test2", "file-default", "${file:delink_file.txt:fail}", "content", false}},
   {{"test2", "file-nexist", "${file:nexist.txt: \" f a i l ' }", "\" f a i l '", false}},
-  {{"test2", "file-fail", "${file:nexist.txt}", "${file:nexist.txt}", false}},
+  {{"test2", "file-fail", "${file:nexist.txt}", "${file:nexist.txt}", true}},
   {{"test2", "env", "${env: test_env: fail}", "test_env"},    {"test2", "env-nexist", "${env:nexist: \" f a i l \" }", " f a i l ", false}},
-  {{"test2", "color", "${color: #123456 }", "#123456", false}},
-  {{"test2", "color-hsv", "${color: hsv(180, 1, 0.75)}", "#00BFBF", false}},
-  {{"test2", "color-ref", "${color: $color}", "#123456", false}},
-  {{"test2", "color-mod", "${color: cielch: lum * 1.5, hue + 60; $color}", "#633E5C", false}},
+  {
+    {"test2", "color", "${color: #123456 }", "#123456", false},
+    {"test2", "color-hsv", "${color: hsv(180, 1, 0.75)}", "#00BFBF", false},
+    {"test2", "color-ref", "${color: $color}", "#123456", false},
+    {"test2", "color-mod", "${color: cielch: lum * 1.5, hue + 60; $color}", "#633E5C", false},
+  },
 };
 class DelinkTest : public ::testing::Test, public ::testing::WithParamInterface<delink_test> {};
 INSTANTIATE_TEST_SUITE_P(TString, DelinkTest, ::testing::ValuesIn(delink_tests));
@@ -159,15 +162,23 @@ TEST_P(DelinkTest, general) {
   document doc;
   auto testset = GetParam();
   for(auto test : testset)
-    doc.add(test.section, test.key, move(test.value));
+    doc.add_onetime(test.section, test.key, move(test.value));
   delink(doc, err);
   for(auto test : testset) {
     auto fullkey = test.section + "." + test.key;
     auto pos = find_if(err.begin(), err.end(), [&](auto it) { return it.first == fullkey; });
-    EXPECT_EQ(pos != err.end(), test.fail);
-    EXPECT_TRUE(doc.get(test.section, test.key))
-        << "Key: " << fullkey;
-    EXPECT_EQ(*doc.get(test.section, test.key), test.delinked)
-        << "Key: " << fullkey;
+    try {
+      EXPECT_TRUE(doc.get(test.section, test.key))
+          << "Key: " << fullkey;
+      EXPECT_EQ(*doc.get(test.section, test.key), test.delinked)
+          << "Key: " << fullkey;
+      EXPECT_EQ(pos != err.end(), test.fail)
+          << "Key: " << fullkey << endl
+          << (pos == err.end() ? "Expected error" : "Unexpected error: " + pos->second);
+    } catch (const exception&) {
+      EXPECT_TRUE(test.fail)
+          << "Key: " << fullkey << endl
+          << "Exception got thrown, but the test is not expected to fail";
+    }
   }
 }

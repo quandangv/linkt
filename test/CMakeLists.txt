@@ -70,7 +70,7 @@ function(add_test_file file)
   configure_file(${file} ${file} COPYONLY)
 endfunction()
 
-add_unit_test(tstring)
+add_unit_test(tstring_test)
 add_lib_test(parse_delink)
 
 add_test_file(delink_file.txt)

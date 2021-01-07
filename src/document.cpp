@@ -7,18 +7,17 @@
 GLOBAL_NAMESPACE
 
 using namespace std;
-DEFINE_ERROR(document_error)
 
 using std::endl;
 
-bool document::add(const string& section, const string& key, string&& value) {
+bool document::add_onetime(const string& section, const string& key, string&& value) {
   auto existing = find(section, key);
   if (existing) {
-    values[*existing] = make_unique<const_string>(move(value));
+    values[*existing] = make_unique<onetime_string>(move(value));
     return false;
   }
   map[section][key] = values.size();
-  values.emplace_back(make_unique<const_string>(move(value)));
+  values.emplace_back(make_unique<onetime_string>(move(value)));
   return true;
 }
 
@@ -48,11 +47,9 @@ string document::to_string() const {
 }
 
 optional<size_t> document::find(const string& section, const string& key) const {
-  if (auto sec_it = map.find(section); sec_it != map.end()) {
-    if (auto key_it = sec_it->second.find(key); key_it != sec_it->second.end()) {
+  if (auto sec_it = map.find(section); sec_it != map.end())
+    if (auto key_it = sec_it->second.find(key); key_it != sec_it->second.end())
       return key_it->second;
-    }
-  }
   return {};
 }
 
