@@ -65,8 +65,14 @@ namespace lini {
     void set(string value);
   };
 
+  struct cmd_string : public fallback_string {
+    string name;
+
+    string get() const;
+  };
+
   struct file_string : public fallback_string {
-    string path;
+    string name;
 
     string get() const;
     bool readonly() const;

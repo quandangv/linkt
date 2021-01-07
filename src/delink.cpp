@@ -35,19 +35,18 @@ void delink(document& doc, str_errlist& err) {
         mod.set_length(sep);
       }
     };
+    auto make_simple_ref = [&]<typename T>(unique_ptr<T>&& ptr) {
+      take_fallback(ptr->fallback);
+      ptr->name = mod.trim_quotes().to_string();
+      value = move(ptr);
+    };
     std::function<void()> subroutine = [&] {
       if (mod.cut_front_back("file:", "")) {
-        // Delink file
-        auto newval = std::make_unique<file_string>();
-        take_fallback(newval->fallback);
-        newval->path = mod.trim_quotes().to_string();
-        value = move(newval);
+        make_simple_ref(std::make_unique<file_string>());
+      } else if (mod.cut_front_back("cmd:", "")) {
+        make_simple_ref(std::make_unique<cmd_string>());
       } else if (mod.cut_front_back("env:", "")) {
-        // Delink environment variable
-        auto newval = std::make_unique<env_string>();
-        take_fallback(newval->fallback);
-        newval->name = mod.trim_quotes().to_string();
-        value = move(newval);
+        make_simple_ref(std::make_unique<env_string>());
       } else if (mod.cut_front_back("color:", "")) {
         // Delink color
         auto newval = std::make_unique<color_string>();

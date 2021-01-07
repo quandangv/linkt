@@ -150,6 +150,8 @@ vector<delink_test> delink_tests = {
   {{"test2", "file-double-default", "${file:nexist.txt ? ${file:delink_file.txt}}", "content", false}},
   {{"test2", "file-nexist", "${file:nexist.txt ? \" f a i l ' }", "\" f a i l '", false}},
   {{"test2", "file-fail", "${file:nexist.txt}", "${file:nexist.txt}", true}},
+  {{"test2", "cmd", "${cmd:echo hello world}", "hello world", false}},
+  {{"test2", "cmd", "${cmd:nexist}", "", true}},
   {{"test2", "env", "${env: test_env? fail}", "test_env"},    {"test2", "env-nexist", "${env:nexist? \" f a i l \" }", " f a i l ", false}},
   {
     {"test2", "color", "${color: #123456 }", "#123456", false},
@@ -180,10 +182,11 @@ TEST_P(DelinkTest, general) {
       EXPECT_EQ(pos != err.end(), test.fail)
           << "Key: " << fullkey << endl
           << (pos == err.end() ? "Expected error" : "Unexpected error: " + pos->second);
-    } catch (const exception&) {
+    } catch (const exception& e) {
       EXPECT_TRUE(test.fail)
           << "Key: " << fullkey << endl
-          << "Exception got thrown, but the test is not expected to fail";
+          << "Exception: " << e.what() << endl
+          << "Exception thrown, but the test is not expected to fail";
     }
   }
 }
