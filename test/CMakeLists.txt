@@ -71,7 +71,8 @@ function(add_test_file file)
 endfunction()
 
 add_unit_test(tstring_test)
-add_lib_test(parse_delink)
+add_lib_test(parse)
+add_lib_test(delink)
 
 add_test_file(delink_file.txt)
 
