@@ -18,46 +18,46 @@ namespace lini {
 
   using string_ref_p = std::unique_ptr<string_ref>;
 
-  struct onetime_string : public string_ref {
+  struct onetime_ref : public string_ref {
     mutable string val;
 
-    onetime_string(string&& val) : val(val) {}
+    onetime_ref(string&& val) : val(val) {}
     string get() const { return val; }
     string get_onetime() const { return move(val); }
   };
     
-  struct const_string : public string_ref {
+  struct const_ref : public string_ref {
     string val;
 
-    const_string(string&& val) : val(val) {}
+    const_ref(string&& val) : val(val) {}
     string get() const { return val; }
     bool readonly() const { return false; }
     void set(string value) { val = value; }
   };
 
-  struct local_string : public string_ref {
+  struct local_ref : public string_ref {
     string_ref_p& ref;
 
-    local_string(string_ref_p& ref) : ref(ref) {}
+    local_ref(string_ref_p& ref) : ref(ref) {}
     string get() const { return ref->get(); }
     bool readonly() const { return ref->readonly(); }
     void set(string value) { ref->set(value); }
   };
 
-  struct color_string : public string_ref {
+  struct color_ref : public string_ref {
     string_ref_p ref;
     cspace::processor processor;
 
     string get() const;
   };
 
-  struct fallback_string : public string_ref {
+  struct fallback_ref : public string_ref {
     string_ref_p fallback;
 
     string use_fallback(const string& error_message) const;
   };
 
-  struct env_string : public fallback_string {
+  struct env_ref : public fallback_ref {
     string name;
 
     string get() const;
@@ -65,13 +65,13 @@ namespace lini {
     void set(string value);
   };
 
-  struct cmd_string : public fallback_string {
+  struct cmd_ref : public fallback_ref {
     string name;
 
     string get() const;
   };
 
-  struct file_string : public fallback_string {
+  struct file_ref : public fallback_ref {
     string name;
 
     string get() const;

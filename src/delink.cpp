@@ -13,24 +13,25 @@ using namespace std;
 constexpr char scope[] = "delink";
 
 void delink(document& doc, str_errlist& err) {
-  std::function<void(const string&, const string&, string_ref_p&)> delink_key = [&](const string& sec, const string& key, string_ref_p& value) {
+  std::function<void(const string&, const string&, string_ref_p&)>
+  delink_key = [&](const string& sec, const string& key, string_ref_p& value) {
     auto report_err = [&](const string& msg) { err.emplace_back(sec + "." + key, msg); };
     if (!value)
       return report_err("Null value detected, possibly due to cyclical referencing");
     
     string src;
-    if (auto onetime = dynamic_cast<onetime_string*>(value.get()); onetime != nullptr) {
+    if (auto onetime = dynamic_cast<onetime_ref*>(value.get()); onetime != nullptr) {
       src = onetime->get_onetime();
     } else return;
     tstring mod(src);
     if (!mod.cut_front_back("${", "}")) {
-      value = make_unique<const_string>(move(src));
+      value = make_unique<const_ref>(move(src));
       return;
     }
 
     auto take_fallback = [&](string_ref_p& fallback) {
       if (auto sep = mod.rfind('?'); sep != tstring::npos) {
-        fallback = make_unique<onetime_string>(mod.substr(sep + 1).trim_quotes().to_string());
+        fallback = make_unique<onetime_ref>(mod.substr(sep + 1).trim_quotes().to_string());
         delink_key(sec, key, fallback);
         mod.set_length(sep);
       }
@@ -42,14 +43,14 @@ void delink(document& doc, str_errlist& err) {
     };
     std::function<void()> subroutine = [&] {
       if (mod.cut_front_back("file:", "")) {
-        make_simple_ref(std::make_unique<file_string>());
+        make_simple_ref(std::make_unique<file_ref>());
       } else if (mod.cut_front_back("cmd:", "")) {
-        make_simple_ref(std::make_unique<cmd_string>());
+        make_simple_ref(std::make_unique<cmd_ref>());
       } else if (mod.cut_front_back("env:", "")) {
-        make_simple_ref(std::make_unique<env_string>());
+        make_simple_ref(std::make_unique<env_ref>());
       } else if (mod.cut_front_back("color:", "")) {
         // Delink color
-        auto newval = std::make_unique<color_string>();
+        auto newval = std::make_unique<color_ref>();
         if (auto sep = mod.find(';'); sep != tstring::npos) {
           auto sep2 = mod.find(':');
           if (sep2 != tstring::npos)
@@ -63,7 +64,7 @@ void delink(document& doc, str_errlist& err) {
           mod.erase_front();
           subroutine();
           newval->ref = move(value);
-        } else newval->ref = std::make_unique<const_string>(mod.to_string());
+        } else newval->ref = std::make_unique<const_ref>(mod.to_string());
         value = move(newval);
       } else {
         // Delink local value
@@ -76,6 +77,7 @@ void delink(document& doc, str_errlist& err) {
           mod.erase_front(sep + 1);
         } else new_sec = sec;
         new_key = mod.trim().to_string();
+        logger::debug<scope>(new_key);
 
         if (auto index = doc.find(new_sec, new_key); index) {
           // Clear to avoid cyclical linking
@@ -83,15 +85,15 @@ void delink(document& doc, str_errlist& err) {
           auto& ref_val = doc.values[*index];
           if (!ref_val) {
             report_err("Cyclical referencing detected");
-            value = make_unique<const_string>(move(src));
+            value = make_unique<const_ref>(move(src));
           } else {
             delink_key(new_sec, new_key, ref_val);
-            value = std::make_unique<local_string>(ref_val);
+            value = std::make_unique<local_ref>(ref_val);
           }
         } else if (fallback)
           value = move(fallback);
         else {
-          value = make_unique<const_string>(move(src));
+          value = make_unique<const_ref>(move(src));
           return report_err("Referenced key doesn't exist: " + new_sec + "." + new_key);
         }
       }

@@ -13,11 +13,11 @@ using std::endl;
 bool document::add_onetime(const string& section, const string& key, string&& value) {
   auto existing = find(section, key);
   if (existing) {
-    values[*existing] = make_unique<onetime_string>(move(value));
+    values[*existing] = make_unique<onetime_ref>(move(value));
     return false;
   }
   map[section][key] = values.size();
-  values.emplace_back(make_unique<onetime_string>(move(value)));
+  values.emplace_back(make_unique<onetime_ref>(move(value)));
   return true;
 }
 

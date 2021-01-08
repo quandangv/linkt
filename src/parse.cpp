@@ -1,11 +1,10 @@
 #include "parse_delink.hpp"
 #include "logger.hpp"
+#include "tstring.hpp"
 
 #include <cstring>
 #include <iostream>
 #include <vector>
-
-#include "tstring.hpp"
 
 GLOBAL_NAMESPACE
 
@@ -42,7 +41,7 @@ std::istream& parse(std::istream& is, document& doc, errorlist& err, const strin
           line.erase_front(sep + 1);
           line.trim_quotes();
           if (current_sec->emplace(key, doc.values.size()).second) {
-            doc.values.emplace_back(make_unique<onetime_string>(line));
+            doc.values.emplace_back(make_unique<onetime_ref>(line));
           } else {
             err.emplace_back(linecount, "Duplicate key: " + key.to_string() + ", Existing value: " + doc.values[(*current_sec)[key]]->get());
           }
