@@ -23,6 +23,7 @@ namespace lini {
     bool has(const string& section, const string& key) const;
     std::optional<size_t> find(const string& section, const string& key) const;
     opt_str get(const string& section, const string& key) const;
+    string_ref& get_ref(const string& section, const string& key) const;
     string get(const string& section, const string& key, string&& fallback) const;
     string to_string() const;
   };

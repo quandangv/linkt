@@ -7,8 +7,7 @@
 GLOBAL_NAMESPACE
 
 using namespace std;
-
-using std::endl;
+DEFINE_ERROR(document_error)
 
 bool document::add_onetime(const string& section, const string& key, string&& value) {
   auto existing = find(section, key);
@@ -57,6 +56,12 @@ opt_str document::get(const string& section, const string& key) const {
   if (auto index = find(section, key); index)
     return values.at(*index)->get();
   return {};
+}
+
+string_ref& document::get_ref(const string& section, const string& key) const {
+  if (auto index = find(section, key); index)
+    return values.at(*index);
+  throw document_error("Can't find the specified key: " + section + "." + key);
 }
 
 string document::get(const string& section, const string& key, string&& fallback) const {

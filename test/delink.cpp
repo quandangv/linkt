@@ -11,50 +11,51 @@ struct delink_test_single {
 using delink_test = vector<delink_test_single>;
 vector<delink_test> delink_tests = {
   {
-    {"", "key-rogue", "rogue", "rogue", false},
-    {"test", "ref-rogue", "${.key-rogue}", "rogue", false},
+    {"", "key-rogue", "rogue", "rogue"},
+    {"test", "ref-rogue", "${.key-rogue}", "rogue"},
   },
   {
-    {"test2", "ref-file-default-before", "${file: nexist.txt ? ${test.ref-ref-a}}", "a", false},
-    {"test2", "ref-before", "${test2.ref-a}", "a", false},
-    {"test", "key-a", "a", "a", false},
-    {"test2", "ref-a", "${test.key-a}", "a", false},
-    {"test2", "ref-default-a", "${test.key-nexist?${test.key-a}}", "a", false},
-    {"test2", "ref-file-default", "${file: nexist.txt ? ${test.key-a}}", "a", false},
-    {"test", "ref-ref-a", "${test2.ref-a?failed}", "a", false},
-    {"test", "ref-self-a", "${key-a?failed}", "a", false},
-    {"test2", "ref-fallback-a", "${ test.key-a ? fail }", "a", false},
-    {"test2", "ref-nexist", "${test.key-nexist? \" f a i l ' }", "\" f a i l '", false},
+    {"test2", "ref-file-default-before", "${file: nexist.txt ? ${test.ref-ref-a}}", "a"},
+    {"test2", "ref-before", "${test2.ref-a}", "a"},
+    {"test", "key-a", "a", "a"},
+    {"test2", "ref-a", "${test.key-a}", "a"},
+    {"test2", "ref-default-a", "${test.key-nexist?${test.key-a}}", "a"},
+    {"test2", "ref-file-default", "${file: nexist.txt ? ${test.key-a}}", "a"},
+    {"test", "ref-ref-a", "${test2.ref-a?failed}", "a"},
+    {"test", "ref-self-a", "${key-a?failed}", "a"},
+    {"test2", "ref-fallback-a", "${ test.key-a ? fail }", "a"},
+    {"test2", "ref-nexist", "${test.key-nexist? \" f a i l ' }", "\" f a i l '"},
     {"test2", "ref-fail", "${test.key-fail}", "${test.key-fail}", true},
-    {"test2", "ref-fake", "{test.key-a}", "{test.key-a}", false},
+    {"test2", "ref-fake", "{test.key-a}", "{test.key-a}"},
   },
   {
-    {"test", "ref-cyclic-1", "${ref-cyclic-2}", "${ref-cyclic-1}", false},
+    {"test", "ref-cyclic-1", "${ref-cyclic-2}", "${ref-cyclic-1}"},
     {"test", "ref-cyclic-2", "${ref-cyclic-1}", "${ref-cyclic-1}", true}
   },
-  {{"test2", "file-delink", "${file: delink_file.txt }", "content", false}},
-  {{"test2", "file-default", "${file:delink_file.txt?fail}", "content", false}},
-  {{"test2", "file-double-default", "${file:nexist.txt ? ${file:delink_file.txt}}", "content", false}},
-  {{"test2", "file-nexist", "${file:nexist.txt ? \" f a i l ' }", "\" f a i l '", false}},
+  {{"test2", "file-delink", "${file: delink_file.txt }", "content"}},
+  {{"test2", "file-default", "${file:delink_file.txt?fail}", "content"}},
+  {{"test2", "file-double-default", "${file:nexist.txt ? ${file:delink_file.txt}}", "content"}},
+  {{"test2", "file-nexist", "${file:nexist.txt ? \" f a i l ' }", "\" f a i l '"}},
   {{"test2", "file-fail", "${file:nexist.txt}", "${file:nexist.txt}", true}},
-  {{"test2", "cmd", "${cmd:echo hello world}", "hello world", false}},
+  {{"test2", "cmd", "${cmd:echo hello world}", "hello world"}},
   {{"test2", "cmd", "${cmd:nexist}", "", true}},
-  {{"test2", "env", "${env: test_env? fail}", "test_env"}},  {{"test2", "env-nexist", "${env:nexist? \" f a i l \" }", " f a i l ", false}},
+  {{"test2", "env", "${env: test_env? fail}", "test_env"}},
+  {{"test2", "env-nexist", "${env:nexist? \" f a i l \" }", " f a i l "}},
   {
-    {"test2", "color", "${color: #123456 }", "#123456", false},
-    {"test2", "color-hsv", "${color: hsv(180, 1, 0.75)}", "#00BFBF", false},
-    {"test2", "color-ref", "${color: $color}", "#123456", false},
-    {"test2", "color-mod", "${color: cielch: lum * 1.5, hue + 60; $color}", "#633E5C", false},
+    {"test2", "color", "${color: #123456 }", "#123456"},
+    {"test2", "color-hsv", "${color: hsv(180, 1, 0.75)}", "#00BFBF"},
+    {"test2", "color-ref", "${color: $color}", "#123456"},
+    {"test2", "color-mod", "${color: cielch: lum * 1.5, hue + 60; $color}", "#633E5C"},
   },
 };
 class DelinkTest : public ::testing::Test, public ::testing::WithParamInterface<delink_test> {};
-INSTANTIATE_TEST_SUITE_P(TString, DelinkTest, ::testing::ValuesIn(delink_tests));
+INSTANTIATE_TEST_SUITE_P(Delink, DelinkTest, ::testing::ValuesIn(delink_tests));
 
 TEST_P(DelinkTest, general) {
-  str_errlist err;
   setenv("test_env", "test_env", true);
   unsetenv("nexist");
   document doc;
+  str_errlist err;
   auto testset = GetParam();
   for(auto test : testset)
     doc.add_onetime(test.section, test.key, move(test.value));
@@ -77,4 +78,34 @@ TEST_P(DelinkTest, general) {
           << "Exception thrown, but the test is not expected to fail";
     }
   }
+}
+
+struct document_key {
+  string section, key, value, delinked;
+};
+vector<document_key> set_document = {
+  {"", "key-a", "a", "a"},
+  {"", "ref-ref-a", "${ref-a?failed}", "a"},
+  {"", "ref-self-a", "${key-a?failed}", "a"},
+  {"", "ref-a", "${key-a}", "a"},
+  {"", "ref-default-a", "${key-nexist?${key-a}}", "a"},
+  {"", "ref-file-default", "${file: nexist.txt ? ${key-a}}", "a"},
+  {"", "ref-fallback-a", "${ key-a ? fail }", "a"},
+  {"", "ref-nexist", "${key-nexist? \" f a i l ' }", "\" f a i l '"},
+  {"", "ref-fake", "{key-a}", "{key-a}"},
+  {"", "file-delink", "${file: delink_file.txt }", "content"},
+  {"", "env", "${env: test_env? fail}", "test_env"},
+  {"", "env-nexist", "${env:nexist? \" f a i l \" }", " f a i l "},
+};
+
+void set_key(const string& key
+
+TEST(Delink, set_test) {
+  document doc;
+  str_errlist err;
+  auto testset = GetParam();
+  for(auto test : testset)
+    doc.add_onetime(test.section, test.key, move(test.value));
+  delink(doc, err);
+  
 }
