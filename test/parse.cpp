@@ -1,7 +1,6 @@
 #include "parse_delink.hpp"
 #include "test.h"
 
-using namespace std;
 using namespace lini;
 
 struct ParseSet {

@@ -5,6 +5,7 @@
 
 #include <stdexcept>
 #include <functional>
+#include <sstream>
 #include <cspace/colorspace.hpp>
 
 GLOBAL_NAMESPACE
@@ -24,10 +25,6 @@ void delink(document& doc, str_errlist& err) {
       src = onetime->get_onetime();
     } else return;
     tstring mod(src);
-    if (!mod.cut_front_back("${", "}")) {
-      value = make_unique<const_ref>(move(src));
-      return;
-    }
 
     auto take_fallback = [&](string_ref_p& fallback) {
       if (auto sep = mod.rfind('?'); sep != tstring::npos) {
@@ -37,6 +34,7 @@ void delink(document& doc, str_errlist& err) {
       }
     };
     std::function<void()> subroutine;
+
     auto make_meta_ref = [&]<typename T>(unique_ptr<T>&& ptr) {
       take_fallback(ptr->fallback);
       mod.trim_quotes();
@@ -98,6 +96,39 @@ void delink(document& doc, str_errlist& err) {
         }
       }
     };
+
+    if (!mod.cut_front_back("${", "}")) {
+      stringstream ss;
+      auto newval = make_unique<string_interpolate_ref>();
+      size_t start = 0;
+      tstring original(mod);
+      while(true) {
+        if (start = original.find('$'); start != tstring::npos && original.size() > start++ + 2 && original[start++] == '{') {
+          if (auto end = original.find('}'); end != tstring::npos) {
+            ss << original.substr(0, start - 2).to_string();
+            newval->interpolator.positions.push_back(ss.tellp());
+
+            mod = original.substr(start, end - start);
+            subroutine();
+            newval->replacements.list.emplace_back(move(value));
+
+            original.erase_front(++end);
+            start = end;
+            continue;
+          }
+        }
+        break;
+      }
+      if (newval->interpolator.positions.empty()) {
+        value = make_unique<const_ref>(move(src));
+        return;
+      }
+      ss << original.to_string();
+      newval->interpolator.base = ss.str();
+      value = move(newval);
+      return;
+    }
+
     subroutine();
   };
   for(auto& seckey : doc.map) {

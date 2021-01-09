@@ -6,8 +6,6 @@
 
 #include "logger.hpp"
 
-using namespace std;
-
 struct substr_test {
   string src;
   size_t pos, end_pos, index, length;

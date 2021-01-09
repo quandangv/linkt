@@ -87,6 +87,10 @@ size_t tstring::length() const {
   return end_pos - pos;
 }
 
+size_t tstring::size() const {
+  return length();
+}
+
 char tstring::operator[](size_t index) const {
   return data[pos + index];
 }

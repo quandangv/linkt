@@ -72,6 +72,7 @@ endfunction()
 
 add_unit_test(tstring_test)
 add_unit_test(execstream_test)
+add_unit_test(string_inter)
 add_lib_test(parse)
 add_lib_test(delink)
 

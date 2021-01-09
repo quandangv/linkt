@@ -1,5 +1,7 @@
 #pragma once
 
+#include "string_inter.hpp"
+
 #include <string>
 #include <optional>
 #include <memory>
@@ -74,5 +76,18 @@ namespace lini {
     string get() const;
     bool readonly() const;
     void set(const string& value);
+  };
+
+  struct string_interpolate_ref : public string_ref {
+    struct replacement_list : public std::iterator<std::forward_iterator_tag, string> {
+      struct iterator;
+      std::vector<string_ref_p> list;
+
+      iterator begin() const;
+      iterator end() const;
+    } replacements;
+    string_inter interpolator;
+
+    string get() const;
   };
 }

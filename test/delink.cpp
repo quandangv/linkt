@@ -3,7 +3,6 @@
 
 #include <fstream>
 
-using namespace std;
 using namespace lini;
 
 struct delink_test_single {
@@ -29,6 +28,7 @@ vector<delink_test> delink_tests = {
     {"test2", "ref-nexist", "${test.key-nexist? \" f a i l ' }", "\" f a i l '"},
     {"test2", "ref-fail", "${test.key-fail}", "${test.key-fail}", true},
     {"test2", "ref-fake", "{test.key-a}", "{test.key-a}"},
+    {"test2", "interpolation", "This is ${test.key-a} test", "This is a test"},
   },
   {
     {"test", "ref-cyclic-1", "${ref-cyclic-2}", "${ref-cyclic-1}"},

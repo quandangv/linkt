@@ -24,6 +24,7 @@ public:
   explicit tstring(const string&);
 
   size_t length() const;
+  size_t size() const;
   tstring& erase_front(size_t = 1);
   tstring& erase_back(size_t = 1);
   tstring& set_length(size_t);
