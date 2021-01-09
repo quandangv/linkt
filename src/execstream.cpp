@@ -1,6 +1,7 @@
 #include "execstream.hpp"
 #include "logger.hpp"
 
+#include <array>
 #include <cstdlib>
 #include <cerrno>
 #include <unistd.h>
@@ -8,6 +9,8 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+
+using namespace std;
 
 DEFINE_ERROR(execstream_error)
 int devnull = open("/dev/null", O_WRONLY);
@@ -56,7 +59,11 @@ execstream::execstream(const char* command, int type) {
 execstream::execstream(execstream&& other) : fp(other.fp), pid(other.pid) {
   other.fp = nullptr;
 }
-  
+
+execstream::~execstream() {
+  close();
+}
+
 int execstream::close() {
   if (fp == nullptr)
     return -1;
@@ -69,6 +76,15 @@ int execstream::close() {
   return (pid == -1 ? -1 : pstat);
 }
 
-execstream::~execstream() {
-  close();
+int execstream::write(const string& s) {
+  return fputs(s.data(), fp);
 }
+
+string execstream::readall() {
+  string result;
+  array<char, 128> buffer;
+  while (fgets(buffer.data(), buffer.size(), fp) != nullptr)
+    result += buffer.data();
+  return result;
+}
+

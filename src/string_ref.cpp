@@ -1,5 +1,6 @@
 #include "string_ref.hpp"
 #include "logger.hpp"
+#include "execstream.hpp"
 
 #include <fstream>
 #include <cstdlib>
@@ -55,15 +56,15 @@ string color_ref::get() const {
 }
 
 string cmd_ref::get() const {
-  array<char, 128> buffer;
   string result;
-  FILE* pipe = popen(name.data(), "r");
-  if (!pipe)
-    return use_fallback("popen() failed!");
-  while (fgets(buffer.data(), buffer.size(), pipe) != nullptr)
-    result += buffer.data();
-  if (auto exitstatus = WEXITSTATUS(pclose(pipe)); exitstatus)
-    return use_fallback("Process failed with exit code: " + to_string(exitstatus));
+  try {
+    execstream exec(name.data(), execstream::type_out);
+    result = exec.readall();
+    if (auto exitstat = WEXITSTATUS(exec.close()); exitstat)
+      use_fallback("Process exited with status " + to_string(exitstat) + ": " + name);
+  } catch (const exception& e) {
+    use_fallback("Can't start process due to: " + string(e.what()));
+  }
   auto last_line = result.find_last_not_of("\r\n");
   result.erase(last_line + 1);
   return result;

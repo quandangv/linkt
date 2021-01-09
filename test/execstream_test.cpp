@@ -9,18 +9,9 @@ using namespace std;
 class Execstream : public ::testing::TestWithParam<int> {};
 INSTANTIATE_TEST_CASE_P(Instantiation, Execstream, ::testing::Range(0, 1));
 
-string readall(execstream&& stream) {
-  string result;
-  array<char, 128> buffer;
-  while (fgets(buffer.data(), buffer.size(), stream.fp) != nullptr) {
-    result += buffer.data();
-  }
-  return result;
-}
-
 string writeread(execstream&& stream, string input) {
-  fputs(input.data(), stream.fp);
-  return readall(move(stream));
+  stream.write(input);
+  return stream.readall();
 }
 
 int exitcode(execstream&& stream) {
@@ -28,23 +19,23 @@ int exitcode(execstream&& stream) {
 }
 
 TEST_P(Execstream, out) {
-  EXPECT_EQ("foo\nbar\n", readall(execstream("echo foo; echo bar", execstream::type_out)));
+  EXPECT_EQ("foo\nbar\n", execstream("echo foo; echo bar", execstream::type_out).readall());
 }
 
 TEST_P(Execstream, filtered_out) {
-  EXPECT_EQ("foo\n", readall(execstream("echo foo; >&2 echo bar", execstream::type_out)));
+  EXPECT_EQ("foo\n", execstream("echo foo; >&2 echo bar", execstream::type_out).readall());
 }
 
 TEST_P(Execstream, filtered_err) {
-  EXPECT_EQ("bar\n", readall(execstream("echo foo; >&2 echo bar", execstream::type_err)));
+  EXPECT_EQ("bar\n", execstream("echo foo; >&2 echo bar", execstream::type_err).readall());
 }
 
 TEST_P(Execstream, out_err) {
-  EXPECT_EQ("foo\nbar\n", readall(execstream("echo foo; echo bar >&2", execstream::type_out_err)));
+  EXPECT_EQ("foo\nbar\n", execstream("echo foo; echo bar >&2", execstream::type_out_err).readall());
 }
 
 TEST_P(Execstream, excess_out_err) {
-  EXPECT_EQ("foo\nbar\n", readall(execstream("echo foo; echo bar", execstream::type_out_err)));
+  EXPECT_EQ("foo\nbar\n", execstream("echo foo; echo bar", execstream::type_out_err).readall());
 }
 
 TEST_P(Execstream, exitcode) {

@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <sys/types.h>
+#include <string>
 
 struct execstream {
   FILE* fp;
@@ -17,6 +18,8 @@ struct execstream {
   static constexpr int type_out_err = 0b101;
   static constexpr int type_full = 0b111;
 
+  std::string readall();
+  int write(const std::string&);
   int close();
 };
 
