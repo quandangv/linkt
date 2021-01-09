@@ -60,7 +60,7 @@ opt_str document::get(const string& section, const string& key) const {
 
 string_ref& document::get_ref(const string& section, const string& key) const {
   if (auto index = find(section, key); index)
-    return values.at(*index);
+    return *values.at(*index);
   throw document_error("Can't find the specified key: " + section + "." + key);
 }
 

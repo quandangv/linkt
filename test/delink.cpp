@@ -1,6 +1,8 @@
 #include "parse_delink.hpp"
 #include "test.h"
 
+#include <fstream>
+
 using namespace std;
 using namespace lini;
 
@@ -81,31 +83,47 @@ TEST_P(DelinkTest, general) {
 }
 
 struct document_key {
-  string section, key, value, delinked;
+  string section, key, value;
 };
 vector<document_key> set_document = {
-  {"", "key-a", "a", "a"},
-  {"", "ref-ref-a", "${ref-a?failed}", "a"},
-  {"", "ref-self-a", "${key-a?failed}", "a"},
-  {"", "ref-a", "${key-a}", "a"},
-  {"", "ref-default-a", "${key-nexist?${key-a}}", "a"},
-  {"", "ref-file-default", "${file: nexist.txt ? ${key-a}}", "a"},
-  {"", "ref-fallback-a", "${ key-a ? fail }", "a"},
-  {"", "ref-nexist", "${key-nexist? \" f a i l ' }", "\" f a i l '"},
-  {"", "ref-fake", "{key-a}", "{key-a}"},
-  {"", "file-delink", "${file: delink_file.txt }", "content"},
-  {"", "env", "${env: test_env? fail}", "test_env"},
-  {"", "env-nexist", "${env:nexist? \" f a i l \" }", " f a i l "},
+  {"", "key-a", "a"},
+  {"", "ref-ref-a", "${ref-a?failed}"},
+  {"", "ref-self-a", "${key-a?failed}"},
+  {"", "ref-a", "${key-a}"},
+  {"", "ref-default-a", "${key-nexist?${key-a}}"},
+  {"", "ref-fallback-a", "${ key-a ? fail }"},
+  {"", "ref-nexist", "${key-nexist? \" f a i l ' }"},
+  {"", "file-delink", "${file: delink_file.txt }"},
+  {"", "env", "${env: test_env? fail}"},
+  {"", "env-nexist", "${env:nexist? \" f a i l \" }"},
 };
-
-void set_key(const string& key
 
 TEST(Delink, set_test) {
   document doc;
   str_errlist err;
-  auto testset = GetParam();
-  for(auto test : testset)
+  auto set_key = [&](const string& key, const string& newval) {
+    doc.get_ref("", key).set(newval);
+    EXPECT_EQ(newval, doc.get("", key));
+  };
+  for(auto test : set_document)
     doc.add_onetime(test.section, test.key, move(test.value));
   delink(doc, err);
+  set_key("ref-a", "foo");
+  set_key("ref-ref-a", "bar");
+  EXPECT_EQ("bar", *doc.get("", "key-a"));
+  set_key("ref-default-a", "foobar");
+  EXPECT_EQ("foobar", *doc.get("", "key-a"));
+  set_key("ref-nexist", "barfoo");
+  set_key("env-nexist", "barbar");
   
+  set_key("file-delink", "foo");
+  ifstream ifs("delink_file.txt");
+  string content;
+  getline(ifs, content);
+  EXPECT_EQ("foo", content);
+  
+  set_key("env", "foo");
+
+  // Revert values back to its original
+  set_key("file-delink", "content");
 }
