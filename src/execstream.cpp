@@ -1,4 +1,4 @@
-#include "mystream.hpp"
+#include "execstream.hpp"
 #include "logger.hpp"
 
 #include <cstdlib>
@@ -9,27 +9,27 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-DEFINE_ERROR(mystream_error)
+DEFINE_ERROR(execstream_error)
 int devnull = open("/dev/null", O_WRONLY);
 
-mystream::mystream(const char* command, int type) {
-  if (type == 0) throw mystream_error("invalid type");
+execstream::execstream(const char* command, int type) {
+  if (type == 0) throw execstream_error("invalid type");
   int pdes[2];
 
   bool write = type_in & type,
        read = type_out_err & type;
   if (read && write) {
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, pdes) < 0)
-      throw mystream_error("socketpair() failed");
+      throw execstream_error("socketpair() failed");
   } else {
     if (pipe(pdes) < 0)
-      throw mystream_error("pipe() failed");
+      throw execstream_error("pipe() failed");
   }
   switch (pid = fork()) {
   case -1:
     ::close(pdes[0]);
     ::close(pdes[1]);
-    throw mystream_error("fork() failed");
+    throw execstream_error("fork() failed");
   case 0:
     if (read) {
       dup2(type_out & type ? pdes[1] : devnull, STDOUT_FILENO);
@@ -53,11 +53,11 @@ mystream::mystream(const char* command, int type) {
   }
 }
 
-mystream::mystream(mystream&& other) : fp(other.fp), pid(other.pid) {
+execstream::execstream(execstream&& other) : fp(other.fp), pid(other.pid) {
   other.fp = nullptr;
 }
   
-int mystream::close() {
+int execstream::close() {
   if (fp == nullptr)
     return -1;
   fclose(fp);
@@ -69,6 +69,6 @@ int mystream::close() {
   return (pid == -1 ? -1 : pstat);
 }
 
-mystream::~mystream() {
+execstream::~execstream() {
   close();
 }

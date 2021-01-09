@@ -3,13 +3,13 @@
 #include <cstdio>
 #include <sys/types.h>
 
-struct mystream {
+struct execstream {
   FILE* fp;
   pid_t pid;
 
-  mystream(const char* cmd, int type);
-  mystream(mystream&&);
-  ~mystream();
+  execstream(const char* cmd, int type);
+  execstream(execstream&&);
+  ~execstream();
 
   static constexpr int type_out = 0b001;
   static constexpr int type_in = 0b010;
