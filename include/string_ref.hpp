@@ -12,7 +12,7 @@ namespace lini {
   struct string_ref {
     virtual string get() const = 0;
     virtual bool readonly() const { return true; }
-    virtual void set(string) {}
+    virtual void set(const string&) {}
     virtual ~string_ref() {}
   };
 
@@ -32,7 +32,7 @@ namespace lini {
     const_ref(string&& val) : val(val) {}
     string get() const { return val; }
     bool readonly() const { return false; }
-    void set(string value) { val = value; }
+    void set(const string& value) { val = value; }
   };
 
   struct local_ref : public string_ref {
@@ -41,14 +41,7 @@ namespace lini {
     local_ref(string_ref_p& ref) : ref(ref) {}
     string get() const { return ref->get(); }
     bool readonly() const { return ref->readonly(); }
-    void set(string value) { ref->set(value); }
-  };
-
-  struct color_ref : public string_ref {
-    string_ref_p ref;
-    cspace::processor processor;
-
-    string get() const;
+    void set(const string& value) { ref->set(value); }
   };
 
   struct fallback_ref : public string_ref {
@@ -57,25 +50,29 @@ namespace lini {
     string use_fallback(const string& error_message) const;
   };
 
-  struct env_ref : public fallback_ref {
-    string name;
-
-    string get() const;
-    bool readonly() const;
-    void set(string value);
+  struct meta_ref : public fallback_ref {
+    string_ref_p value;
   };
 
-  struct cmd_ref : public fallback_ref {
-    string name;
+  struct color_ref : public meta_ref {
+    cspace::processor processor;
 
     string get() const;
   };
 
-  struct file_ref : public fallback_ref {
-    string name;
-
+  struct env_ref : public meta_ref {
     string get() const;
     bool readonly() const;
-    void set(string value);
+    void set(const string& value);
+  };
+
+  struct cmd_ref : public meta_ref {
+    string get() const;
+  };
+
+  struct file_ref : public meta_ref {
+    string get() const;
+    bool readonly() const;
+    void set(const string& value);
   };
 }

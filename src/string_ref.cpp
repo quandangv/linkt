@@ -18,50 +18,61 @@ string fallback_ref::use_fallback(const string& msg) const {
 }
 
 string env_ref::get() const {
-  auto result = getenv(name.data());
+  auto result = getenv(value->get().data());
   if (result == nullptr)
-    return use_fallback("Environment variable not found: " + name);
+    return use_fallback("Environment variable not found: " + value->get());
   return string(result);
 }
 
 bool env_ref::readonly() const {
-  return true;
+  return false;
 }
 
-void env_ref::set(string value) {
-  setenv(name.data(), value.data(), true);
+void env_ref::set(const string& newval) {
+  setenv(value->get().data(), newval.data(), true);
 }
 
 string file_ref::get() const {
-  ifstream ifs(name.data());
-  if (!ifs.fail()) {
-    string result(istreambuf_iterator<char>{ifs}, {});
-    ifs.close();
-    auto last_line = result.find_last_not_of("\r\n");
-    result.erase(last_line + 1);
-    return move(result);
-  } else
-    return use_fallback("Can't read file: " + name);
+  ifstream ifs(value->get().data());
+  if (ifs.fail())
+    return use_fallback("Can't read file: " + value->get());
+  string result(istreambuf_iterator<char>{ifs}, {});
+  ifs.close();
+  auto last_line = result.find_last_not_of("\r\n");
+  result.erase(last_line + 1);
+  return move(result);
 }
 
 bool file_ref::readonly() const {
-  return true;
+  return false;
 }
 
-void file_ref::set(string value) {
+void file_ref::set(const string& content) {
+  ofstream ofs(value->get().data(), ios_base::trunc);
+  if (ofs.fail())
+    throw stringref_error("Can't write to file: " + value->get());
+  ofs << content;
+  ofs.close();
 }
 
 string color_ref::get() const {
-  return processor.operate(ref->get());
+  try {
+    auto result = processor.operate(value->get());
+    if (result.empty() && fallback)
+      return fallback->get();
+    return result;
+  } catch(const exception& e) {
+    return use_fallback("Color processing failed, due to: " + string(e.what()));
+  }
 }
 
 string cmd_ref::get() const {
   string result;
   try {
-    execstream exec(name.data(), execstream::type_out);
+    execstream exec(value->get().data(), execstream::type_out);
     result = exec.readall();
     if (auto exitstat = WEXITSTATUS(exec.close()); exitstat)
-      use_fallback("Process exited with status " + to_string(exitstat) + ": " + name);
+      use_fallback("Process exited with status " + to_string(exitstat) + ": " + value->get());
   } catch (const exception& e) {
     use_fallback("Can't start process due to: " + string(e.what()));
   }

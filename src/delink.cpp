@@ -36,18 +36,24 @@ void delink(document& doc, str_errlist& err) {
         mod.set_length(sep);
       }
     };
-    auto make_simple_ref = [&]<typename T>(unique_ptr<T>&& ptr) {
+    std::function<void()> subroutine;
+    auto make_meta_ref = [&]<typename T>(unique_ptr<T>&& ptr) {
       take_fallback(ptr->fallback);
-      ptr->name = mod.trim_quotes().to_string();
+      mod.trim_quotes();
+      if (mod.front() == '$') {
+        mod.erase_front();
+        subroutine();
+        ptr->value = move(value);
+      } else ptr->value = make_unique<const_ref>(mod.to_string());
       value = move(ptr);
     };
-    std::function<void()> subroutine = [&] {
+    subroutine = [&] {
       if (mod.cut_front_back("file:", "")) {
-        make_simple_ref(std::make_unique<file_ref>());
+        make_meta_ref(std::make_unique<file_ref>());
       } else if (mod.cut_front_back("cmd:", "")) {
-        make_simple_ref(std::make_unique<cmd_ref>());
+        make_meta_ref(std::make_unique<cmd_ref>());
       } else if (mod.cut_front_back("env:", "")) {
-        make_simple_ref(std::make_unique<env_ref>());
+        make_meta_ref(std::make_unique<env_ref>());
       } else if (mod.cut_front_back("color:", "")) {
         // Delink color
         auto newval = std::make_unique<color_ref>();
@@ -59,13 +65,7 @@ void delink(document& doc, str_errlist& err) {
           newval->processor.add_modification(mod.substr(sep2, sep - sep2).to_string());
           mod.erase_front(sep + 1);
         }
-        mod.trim();
-        if (mod[0] == '$') {
-          mod.erase_front();
-          subroutine();
-          newval->ref = move(value);
-        } else newval->ref = std::make_unique<const_ref>(mod.to_string());
-        value = move(newval);
+        make_meta_ref(move(newval));
       } else {
         // Delink local value
         string_ref_p fallback;
