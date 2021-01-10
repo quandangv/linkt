@@ -32,22 +32,38 @@ vector<delink_test> delink_tests = {
   },
   {
     {"test", "ref-cyclic-1", "${ref-cyclic-2}", "${ref-cyclic-1}"},
-    {"test", "ref-cyclic-2", "${ref-cyclic-1}", "${ref-cyclic-1}", true}
+    {"test", "ref-cyclic-2", "${ref-cyclic-1}", "${ref-cyclic-1}", true},
   },
-  {{"test2", "file-delink", "${file: delink_file.txt }", "content"}},
-  {{"test2", "file-default", "${file:delink_file.txt?fail}", "content"}},
-  {{"test2", "file-double-default", "${file:nexist.txt ? ${file:delink_file.txt}}", "content"}},
-  {{"test2", "file-nexist", "${file:nexist.txt ? \" f a i l ' }", "\" f a i l '"}},
-  {{"test2", "file-fail", "${file:nexist.txt}", "${file:nexist.txt}", true}},
-  {{"test2", "cmd", "${cmd:echo hello world}", "hello world"}},
-  {{"test2", "cmd", "${cmd:nexist}", "", true}},
-  {{"test2", "env", "${env: test_env? fail}", "test_env"}},
-  {{"test2", "env-nexist", "${env:nexist? \" f a i l \" }", " f a i l "}},
   {
-    {"test2", "color", "${color: #123456 }", "#123456"},
-    {"test2", "color-hsv", "${color: hsv(180, 1, 0.75)}", "#00BFBF"},
-    {"test2", "color-ref", "${color: $color}", "#123456"},
-    {"test2", "color-mod", "${color: cielch: lum * 1.5, hue + 60; $color}", "#633E5C"},
+    {"test", "ref-cyclic-1", "${ref-cyclic-2}", "${ref-cyclic-1}"},
+    {"test", "ref-cyclic-2", "${ref-cyclic-3}", "${ref-cyclic-1}"},
+    {"test", "ref-cyclic-3", "${ref-cyclic-1}", "${ref-cyclic-1}", true},
+    {"test", "ref-not-cyclic-1", "${ref-not-cyclic-2}", ""},
+    {"test", "ref-not-cyclic-2", "", ""}
+  },
+  {{"", "file", "${file: delink_file.txt }", "content"}},
+  {{"", "file", "${file:delink_file.txt?fail}", "content"}},
+  {
+    {"", "ext", "txt", "txt"},
+    {"", "file", "${file:delink_file.${ext} ? fail}", "content"},
+    {"", "file-fail", "${file:nexist.${ext} ? Can't find ${ext} file}", "Can't find txt file"},
+  },
+  {{"", "file", "${file:nexist.txt ? ${file:delink_file.txt}}", "content"}},
+  {{"", "file", "${file:nexist.txt ? \" f a i l ' }", "\" f a i l '"}},
+  {{"", "file", "${file:nexist.txt}", "${file:nexist.txt}", true}},
+  {{"", "cmd", "${cmd:echo hello world}", "hello world"}},
+  {{"", "cmd", "${cmd:nexist}", "", true}},
+  {
+    {"", "msg", "foo bar", "foo bar"},
+    {"", "cmd", "${cmd:echo ${msg}}", "foo bar"},
+  },
+  {{"", "env", "${env: test_env? fail}", "test_env"}},
+  {{"", "env", "${env:nexist? \" f a i l \" }", " f a i l "}},
+  {
+    {"", "color", "${color: #123456 }", "#123456"},
+    {"", "color-hsv", "${color: hsv(180, 1, 0.75)}", "#00BFBF"},
+    {"", "color-ref", "${color: ${color}}", "#123456"},
+    {"", "color-mod", "${color: cielch: lum * 1.5, hue + 60; ${color}}", "#633E5C"},
   },
 };
 class DelinkTest : public ::testing::Test, public ::testing::WithParamInterface<delink_test> {};
@@ -60,7 +76,8 @@ TEST_P(DelinkTest, general) {
   str_errlist err;
   auto testset = GetParam();
   for(auto test : testset)
-    doc.add_onetime(test.section, test.key, move(test.value));
+    EXPECT_TRUE(doc.add_onetime(test.section, test.key, move(test.value)))
+        << "Duplicate key: " << test.section << "." << test.key;
   delink(doc, err);
   for(auto test : testset) {
     auto fullkey = test.section + "." + test.key;

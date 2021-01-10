@@ -26,12 +26,14 @@ tstring& tstring::set(const char* data, size_t length) {
   this->data = data;
   pos = 0;
   end_pos = length;
+  return *this;
 }
 
 tstring& tstring::set(const string& s) {
   this->data = s.data();
   pos = 0;
   end_pos = s.length();
+  return *this;
 }
 
 tstring& tstring::erase_front(size_t count) {
@@ -113,8 +115,14 @@ tstring tstring::substr(size_t index, size_t len) const {
   return tstring(data + pos + index, std::min(len, length() - index));
 }
 
+tstring tstring::interval(size_t start, size_t end) const {
+  if (start >= end_pos)
+    return tstring();
+  return tstring(data, pos + start, std::min(end_pos, pos + end));
+}
+
 tstring tstring::substr(size_t index) const {
-  return substr(index, length() - index);
+  return interval(index, end_pos);
 }
 
 size_t tstring:: get_end_pos() const {

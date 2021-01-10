@@ -19,49 +19,50 @@ void delink(document& doc, str_errlist& err) {
     auto report_err = [&](const string& msg) { err.emplace_back(sec + "." + key, msg); };
     if (!value)
       return report_err("Null value detected, possibly due to cyclical referencing");
-    
+
+    // Skip if the original value is not a onetime_ref, which means it has already been delinked
     string src;
     if (auto onetime = dynamic_cast<onetime_ref*>(value.get()); onetime != nullptr) {
       src = onetime->get_onetime();
     } else return;
-    tstring mod(src);
+    tstring str(src);
 
-    auto take_fallback = [&](string_ref_p& fallback) {
-      if (auto sep = mod.rfind('?'); sep != tstring::npos) {
-        fallback = make_unique<onetime_ref>(mod.substr(sep + 1).trim_quotes().to_string());
-        delink_key(sec, key, fallback);
-        mod.set_length(sep);
-      }
-    };
-    std::function<void()> subroutine;
+    std::function<void(tstring&, string_ref_p&)> delink_string;
 
-    auto make_meta_ref = [&]<typename T>(unique_ptr<T>&& ptr) {
-      take_fallback(ptr->fallback);
-      mod.trim_quotes();
-      if (mod.front() == '$') {
-        mod.erase_front();
-        subroutine();
-        ptr->value = move(value);
-      } else ptr->value = make_unique<const_ref>(mod.to_string());
-      value = move(ptr);
-    };
-    subroutine = [&] {
-      if (mod.cut_front_back("file:", "")) {
+    // Delink the reference represented by `str`, into `value`
+    // The reference is the string between '${' and '}'
+    auto delink_ref = [&](tstring& str, string_ref_p& value) {
+      // Parse the fallback part of the reference string and remove it from consideration.
+      auto take_fallback = [&](string_ref_p& fallback) {
+        if (auto sep = str.rfind('?'); sep != tstring::npos) {
+          delink_string(str.substr(sep + 1).trim_quotes(), fallback);
+          str.set_length(sep);
+        }
+      };
+      // Finish the intialization for the types derived from meta_ref
+      auto make_meta_ref = [&]<typename T>(unique_ptr<T>&& ptr) {
+        take_fallback(ptr->fallback);
+        // Set the value field
+        delink_string(str.trim_quotes(), ptr->value);
+        value = move(ptr);
+      };
+      if (str.cut_front_back("file:", "")) {
         make_meta_ref(std::make_unique<file_ref>());
-      } else if (mod.cut_front_back("cmd:", "")) {
+      } else if (str.cut_front_back("cmd:", "")) {
         make_meta_ref(std::make_unique<cmd_ref>());
-      } else if (mod.cut_front_back("env:", "")) {
+      } else if (str.cut_front_back("env:", "")) {
         make_meta_ref(std::make_unique<env_ref>());
-      } else if (mod.cut_front_back("color:", "")) {
+      } else if (str.cut_front_back("color:", "")) {
         // Delink color
         auto newval = std::make_unique<color_ref>();
-        if (auto sep = mod.find(';'); sep != tstring::npos) {
-          auto sep2 = mod.find(':');
+        // Parse the modification part
+        if (auto sep = str.find(';'); sep != tstring::npos) {
+          auto sep2 = str.find(':');
           if (sep2 != tstring::npos)
-            newval->processor.inter = cspace::stospace(mod.substr(0,sep2++).trim());
+            newval->processor.inter = cspace::stospace(str.substr(0,sep2++).trim());
           else sep2 = 0;
-          newval->processor.add_modification(mod.substr(sep2, sep - sep2).to_string());
-          mod.erase_front(sep + 1);
+          newval->processor.add_modification(str.substr(sep2, sep - sep2).to_string());
+          str.erase_front(sep + 1);
         }
         make_meta_ref(move(newval));
       } else {
@@ -69,65 +70,96 @@ void delink(document& doc, str_errlist& err) {
         string_ref_p fallback;
         take_fallback(fallback);
 
+        // Parse the referenced section and key
         string new_sec, new_key;
-        if (auto sep = mod.find('.'); sep != tstring::npos) {
-          new_sec = mod.substr(0, sep).trim().to_string();
-          mod.erase_front(sep + 1);
+        if (auto sep = str.find('.'); sep != tstring::npos) {
+          new_sec = str.substr(0, sep).trim().to_string();
+          str.erase_front(sep + 1);
         } else new_sec = sec;
-        new_key = mod.trim().to_string();
+        new_key = str.trim().to_string();
 
+        // Look for the referenced key
         if (auto index = doc.find(new_sec, new_key); index) {
-          // Clear to avoid cyclical linking
-          value.reset();
+          // Found it
           auto& ref_val = doc.values[*index];
+          value.reset();
+
+          // Check for cyclical linking
           if (!ref_val) {
             report_err("Cyclical referencing detected");
             value = make_unique<const_ref>(move(src));
           } else {
             delink_key(new_sec, new_key, ref_val);
-            value = std::make_unique<local_ref>(ref_val);
+
+            // Don't make a local_ref to another local_ref, reference directly to its source
+            if (auto local = dynamic_cast<local_ref*>(ref_val.get()); local != nullptr)
+              value = std::make_unique<local_ref>(local->ref);
+            else
+              value = std::make_unique<local_ref>(ref_val);
           }
         } else if (fallback) {
           value = move(fallback);
         } else {
           value = make_unique<const_ref>(move(src));
-          return report_err("Referenced key doesn't exist: " + new_sec + "." + new_key);
+          report_err("Referenced key doesn't exist: " + new_sec + "." + new_key);
         }
       }
     };
 
-    if (mod.cut_front_back("${", "}")) {
-      subroutine();
-    } else {
+    // Delink an arbitrary string into `value`. The main thing this does is handling string interpolations. Otherwise, it would call delink_ref
+    delink_string = [&](tstring& str, string_ref_p& value) {
       size_t start, end;
+      // Find the '${' and '}' pairs and mark them with `start` and `end`
       auto find_token = [&](const tstring& original) {
         start = original.find('$');
-        if (start != tstring::npos && original.size() > start++ + 2 && original[start++] == '{')
-          if (end = original.find('}'); end != tstring::npos)
-            return true;
+        end = start + 2;
+        if (start != tstring::npos && original.size() > end && original[start + 1] == '{') {
+          // We need to find the *matching* bracket '}', as there may be bracket pairs inside
+          for(size_t opening_index = 0, opening_count = 0; end < original.size(); end++) {
+            if (original[end] == '}' && opening_count-- == 0)
+              return true;
+            if (original[end] == '$') {
+              opening_index = 1;
+            } else if (opening_index == 1 && original[end] == '{') {
+              opening_index = 0;
+              opening_count++;
+            }
+          }
+        }
         return false;
       };
-      if (!find_token(mod)) {
-        value = make_unique<const_ref>(move(src));
+      if (!find_token(str)) {
+        // There is no token inside the string, it's a normal string
+        logger::debug<scope>("Normal string ? " + str.to_string());
+        value = make_unique<const_ref>(str.to_string());
+      } else if (start == 0 && end == str.size() - 1) {
+        // There is a token inside, but string interpolation is unecessary
+        str.erase_front(2);
+        str.erase_back();
+        delink_ref(str, value);
       } else {
+        // String interpolation
         stringstream ss;
         auto newval = make_unique<string_interpolate_ref>();
-        tstring original(mod);
         do {
-          ss << original.substr(0, start - 2).to_string();
+          // Write the part we have moved past to get the token, to the base string
+          ss << str.substr(0, start).to_string();
+          // Mark the position of the token in the base string
           newval->interpolator.positions.push_back(ss.tellp());
 
-          mod = original.substr(start, end - start);
-          subroutine();
-          newval->replacements.list.emplace_back(move(value));
+          // Make string_ref from the token
+          auto ref = str.interval(start + 2, end);
+          newval->replacements.list.emplace_back();
+          delink_ref(ref, newval->replacements.list.back());
 
-          original.erase_front(end + 1);
-        } while (find_token(original));
-        ss << original.to_string();
+          str.erase_front(end + 1);
+        } while (find_token(str));
+        ss << str.to_string();
         newval->interpolator.base = ss.str();
         value = move(newval);
       }
-    }
+    };
+    delink_string(str, value);
   };
   for(auto& seckey : doc.map) {
     auto& section = seckey.second;

@@ -43,6 +43,7 @@ public:
   const char* end() const;
   tstring substr(size_t pos, size_t length) const;
   tstring substr(size_t pos) const;
+  tstring interval(size_t start, size_t end) const;
   size_t get_end_pos() const;
   char operator[](size_t) const;
 
