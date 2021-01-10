@@ -23,6 +23,8 @@ public:
   explicit tstring(const char*);
   explicit tstring(const string&);
 
+  tstring& set(const char* data, size_t length);
+  tstring& set(const string&);
   size_t length() const;
   size_t size() const;
   tstring& erase_front(size_t = 1);

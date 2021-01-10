@@ -22,6 +22,18 @@ tstring::tstring(const char* data) : tstring(data, strlen(data)) {}
 
 tstring::tstring(const string& s) : tstring(s.c_str(), s.size()) {}
 
+tstring& tstring::set(const char* data, size_t length) {
+  this->data = data;
+  pos = 0;
+  end_pos = length;
+}
+
+tstring& tstring::set(const string& s) {
+  this->data = s.data();
+  pos = 0;
+  end_pos = s.length();
+}
+
 tstring& tstring::erase_front(size_t count) {
   pos += std::min(length(), count);
   return *this;

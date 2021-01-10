@@ -75,7 +75,6 @@ void delink(document& doc, str_errlist& err) {
           mod.erase_front(sep + 1);
         } else new_sec = sec;
         new_key = mod.trim().to_string();
-        logger::debug<scope>(new_key);
 
         if (auto index = doc.find(new_sec, new_key); index) {
           // Clear to avoid cyclical linking
@@ -88,48 +87,47 @@ void delink(document& doc, str_errlist& err) {
             delink_key(new_sec, new_key, ref_val);
             value = std::make_unique<local_ref>(ref_val);
           }
-        } else if (fallback)
+        } else if (fallback) {
           value = move(fallback);
-        else {
+        } else {
           value = make_unique<const_ref>(move(src));
           return report_err("Referenced key doesn't exist: " + new_sec + "." + new_key);
         }
       }
     };
 
-    if (!mod.cut_front_back("${", "}")) {
-      stringstream ss;
-      auto newval = make_unique<string_interpolate_ref>();
-      size_t start = 0;
-      tstring original(mod);
-      while(true) {
-        if (start = original.find('$'); start != tstring::npos && original.size() > start++ + 2 && original[start++] == '{') {
-          if (auto end = original.find('}'); end != tstring::npos) {
-            ss << original.substr(0, start - 2).to_string();
-            newval->interpolator.positions.push_back(ss.tellp());
-
-            mod = original.substr(start, end - start);
-            subroutine();
-            newval->replacements.list.emplace_back(move(value));
-
-            original.erase_front(++end);
-            start = end;
-            continue;
-          }
-        }
-        break;
-      }
-      if (newval->interpolator.positions.empty()) {
+    if (mod.cut_front_back("${", "}")) {
+      subroutine();
+    } else {
+      size_t start, end;
+      auto find_token = [&](const tstring& original) {
+        start = original.find('$');
+        if (start != tstring::npos && original.size() > start++ + 2 && original[start++] == '{')
+          if (end = original.find('}'); end != tstring::npos)
+            return true;
+        return false;
+      };
+      if (!find_token(mod)) {
         value = make_unique<const_ref>(move(src));
-        return;
-      }
-      ss << original.to_string();
-      newval->interpolator.base = ss.str();
-      value = move(newval);
-      return;
-    }
+      } else {
+        stringstream ss;
+        auto newval = make_unique<string_interpolate_ref>();
+        tstring original(mod);
+        do {
+          ss << original.substr(0, start - 2).to_string();
+          newval->interpolator.positions.push_back(ss.tellp());
 
-    subroutine();
+          mod = original.substr(start, end - start);
+          subroutine();
+          newval->replacements.list.emplace_back(move(value));
+
+          original.erase_front(end + 1);
+        } while (find_token(original));
+        ss << original.to_string();
+        newval->interpolator.base = ss.str();
+        value = move(newval);
+      }
+    }
   };
   for(auto& seckey : doc.map) {
     auto& section = seckey.second;
