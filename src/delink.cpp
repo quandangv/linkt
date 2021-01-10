@@ -108,30 +108,32 @@ void delink(document& doc, str_errlist& err) {
 
     // Delink an arbitrary string into `value`. The main thing this does is handling string interpolations. Otherwise, it would call delink_ref
     delink_string = [&](tstring& str, string_ref_p& value) {
-      size_t start, end;
       // Find the '${' and '}' pairs and mark them with `start` and `end`
-      auto find_token = [&](const tstring& original) {
-        start = original.find('$');
-        end = start + 2;
-        if (start != tstring::npos && original.size() > end && original[start + 1] == '{') {
-          // We need to find the *matching* bracket '}', as there may be bracket pairs inside
-          for(size_t opening_index = 0, opening_count = 0; end < original.size(); end++) {
-            if (original[end] == '}' && opening_count-- == 0)
-              return true;
-            if (original[end] == '$') {
-              opening_index = 1;
-            } else if (opening_index == 1 && original[end] == '{') {
+      auto find_token = [&](tstring& str, size_t& start, size_t& end) {
+        end = 0;
+        for(size_t opening_index = 0, opening_count = 0; end < str.size(); end++) {
+          if (opening_index == 1) {
+            if (str[end] == '$') {
+              str.erase(src, end--, 1);
+              opening_index = 0;
+            } else if (str[end] == '{') {
+              if (opening_count == 0)
+                start = end - 1;
               opening_index = 0;
               opening_count++;
-            }
-          }
+            } else
+              opening_index = 0;
+          } else if (str[end] == '$') {
+            opening_index = 1;
+          } else if (str[end] == '}' && opening_count > 0 && --opening_count == 0)
+            return true;
         }
         return false;
       };
-      if (!find_token(str)) {
+      size_t start, end;
+      if (!find_token(str, start, end)) {
         // There is no token inside the string, it's a normal string
-        logger::debug<scope>("Normal string ? " + str.to_string());
-        value = make_unique<const_ref>(str.to_string());
+        value = make_unique<const_ref>(str);
       } else if (start == 0 && end == str.size() - 1) {
         // There is a token inside, but string interpolation is unecessary
         str.erase_front(2);
@@ -153,7 +155,7 @@ void delink(document& doc, str_errlist& err) {
           delink_ref(ref, newval->replacements.list.back());
 
           str.erase_front(end + 1);
-        } while (find_token(str));
+        } while (find_token(str, start, end));
         ss << str.to_string();
         newval->interpolator.base = ss.str();
         value = move(newval);

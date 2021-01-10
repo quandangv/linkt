@@ -6,27 +6,6 @@
 
 #include "logger.hpp"
 
-struct substr_test {
-  string src;
-  size_t pos, end_pos, index, length;
-  string result;
-};
-class SubstrTest : public ::testing::Test, public ::testing::WithParamInterface<substr_test> {};
-
-vector<substr_test> substr_tests = {
-  {"123456789", 2, 9, 3, 3, "678"},
-  {"123456789", 0, 9, 10, 1, ""},
-  {"123456789", 5, 8, 1, 5, "78"},
-};
-INSTANTIATE_TEST_SUITE_P(TString, SubstrTest, ::testing::ValuesIn(substr_tests));
-
-TEST_P(SubstrTest, substr) {
-  auto test_set = GetParam();
-  tstring str(test_set.src.data(), test_set.pos, test_set.end_pos);
-  str = str.substr(test_set.index, test_set.length);
-  EXPECT_EQ(str.to_string(), test_set.result);
-}
-
 using comp_test = pair<string, string>;
 
 vector<comp_test> comp_tests = {
@@ -125,29 +104,66 @@ TEST_P(TrimQuotesTest, trim) {
       << "Source: " << test_set.src;
 }
 
-using erase_test = tuple<string, int, string>;
+constexpr char test_source[] = "123456";
+
+struct substr_test { size_t pos, end_pos, index, length; string result; };
+class SubstrTest : public ::testing::Test, public ::testing::WithParamInterface<substr_test> {};
+
+vector<substr_test> substr_tests = {
+  {2, 6, 1, 2, "45"},
+  {0, 6, 9, 1, ""},
+  {1, 5, 1, 6, "345"},
+};
+INSTANTIATE_TEST_SUITE_P(TString, SubstrTest, ::testing::ValuesIn(substr_tests));
+
+TEST_P(SubstrTest, substr) {
+  auto test_set = GetParam();
+  tstring str(test_source, test_set.pos, test_set.end_pos);
+  str = str.substr(test_set.index, test_set.length);
+  EXPECT_EQ(str.to_string(), test_set.result);
+}
+
+struct erase_test { int num; string result; };
 class EraseTest : public ::testing::Test, public ::testing::WithParamInterface<erase_test> {};
 
 vector<erase_test> erase_tests = {
-  { "123456", 2, "3456" },
-  { "123456", -3, "123" },
-  { "123456", 1, "23456" },
-  { "123456", 0, "123456" },
-  { "123456", 6, "" },
-  { "123456", 9, "" },
-  { "123456", -9, "" },
+  {2, "3456"},
+  {-3, "123"},
+  {1, "23456"},
+  {0, "123456"},
+  {6, ""},
+  {9, ""},
+  {-9, ""},
 };
 INSTANTIATE_TEST_SUITE_P(TString, EraseTest, ::testing::ValuesIn(erase_tests));
-TEST_P(EraseTest, trim_equality) {
-  auto expect = tstring(get<2>(GetParam()));
-  auto reality = tstring(get<0>(GetParam()));
-  auto num = get<1>(GetParam());
-  if (num < 0) reality.erase_back(-num);
-  else reality.erase_front(num);
-  EXPECT_EQ(expect.to_string(), reality.to_string())
-      << "Input: " << get<0>(GetParam()) << endl
-      << "Num: " << get<1>(GetParam());
-  EXPECT_EQ(expect, reality);
+TEST_P(EraseTest, erase_front_back) {
+  auto testset = GetParam();
+  auto reality = tstring(test_source);
+  if (testset.num < 0)
+    reality.erase_back(-testset.num);
+  else
+    reality.erase_front(testset.num);
+  EXPECT_EQ(testset.result, reality.to_string())
+      << "Num: " << testset.num;
+}
+
+struct erase_mid_test { size_t off, len; string result; };
+class EraseMidTest : public ::testing::Test, public ::testing::WithParamInterface<erase_mid_test> {};
+
+vector<erase_mid_test> erase_mid_tests = {
+  {0, 0, "123456"},
+  {0, 1, "23456"},
+  {4, 9, "1234"},
+  {1, 2, "1456"},
+};
+INSTANTIATE_TEST_SUITE_P(TString, EraseMidTest, ::testing::ValuesIn(erase_mid_tests));
+TEST_P(EraseMidTest, erase_mid) {
+  auto src = string(test_source);
+  auto testset = GetParam();
+  tstring reality(src);
+  reality.erase(src, testset.off, testset.len);
+  EXPECT_EQ(testset.result, reality.to_string())
+      << "Start: " << testset.off << ", Length: " << testset.len;
 }
 
 TEST(TString, other) {

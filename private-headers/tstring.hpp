@@ -56,11 +56,12 @@ public:
   bool operator>(const tstring&) const;
   static constexpr size_t npos = -1;
 
-  size_t find(char) const;
+  size_t find(char, size_t start = 0) const;
   size_t rfind(char) const;
+  tstring& erase(string& source, size_t offset, size_t length = -1);
   string to_string() const;
   operator string() const { return to_string(); }
 };
 
 string operator+(const tstring& a, const string& b);
-
+string operator+(const string& a, const tstring& b);

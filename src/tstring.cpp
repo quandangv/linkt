@@ -41,6 +41,23 @@ tstring& tstring::erase_front(size_t count) {
   return *this;
 }
 
+tstring& tstring::erase(string& source, size_t off, size_t length) {
+  auto s = size();
+  // Try to use linear-time methods first
+  if (off < s) {
+    if (off == 0)
+      erase_front(length);
+    else if (length + off > s) {
+      set_length(off);
+    } else {
+      source.erase(pos + off, length);
+      end_pos -= length;
+      data = source.data();
+    }
+  }
+  return *this;
+}
+
 tstring& tstring::erase_back(size_t count) {
   end_pos -= std::min(length(), count);
   return *this;
@@ -112,7 +129,7 @@ char tstring::operator[](size_t index) const {
 tstring tstring::substr(size_t index, size_t len) const {
   if (index >= end_pos)
     return tstring();
-  return tstring(data + pos + index, std::min(len, length() - index));
+  return tstring(data, pos + index, std::min(end_pos, pos + index + len));
 }
 
 tstring tstring::interval(size_t start, size_t end) const {
@@ -129,8 +146,8 @@ size_t tstring:: get_end_pos() const {
   return end_pos;
 }
 
-size_t tstring::find(char ch) const {
-  for(auto p = begin(); p < end(); p++)
+size_t tstring::find(char ch, size_t start) const {
+  for(auto p = begin() + start; p < end(); p++)
     if (*p == ch)
       return p - begin();
   return npos;
@@ -180,6 +197,10 @@ bool tstring::operator>(const tstring& other) const {
 
 string operator+(const tstring& a, const string& b) {
   return a.to_string() + b;
+}
+
+string operator+(const string& a, const tstring& b) {
+  return a + b.to_string();
 }
 
 bool tstring::cut_front_back(const char* fs, const char* bs) {
