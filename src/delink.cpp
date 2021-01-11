@@ -111,23 +111,17 @@ void delink(document& doc, str_errlist& err) {
       // Find the '${' and '}' pairs and mark them with `start` and `end`
       auto find_token = [&](tstring& str, size_t& start, size_t& end) {
         end = 0;
-        for(size_t opening_index = 0, opening_count = 0; end < str.size(); end++) {
-          if (opening_index == 1) {
-            if (str[end] == '$') {
-              str.erase(src, end--, 1);
-              opening_index = 0;
-            } else if (str[end] == '{') {
+        for(size_t opening_count = 0; end < str.size(); end++)
+          if (str[end] == '$') {
+            if (str[end + 1] == '$') {
+              str.erase(src, end, 1);
+            } else if (str[end + 1] == '{') {
               if (opening_count == 0)
-                start = end - 1;
-              opening_index = 0;
+                start = end;
               opening_count++;
-            } else
-              opening_index = 0;
-          } else if (str[end] == '$') {
-            opening_index = 1;
+            }
           } else if (str[end] == '}' && opening_count > 0 && --opening_count == 0)
             return true;
-        }
         return false;
       };
       size_t start, end;
