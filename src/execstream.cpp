@@ -12,28 +12,30 @@
 
 using namespace std;
 
-DEFINE_ERROR(execstream_error)
 int devnull = open("/dev/null", O_WRONLY);
 
 execstream::execstream(const char* command, int type) {
-  if (type == 0) throw execstream_error("invalid type");
-  int pdes[2];
-
+  if (type % 8 == 0) throw error("invalid type");
   bool write = type_in & type,
        read = type_out_err & type;
+
+  // Open a two-way pipe for read-write streams, otherwise, open a one-way pipe
+  int pdes[2];
   if (read && write) {
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, pdes) < 0)
-      throw execstream_error("socketpair() failed");
+      throw error("socketpair() failed");
   } else {
     if (pipe(pdes) < 0)
-      throw execstream_error("pipe() failed");
+      throw error("pipe() failed");
   }
   switch (pid = fork()) {
   case -1:
+    // Fail
     ::close(pdes[0]);
     ::close(pdes[1]);
-    throw execstream_error("fork() failed");
+    throw error("fork() failed");
   case 0:
+    // Child process
     if (read) {
       dup2(type_out & type ? pdes[1] : devnull, STDOUT_FILENO);
       dup2(type_err & type ? pdes[1] : devnull, STDERR_FILENO);
@@ -47,6 +49,7 @@ execstream::execstream(const char* command, int type) {
     exit(127);
   }
 
+  // Parent process
   if (read) {
     fp = fdopen(pdes[0], write ? "r+" : "r");
     ::close(pdes[1]);

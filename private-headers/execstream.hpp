@@ -1,10 +1,14 @@
 #pragma once
 
+#include "error.hpp"
+
 #include <cstdio>
 #include <sys/types.h>
 #include <string>
 
 struct execstream {
+  struct error : lini::error_base { using error_base::error_base; };
+
   FILE* fp;
   pid_t pid;
 

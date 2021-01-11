@@ -10,12 +10,11 @@
 GLOBAL_NAMESPACE
 
 using namespace std;
-DEFINE_ERROR(stringref_error)
 
 string fallback_ref::use_fallback(const string& msg) const {
   if (fallback)
     return fallback->get();
-  throw stringref_error("Reference failed: " + msg + ". And no fallback was found");
+  throw error("Reference failed: " + msg + ". And no fallback was found");
 }
 
 string env_ref::get() const {
@@ -51,7 +50,7 @@ bool file_ref::readonly() const {
 void file_ref::set(const string& content) {
   ofstream ofs(value->get().data(), ios_base::trunc);
   if (ofs.fail())
-    throw stringref_error("Can't write to file: " + value->get());
+    throw error("Can't write to file: " + value->get());
   ofs << content;
   ofs.close();
 }

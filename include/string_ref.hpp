@@ -1,6 +1,7 @@
 #pragma once
 
 #include "string_inter.hpp"
+#include "error.hpp"
 
 #include <string>
 #include <optional>
@@ -12,6 +13,8 @@ namespace lini {
   using opt_str = std::optional<string>;
 
   struct string_ref {
+    struct error : error_base { using error_base::error_base; };
+
     virtual string get() const = 0;
     virtual bool readonly() const { return true; }
     virtual void set(const string&) {}
@@ -76,6 +79,8 @@ namespace lini {
     string get() const;
     bool readonly() const;
     void set(const string& value);
+    struct error : error_base { using error_base::error_base; };
+
   };
 
   struct string_interpolate_ref : public string_ref {

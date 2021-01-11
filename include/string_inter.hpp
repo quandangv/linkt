@@ -15,9 +15,9 @@ concept iterable = requires (T a) {
   { *a.end() }   -> std::convertible_to<U>;
 };
 
-DEFINE_ERROR(stringinter_error)
-
 struct string_inter {
+  struct error : lini::error_base { using error_base::error_base; };
+
   std::string base;
   std::vector<int> positions;
 
@@ -28,9 +28,9 @@ struct string_inter {
     int lastpoint = 0;
     for (int point : positions) {
       if (point > base.size())
-        throw stringinter_error("Position out of range: " + std::to_string(point));
+        throw error("Position out of range: " + std::to_string(point));
       if (repit == replacements.end())
-        throw stringinter_error("Reached end of iterator while replacements st//ill needed");
+        throw error("Reached end of iterator while replacements st//ill needed");
       ss << base.substr(lastpoint, point - lastpoint) << *repit++;
       lastpoint = point;
     }

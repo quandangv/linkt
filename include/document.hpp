@@ -1,11 +1,12 @@
 #pragma once
 
+#include "string_ref.hpp"
+#include "error.hpp"
+
 #include <map>
 #include <vector>
 #include <string>
 #include <optional>
-
-#include "string_ref.hpp"
 
 namespace lini {
   using std::string;
@@ -13,6 +14,8 @@ namespace lini {
   using str_errlist = std::vector<std::pair<string, string>>;
 
   struct document {
+    struct error : error_base { using error_base::error_base; };
+
     using sec_map = std::map<string, size_t>;
     using doc_map = std::map<string, sec_map>;
 
