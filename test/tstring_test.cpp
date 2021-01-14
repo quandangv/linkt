@@ -48,8 +48,7 @@ INSTANTIATE_TEST_SUITE_P(TString, TrimTest, ::testing::ValuesIn(trim_tests));
 TEST_P(TrimTest, trim_equality) {
   auto expect = tstring(GetParam().second);
   auto reality = tstring(GetParam().first);
-  reality.trim();
-  EXPECT_EQ(expect.to_string(), reality.to_string());
+  EXPECT_EQ(expect, trim(reality));
   EXPECT_EQ(expect, reality);
 }
 
@@ -79,9 +78,9 @@ INSTANTIATE_TEST_SUITE_P(TString, CutTest, ::testing::ValuesIn(cut_tests));
 TEST_P(CutTest, cut) {
   auto& test_set = GetParam();
   tstring src(test_set.src);
-  EXPECT_EQ(src.cut_front_back(test_set.front, test_set.back), test_set.match)
+  EXPECT_EQ(cut_front_back(src, test_set.front, test_set.back), test_set.match)
       << "Source: " << test_set.src;
-  EXPECT_EQ(src.to_string(), test_set.result);
+  EXPECT_EQ(src, test_set.result);
 }
 
 struct trim_quotes_test {
@@ -100,7 +99,8 @@ INSTANTIATE_TEST_SUITE_P(TString, TrimQuotesTest, ::testing::ValuesIn(trim_quote
 TEST_P(TrimQuotesTest, trim) {
   auto& test_set = GetParam();
   tstring src(test_set.src);
-  EXPECT_EQ(src.trim_quotes().to_string(), test_set.result)
+  trim_quotes(src);
+  EXPECT_EQ(src, test_set.result)
       << "Source: " << test_set.src;
 }
 
@@ -112,15 +112,18 @@ class SubstrTest : public ::testing::Test, public ::testing::WithParamInterface<
 vector<substr_test> substr_tests = {
   {2, 6, 1, 2, "45"},
   {0, 6, 9, 1, ""},
-  {1, 5, 1, 6, "345"},
+  {1, 5, 1, 9, "345"},
 };
 INSTANTIATE_TEST_SUITE_P(TString, SubstrTest, ::testing::ValuesIn(substr_tests));
 
 TEST_P(SubstrTest, substr) {
   auto test_set = GetParam();
-  tstring str(test_source, test_set.pos, test_set.end_pos);
-  str = str.substr(test_set.index, test_set.length);
-  EXPECT_EQ(str.to_string(), test_set.result);
+  tstring str;
+  {
+    tstring tmp(test_source, test_set.pos, test_set.end_pos);
+    str = substr(tmp, test_set.index, test_set.length);
+  }
+  EXPECT_EQ((string)str, test_set.result);
 }
 
 struct erase_test { int num; string result; };
@@ -143,12 +146,12 @@ TEST_P(EraseTest, erase_front_back) {
     reality.erase_back(-testset.num);
   else
     reality.erase_front(testset.num);
-  EXPECT_EQ(testset.result, reality.to_string())
+  EXPECT_EQ(testset.result, reality)
       << "Num: " << testset.num;
 }
 
 struct erase_mid_test { size_t off, len; string result; };
-class EraseMidTest : public ::testing::Test, public ::testing::WithParamInterface<erase_mid_test> {};
+class erase_mid_test_intf : public ::testing::Test, public ::testing::WithParamInterface<erase_mid_test> {};
 
 vector<erase_mid_test> erase_mid_tests = {
   {0, 0, "123456"},
@@ -156,14 +159,33 @@ vector<erase_mid_test> erase_mid_tests = {
   {4, 9, "1234"},
   {1, 2, "1456"},
 };
-INSTANTIATE_TEST_SUITE_P(TString, EraseMidTest, ::testing::ValuesIn(erase_mid_tests));
-TEST_P(EraseMidTest, erase_mid) {
+INSTANTIATE_TEST_SUITE_P(TString, erase_mid_test_intf, ::testing::ValuesIn(erase_mid_tests));
+TEST_P(erase_mid_test_intf, erase_mid) {
   auto src = string(test_source);
   auto testset = GetParam();
   tstring reality(src);
   reality.erase(src, testset.off, testset.len);
-  EXPECT_EQ(testset.result, reality.to_string())
+  EXPECT_EQ(testset.result, reality)
       << "Start: " << testset.off << ", Length: " << testset.len;
+}
+
+struct find_test { string source; char c; int result, r_result; };
+class find_test_intf : public ::testing::Test, public ::testing::WithParamInterface<find_test> {};
+
+vector<find_test> find_tests = {
+  {"123454321", '2', 1, 7},
+  {"123454301", '2', 1, 1},
+  {"123404321", '5', -1, -1},
+  {"123454321", 0, -1, -1},
+};
+INSTANTIATE_TEST_SUITE_P(TString, find_test_intf, ::testing::ValuesIn(find_tests));
+TEST_P(find_test_intf, find) {
+  auto testset = GetParam();
+  tstring src(testset.source);
+  EXPECT_EQ(find(src, testset.c), testset.result)
+      << "Source: " << src<< ", character: " << testset.c;
+  EXPECT_EQ(rfind(src, testset.c), testset.r_result)
+      << "Source: " << src<< ", character: " << testset.c;
 }
 
 TEST(TString, other) {
@@ -172,16 +194,16 @@ TEST(TString, other) {
   str = "123456789";
   EXPECT_EQ(string("123456789").length(), tstring(move(str)).length());
   EXPECT_EQ(string("123456789").length(), tstring("123456789").length());
-  EXPECT_EQ(string("123456789"), tstring("123456789").to_string());
+  EXPECT_EQ(string("123456789"), tstring("123456789"));
 
   str = "";
   EXPECT_EQ(string("").length(), tstring(move(str)).length());
   EXPECT_EQ(string("").length(), tstring("").length());
-  EXPECT_EQ(string(""), tstring("").to_string());
+  EXPECT_EQ(string(""), tstring(""));
 
   str = "123456";
   EXPECT_EQ(string("").length(), tstring(move(str)).erase_front(9).length());
   EXPECT_EQ(string("").length(), tstring("123456").erase_front(9).length());
-  EXPECT_EQ(string(""), tstring("123456").erase_front(9).to_string());
+  EXPECT_EQ(string(""), tstring("123456").erase_front(9));
 }
 

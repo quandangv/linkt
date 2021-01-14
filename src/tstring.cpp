@@ -4,29 +4,12 @@
 #include <cctype>
 #include <algorithm>
 
-#include "logger.hpp"
+using namespace std;
 
 const char* clone(const char* str, size_t length) {
   char* result = new char[length];
   memcpy(result, str, length*sizeof(char));
   return result;
-}
-
-tstring::tstring(const char* data, size_t pos, size_t end_pos) : data(data), pos(pos), end_pos(end_pos) {}
-
-tstring::tstring(const char* data, size_t length) : tstring(data, 0, length) {}
-
-tstring::tstring(const tstring& s) : tstring(s.data, s.pos, s.end_pos) {}
-
-tstring::tstring(const char* data) : tstring(data, strlen(data)) {}
-
-tstring::tstring(const string& s) : tstring(s.c_str(), s.size()) {}
-
-tstring& tstring::set(const char* data, size_t length) {
-  this->data = data;
-  pos = 0;
-  end_pos = length;
-  return *this;
 }
 
 tstring& tstring::set(const string& s) {
@@ -37,57 +20,65 @@ tstring& tstring::set(const string& s) {
 }
 
 tstring& tstring::erase_front(size_t count) {
-  pos += std::min(length(), count);
-  return *this;
-}
-
-tstring& tstring::erase(string& source, size_t off, size_t length) {
-  auto s = size();
-  // Try to use linear-time methods first
-  if (off < s) {
-    if (off == 0)
-      erase_front(length);
-    else if (length + off > s) {
-      set_length(off);
-    } else {
-      source.erase(pos + off, length);
-      end_pos -= length;
-      data = source.data();
-    }
-  }
+  pos += min(length(), count);
   return *this;
 }
 
 tstring& tstring::erase_back(size_t count) {
-  end_pos -= std::min(length(), count);
+  end_pos -= min(length(), count);
   return *this;
 }
 
 tstring& tstring::set_length(size_t length) {
-  end_pos = pos + length;
+  end_pos = pos + min(size(), length);
   return *this;
 }
 
-tstring& tstring::ltrim(const char* trim_char) {
-  for(; !empty() && strchr(trim_char, front()) != nullptr; pos++);
-  return *this;
+tstring& ltrim(tstring& ts, const char* trim_char) {
+  auto ptr = ts.begin(), end = ts.end();
+  for(; ptr != end && strchr(trim_char, *ptr) != nullptr; ptr++);
+  ts.erase_front(ptr - ts.begin());
+  return ts;
 }
 
-tstring& tstring::rtrim(const char* trim_char) {
-  for(; !empty() && strchr(trim_char, back()) != nullptr; end_pos--);
-  return *this;
+tstring& rtrim(tstring& ts, const char* trim_char) {
+  auto ptr = ts.rbegin(), end = ts.rend();
+  for(; ptr != end && strchr(trim_char, *ptr) != nullptr; ptr++);
+  ts.erase_back(ptr - ts.rbegin());
+  return ts;
 }
 
-tstring& tstring::trim(const char* trim_char) {
-  ltrim(trim_char);
-  return rtrim(trim_char);
+tstring& trim_quotes(tstring& ts) {
+  trim(ts);
+  cut_front_back(ts, "'", "'");
+  cut_front_back(ts, "\"", "\"");
+  return ts;
 }
 
-tstring& tstring::trim_quotes() {
-  trim();
-  cut_front_back("'", "'");
-  cut_front_back("\"", "\"");
-  return *this;
+bool cut_front(tstring& ts, const char* front) {
+  auto lfront = strlen(front);
+  if (lfront > ts.length() || !std::equal(front, front + lfront, ts.begin()))
+    return false;
+  ts.erase_front(lfront);
+  return true;
+}
+
+bool cut_back(tstring& ts, const char* back) {
+  auto lback = strlen(back);
+  if (lback > ts.length() || !std::equal(back, back + lback, ts.end() - lback))
+    return false;
+  ts.erase_back(lback);
+  return true;
+}
+
+bool cut_front_back(tstring& ts, const char* front, const char* back) {
+  auto lfront = strlen(front);
+  auto lback = strlen(back);
+  if (lfront + lback > ts.length() || !std::equal(front, front + lfront, ts.begin()) || !std::equal(back, back + lback, ts.end() - lback))
+    return false;
+  ts.erase_front(lfront);
+  ts.erase_back(lback);
+  return true;
 }
 
 bool tstring::empty() const {
@@ -114,110 +105,70 @@ const char* tstring::end() const {
   return data + end_pos;
 }
 
-size_t tstring::length() const {
-  return end_pos - pos;
+reverse_iterator<const char*> tstring::rbegin() const {
+  return reverse_iterator<const char*>(data + end_pos);
 }
 
-size_t tstring::size() const {
-  return length();
+reverse_iterator<const char*> tstring::rend() const {
+  return reverse_iterator<const char*>(data + pos);
+}
+
+size_t tstring::length() const {
+  return end_pos - pos;
 }
 
 char tstring::operator[](size_t index) const {
   return data[pos + index];
 }
 
-tstring tstring::substr(size_t index, size_t len) const {
-  if (index >= end_pos)
-    return tstring();
-  return tstring(data, pos + index, std::min(end_pos, pos + index + len));
-}
-
 tstring tstring::interval(size_t start, size_t end) const {
   if (start >= end_pos)
     return tstring();
-  return tstring(data, pos + start, std::min(end_pos, pos + end));
+  return tstring(data, pos + start, min(end_pos, pos + end));
 }
 
-tstring tstring::substr(size_t index) const {
-  return interval(index, end_pos);
+tstring substr(const tstring& ts, size_t offset, size_t len) {
+  return ts.interval(offset, offset + len);
 }
 
-size_t tstring:: get_end_pos() const {
-  return end_pos;
+size_t find(const tstring& ts, char ch) {
+  auto result = std::find(ts.begin(), ts.end(), ch);
+  return result == ts.end() ? tstring::npos : result - ts.begin();
 }
 
-size_t tstring::find(char ch, size_t start) const {
-  for(auto p = begin() + start; p < end(); p++)
-    if (*p == ch)
-      return p - begin();
-  return npos;
+size_t rfind(const tstring& ts, char ch) {
+  auto result = std::find(ts.rbegin(), ts.rend(), ch);
+  return result == ts.rend() ? tstring::npos : result.base() - ts.begin() - 1;
 }
 
-size_t tstring::rfind(char ch) const {
-  for(auto p = end() - 1; p >= begin(); p--)
-    if (*p == ch)
-      return p - begin();
-  return npos;
-}
-
-string tstring::to_string() const {
-  return string(begin(), length());
+tstring& tstring::erase(string& source, size_t off, size_t length) {
+  auto s = size();
+  // Try to use linear-time methods first
+  if (off < s) {
+    if (off == 0)
+      erase_front(length);
+    else if (length + off > s) {
+      set_length(off);
+    } else {
+      source.erase(pos + off, length);
+      end_pos -= length;
+      data = source.data();
+    }
+  }
+  return *this;
 }
 
 template<typename T>
-std::strong_ordering tstring::compare(const T& other) const {
+strong_ordering tstring::compare(const T& other) const {
   auto len = length();
   if (auto diff = other.length() <=> len; diff != 0)
     return diff;
   for(size_t i = 0; i < len; i++)
     if (auto diff = other[i] <=> (*this)[i]; diff != 0)
       return diff;
-  return std::strong_ordering::equal;
+  return strong_ordering::equal;
 }
 
-std::strong_ordering tstring::operator<=>(const tstring& other) const {
-  return compare(other);
-}
-
-std::strong_ordering tstring::operator<=>(const string& other) const {
-  return compare(other);
-}
-
-bool tstring::operator==(const tstring& other) const {
-  return compare(other) == 0;
-}
-
-bool tstring::operator<(const tstring& other) const {
-  return compare(other) < 0;
-}
-
-bool tstring::operator>(const tstring& other) const {
-  return compare(other) > 0;
-}
-
-string operator+(const tstring& a, const string& b) {
-  return a.to_string() + b;
-}
-
-string operator+(const string& a, const tstring& b) {
-  return a + b.to_string();
-}
-
-bool tstring::cut_front_back(const char* fs, const char* bs) {
-  auto fs_length = strlen(fs);
-  auto bs_length = strlen(bs);
-  if (fs_length + bs_length > length()) return false;
-  const char* fp = begin(), *bp = end();
-  for(; *fs; fp++, fs++)
-    if(*fs != *fp)
-      return false;
-
-  bp -= bs_length;
-  for(; *bs; bp++, bs++)
-    if(*bs != *bp)
-      return false;
-
-  pos += fs_length;
-  end_pos -= bs_length;
-  return true;
+tstring::operator string() const {
+  return string(&*begin(), size());
 }

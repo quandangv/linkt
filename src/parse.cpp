@@ -26,24 +26,23 @@ std::istream& parse(std::istream& is, document& doc, errorlist& err, const strin
       err.emplace_back(linecount, "Invalid character '" + string{*invalid} + "' in name");
       return false;
     };
-    line.trim();
+    trim(line);
     // skip empty and comment lines
     if (!line.empty() && !strchr(comment_chars, line.front())) {
-      if (line.cut_front_back("[", "]")) {
+      if (cut_front_back(line, "[", "]")) {
         // detected section header
         if (check_name(line))
           current_sec = &doc.map[line];
-      } else if (auto sep = line.find('='); sep != tstring::npos) {
+      } else if (auto sep = find(line, '='); sep != tstring::npos) {
         // detected key line
-        auto key = line.substr(0, sep);
-        key.trim();
+        auto key = substr(line, 0, sep);
+        trim(key);
         if (check_name(key)) {
-          line.erase_front(sep + 1);
-          line.trim_quotes();
+          trim_quotes(line.erase_front(sep + 1));
           if (current_sec->emplace(key, doc.values.size()).second) {
             doc.values.emplace_back(make_unique<onetime_ref>(line));
           } else {
-            err.emplace_back(linecount, "Duplicate key: " + key.to_string() + ", Existing value: " + doc.values[(*current_sec)[key]]->get());
+            err.emplace_back(linecount, "Duplicate key: " + key + ", Existing value: " + doc.values[(*current_sec)[key]]->get());
           }
         }
       } else err.emplace_back(linecount, "Unparsed line");
