@@ -139,7 +139,7 @@ main() {
   msg "Executing CMake command"
   cmake -DBUILD_TESTS=${BUILD_TESTS} \
         -DDEBUG_SCOPES=${DEBUG_SCOPES} \
-        -DPLATFORM_LINUX=ON \
+        -DPLATFORM="Linux" \
         ${USE_PREFIX_OPTION} \
         .. || msg_err "Failed to compile project..."
 

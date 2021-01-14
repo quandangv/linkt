@@ -37,16 +37,19 @@ void delink(document& doc, str_errlist& err) {
         end = 0;
         for(size_t opening_count = 0; end < str.size(); end++) {
           if (str[end] == '}') {
+            // Check for the closing part
             if (opening_count > 0 && --opening_count == 0)
               return true;
           } else if (end + 1 < str.size()) {
             if (str[end] == '$') {
+              // Check for the opening part
               if (str[end + 1] == '{') {
                 if (opening_count == 0)
                   start = end;
                 opening_count++;
               }
             } else if (str[end] == '\\') {
+              // Check for the escape character
               if (str[end + 1] == '$')
                 str.erase(src, end, 1);
             }
