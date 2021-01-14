@@ -33,12 +33,11 @@ std::istream& parse(std::istream& is, document& doc, errorlist& err, const strin
         // detected section header
         if (check_name(line))
           current_sec = &doc.map[line];
-      } else if (auto sep = find(line, '='); sep != tstring::npos) {
+      } else if (auto key = cut_front(line, '='); !key.untouched()) {
         // detected key line
-        auto key = substr(line, 0, sep);
         trim(key);
         if (check_name(key)) {
-          trim_quotes(line.erase_front(sep + 1));
+          trim_quotes(line);
           if (current_sec->emplace(key, doc.values.size()).second) {
             doc.values.emplace_back(make_unique<onetime_ref>(line));
           } else {

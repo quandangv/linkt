@@ -55,6 +55,7 @@ vector<delink_test> delink_tests = {
   {{"", "file", "${file:nexist.txt ? ${file:delink_file.txt}}", "content"}},
   {{"", "file", "${file:nexist.txt ? \" f a i l ' }", "\" f a i l '"}},
   {{"", "file", "${file:nexist.txt}", "${file:nexist.txt}", true}},
+  {{"", "dumb", "${dumb:nexist.txt}", "${dumb:nexist.txt}", true}},
   {{"", "cmd", "${cmd:echo hello world}", "hello world"}},
   {{"", "cmd", "${cmd:nexist}", "", true}},
   {

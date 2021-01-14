@@ -16,9 +16,12 @@ constexpr char scope[] = "delink";
 void delink(document& doc, str_errlist& err) {
   std::function<void(const string&, const string&, string_ref_p&)>
   delink_key = [&](const string& sec, const string& key, string_ref_p& value) {
-    auto report_err = [&](const string& msg) { err.emplace_back(sec + "." + key, msg); };
+    auto report_err = [&](const string& msg, string&& fallback) {
+      err.emplace_back(sec + "." + key, msg);
+      value = make_unique<const_ref>(move(fallback));
+    };
     if (!value)
-      return report_err("Null value detected, possibly due to cyclical referencing");
+      return report_err("Null value detected, possibly due to cyclical referencing", "");
 
     // Skip if the original value is not a onetime_ref, which means it has already been delinked
     string src;
@@ -28,7 +31,7 @@ void delink(document& doc, str_errlist& err) {
     std::function<void(tstring&, string_ref_p&)> delink_ref;
 
     // Delink an arbitrary string into `value`. The main thing this does is handling string interpolations. Otherwise, it would call delink_ref
-    auto delink_string = [&](tstring str, string_ref_p& value) {
+    auto delink_string = [&](tstring& str, string_ref_p& value) {
       // Find the '${' and '}' pairs and mark them with `start` and `end`
       auto find_token = [&](tstring& str, size_t& start, size_t& end) {
         end = 0;
@@ -82,10 +85,8 @@ void delink(document& doc, str_errlist& err) {
     delink_ref = [&](tstring& str, string_ref_p& value) {
       // Parse the fallback part of the reference string and remove it from consideration.
       auto take_fallback = [&](string_ref_p& fallback) {
-        if (auto sep = rfind(str, '?'); sep != tstring::npos) {
-          delink_string(trim_quotes(str.interval(sep + 1)), fallback);
-          str.set_length(sep);
-        }
+        if (auto fb_str = cut_back(str, '?'); !fb_str.untouched())
+          delink_string(trim_quotes(fb_str), fallback);
       };
       // Finish the intialization for the types derived from meta_ref
       auto make_meta_ref = [&]<typename T>(unique_ptr<T>&& ptr) {
@@ -94,25 +95,25 @@ void delink(document& doc, str_errlist& err) {
         delink_string(trim_quotes(str), ptr->value);
         value = move(ptr);
       };
-      if (cut_front(str, "file:")) {
-        make_meta_ref(std::make_unique<file_ref>());
-      } else if (cut_front(str, "cmd:")) {
-        make_meta_ref(std::make_unique<cmd_ref>());
-      } else if (cut_front(str, "env:")) {
-        make_meta_ref(std::make_unique<env_ref>());
-      } else if (cut_front(str, "color:")) {
-        // Delink color
-        auto newval = std::make_unique<color_ref>();
-        // Parse the modification part
-        if (auto sep = find(str, ';'); sep != tstring::npos) {
-          auto sep2 = find(str, ':');
-          if (sep2 != tstring::npos)
-            newval->processor.inter = cspace::stospace(trim(substr(str, 0, sep2++)));
-          else sep2 = 0;
-          newval->processor.add_modification(substr(str, sep2, sep - sep2));
-          str.erase_front(sep + 1);
-        }
-        make_meta_ref(move(newval));
+      if (auto ref_type= cut_front(str, ':'); !ref_type.untouched()) {
+        if (ref_type == "file") {
+          make_meta_ref(std::make_unique<file_ref>());
+        } else if (ref_type == "cmd") {
+          make_meta_ref(std::make_unique<cmd_ref>());
+        } else if (ref_type == "env") {
+          make_meta_ref(std::make_unique<env_ref>());
+        } else if (ref_type == "color") {
+          // Delink color
+          auto newval = std::make_unique<color_ref>();
+          // Parse the modification part
+          if (auto mod_str = cut_front(str, ';'); !mod_str.untouched()) {
+            if (auto colorspace = cut_front(mod_str, ':'); !colorspace.untouched())
+              newval->processor.inter = cspace::stospace(trim(colorspace));
+            newval->processor.add_modification(mod_str);
+          }
+          make_meta_ref(move(newval));
+        } else
+          report_err("Unsupported reference type: " + ref_type, move(src));
       } else {
         // Delink local value
         string_ref_p fallback;
@@ -120,9 +121,8 @@ void delink(document& doc, str_errlist& err) {
 
         // Parse the referenced section and key
         string new_sec, new_key;
-        if (auto sep = find(str, '.'); sep != tstring::npos) {
-          new_sec = trim(substr(str, 0, sep));
-          str.erase_front(sep + 1);
+        if (auto sec_str = cut_front(str, '.'); !sec_str.untouched()) {
+          new_sec = trim(sec_str);
         } else new_sec = sec;
         new_key = trim(str);
 
@@ -134,8 +134,7 @@ void delink(document& doc, str_errlist& err) {
 
           // Check for cyclical linking
           if (!ref_val) {
-            report_err("Cyclical referencing detected");
-            value = make_unique<const_ref>(move(src));
+            report_err("Cyclical referencing detected", move(src));
           } else {
             delink_key(new_sec, new_key, ref_val);
 
@@ -147,13 +146,12 @@ void delink(document& doc, str_errlist& err) {
           }
         } else if (fallback) {
           value = move(fallback);
-        } else {
-          value = make_unique<const_ref>(move(src));
-          report_err("Referenced key doesn't exist: " + new_sec + "." + new_key);
-        }
+        } else
+          report_err("Referenced key doesn't exist: " + new_sec + "." + new_key, move(src));
       }
     };
-    delink_string(tstring(src), value);
+    tstring str(src);
+    delink_string(str, value);
   };
   for(auto& seckey : doc.map) {
     auto& section = seckey.second;

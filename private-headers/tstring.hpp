@@ -62,7 +62,9 @@ tstring& rtrim(tstring&, const char* trim_char = "\r\n\t\v\f ");
 tstring& trim_quotes(tstring&);
 
 bool cut_front(tstring&, const char* front);
+tstring cut_front(tstring&, char limit);
 bool cut_back(tstring&, const char* back);
+tstring cut_back(tstring&, char limit);
 bool cut_front_back(tstring&, const char* front, const char* back = "");
 
 tstring substr(const tstring&, size_t offset, size_t length);

@@ -63,12 +63,32 @@ bool cut_front(tstring& ts, const char* front) {
   return true;
 }
 
+tstring cut_front(tstring& ts, char limit) {
+  if (auto lim = find(ts, limit); lim == tstring::npos) {
+    return tstring();
+  } else {
+    auto result = ts.interval(0, lim);
+    ts.erase_front(lim + 1);
+    return result;
+  }
+}
+
 bool cut_back(tstring& ts, const char* back) {
   auto lback = strlen(back);
   if (lback > ts.length() || !std::equal(back, back + lback, ts.end() - lback))
     return false;
   ts.erase_back(lback);
   return true;
+}
+
+tstring cut_back(tstring& ts, char limit) {
+  if (auto lim = rfind(ts, limit); lim == tstring::npos) {
+    return tstring();
+  } else {
+    auto result = ts.interval(lim + 1);
+    ts.set_length(lim);
+    return result;
+  }
 }
 
 bool cut_front_back(tstring& ts, const char* front, const char* back) {
@@ -123,7 +143,7 @@ char tstring::operator[](size_t index) const {
 
 tstring tstring::interval(size_t start, size_t end) const {
   if (start >= end_pos)
-    return tstring();
+    return tstring(data, end_pos, end_pos);
   return tstring(data, pos + start, min(end_pos, pos + end));
 }
 
