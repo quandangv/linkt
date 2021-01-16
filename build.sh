@@ -1,11 +1,12 @@
 PROJECT=$(grep -oP 'project\(\K[\w]+' CMakeLists.txt)
 VERSION=$(grep -oP 'project\(.*? VERSION \K[0-9.]+' CMakeLists.txt)
-source cmake/utils.sh
 
-[[ -d ./.git ]] && { 
-  msg "Fetching submodules" 
-  #git submodule update --init --recursive || msg_err "Failed to clone submodules"
+[[ -d ./.git ]] && [[ ! -d ./cmake ]] && {
+  echo "Fetching CMake submodule"
+  git submodule update --init -- cmake
 } 
+
+source cmake/utils.sh
 
 parse_options $@
 ask_options
