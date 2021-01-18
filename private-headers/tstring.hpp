@@ -16,11 +16,12 @@ protected:
   const char* data;
   size_t pos, end_pos;
 
+  template<typename T> std::strong_ordering compare(const T&) const;
 public:
   static constexpr size_t npos = -1;
 
   // const time operations
-  tstring(const char* data, size_t pos, size_t end) : data(data), pos(pos), end_pos(end) {}
+  tstring(const char* data, size_t pos, size_t end_pos) : data(data), pos(pos), end_pos(end_pos) {}
   tstring() : tstring(nullptr, 0, 0) {}
   tstring(const tstring& s) : tstring(s.data, s.pos, s.end_pos) {}
   explicit tstring(const char* data) : tstring(data, 0, strlen(data)) {}
@@ -47,7 +48,6 @@ public:
 
   // linear time operations
   tstring& erase(string& source, size_t offset, size_t length = -1);
-  template<typename T> std::strong_ordering compare(const T&) const;
   bool operator==(const tstring& s) const { return compare(s) == 0; }
   bool operator==(const string& s) const { return compare(s) == 0; }
   bool operator<(const tstring& s) const { return compare(s) < 0; }
@@ -62,20 +62,33 @@ tstring& rtrim(tstring&, const char* trim_char = "\r\n\t\v\f ");
 tstring& trim_quotes(tstring&);
 
 bool cut_front(tstring&, const char* front);
-tstring cut_front(tstring&, char limit);
 bool cut_back(tstring&, const char* back);
-tstring cut_back(tstring&, char limit);
 bool cut_front_back(tstring&, const char* front, const char* back = "");
+tstring cut_front(tstring&, char limit);
+tstring cut_back(tstring&, char limit);
+bool find_enclosed(tstring&, string& source,
+                   const string& start_group, const string& end_group,
+                   size_t& start, size_t& end);
 
 tstring substr(const tstring&, size_t offset, size_t length);
 
 size_t find(const tstring&, char);
 size_t rfind(const tstring&, char);
 
-inline tstring trim_quotes(tstring&& ts) { return trim_quotes(ts); }
-inline tstring& trim(tstring& ts, const char* trim_char = "\r\n\t\v\f ") { return ltrim(ts, trim_char), rtrim(ts, trim_char); }
-inline tstring trim(tstring&& ts, const char* trim_char = "\r\n\t\v\f ") { return trim(ts, trim_char); }
-inline string operator+(const tstring& a, const string& b) { return static_cast<string>(a) + b; }
-inline string operator+(const string& a, const tstring& b) { return a + static_cast<string>(b); }
-inline std::ostream& operator<<(std::ostream& os, const tstring& ts) { return os << static_cast<string>(ts); }
+inline tstring trim_quotes(tstring&& ts)
+{ return trim_quotes(ts); }
 
+inline tstring& trim(tstring& ts, const char* trim_char = "\r\n\t\v\f ")
+{ return ltrim(ts, trim_char), rtrim(ts, trim_char); }
+
+inline tstring trim(tstring&& ts, const char* trim_char = "\r\n\t\v\f ")
+{ return trim(ts, trim_char); }
+
+inline string operator+(const tstring& a, const string& b)
+{ return static_cast<string>(a) + b; }
+
+inline string operator+(const string& a, const tstring& b)
+{ return a + static_cast<string>(b); }
+
+inline std::ostream& operator<<(std::ostream& os, const tstring& ts)
+{ return os << static_cast<string>(ts); }

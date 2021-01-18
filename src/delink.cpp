@@ -25,43 +25,15 @@ void delink(document& doc, str_errlist& err) {
 
     // Skip if the original value is not a onetime_ref, which means it has already been delinked
     string src;
-    if (auto onetime = dynamic_cast<onetime_ref*>(value.get()); onetime != nullptr) {
-      src = onetime->get_onetime();
-    } else return;
     std::function<void(tstring&, string_ref_p&)> delink_ref;
 
     // Delink an arbitrary string into `value`. The main thing this does is handling string interpolations. Otherwise, it would call delink_ref
     auto delink_string = [&](tstring& str, string_ref_p& value) {
-      // Find the '${' and '}' pairs and mark them with `start` and `end`
-      auto find_token = [&](tstring& str, size_t& start, size_t& end) {
-        end = 0;
-        for(size_t opening_count = 0; end < str.size(); end++) {
-          if (str[end] == '}') {
-            // Check for the closing part
-            if (opening_count > 0 && --opening_count == 0)
-              return true;
-          } else if (end + 1 < str.size()) {
-            if (str[end] == '$') {
-              // Check for the opening part
-              if (str[end + 1] == '{') {
-                if (opening_count == 0)
-                  start = end;
-                opening_count++;
-              }
-            } else if (str[end] == '\\') {
-              // Check for the escape character
-              if (str[end + 1] == '$')
-                str.erase(src, end, 1);
-            }
-          }
-        }
-        return false;
-      };
       size_t start, end;
-      if (!find_token(str, start, end)) {
+      if (!find_enclosed(str, src, "${", "}", start, end)) {
         // There is no token inside the string, it's a normal string
         value = make_unique<const_ref>(str);
-      } else if (start == 0 && end == str.size() - 1) {
+      } else if (start == 0 && end == str.size()) {
         // There is a token inside, but string interpolation is unecessary
         str.erase_front(2);
         str.erase_back();
@@ -72,17 +44,17 @@ void delink(document& doc, str_errlist& err) {
         auto newval = make_unique<string_interpolate_ref>();
         do {
           // Write the part we have moved past to get the token, to the base string
-          ss << (string)substr(str, 0, start);
+          ss << substr(str, 0, start);
           // Mark the position of the token in the base string
           newval->interpolator.positions.push_back(ss.tellp());
 
           // Make string_ref from the token
-          auto ref = str.interval(start + 2, end);
+          auto token = str.interval(start + 2, end - 1);
           newval->replacements.list.emplace_back();
-          delink_ref(ref, newval->replacements.list.back());
+          delink_ref(token, newval->replacements.list.back());
 
-          str.erase_front(end + 1);
-        } while (find_token(str, start, end));
+          str.erase_front(end);
+        } while (find_enclosed(str, src, "${", "}", start, end));
         ss << str;
         newval->interpolator.base = ss.str();
         value = move(newval);
@@ -159,8 +131,11 @@ void delink(document& doc, str_errlist& err) {
           report_err("Referenced key doesn't exist: " + new_sec + "." + new_key, move(src));
       }
     };
-    tstring str(src);
-    delink_string(str, value);
+    if (auto onetime = dynamic_cast<onetime_ref*>(value.get()); onetime != nullptr) {
+      src = onetime->get_onetime();
+      tstring str(src);
+      delink_string(str, value);
+    }
   };
   for(auto& seckey : doc.map) {
     auto& section = seckey.second;

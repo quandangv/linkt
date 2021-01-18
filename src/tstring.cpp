@@ -192,3 +192,28 @@ strong_ordering tstring::compare(const T& other) const {
 tstring::operator string() const {
   return string(&*begin(), size());
 }
+
+bool find_enclosed(tstring& str, string& src,
+                   const string& start_group, const string& end_group,
+                   size_t& start, size_t& end) {
+  size_t opening_count = 0;
+  auto ptr = str.begin(),
+       start_limit = str.end() + 1 - std::max(start_group.size(), end_group.size()),
+       end_limit = str.end() + 1 - end_group.size();
+  for(; ptr < end_limit; ptr++) {
+    if (ptr < start_limit && std::equal(start_group.data(), start_group.data() + start_group.size(), ptr)) {
+      if (ptr > str.begin() && ptr[-1] == '\\') {
+        str.erase(src, --ptr - str.begin(), 1);
+      } else if (opening_count++ == 0)
+        start = ptr - str.begin();
+      ptr += start_group.size() - 1;
+    } else if (std::equal(end_group.data(), end_group.data() + end_group.size(), ptr)) {
+      ptr += end_group.size() - 1;
+      if (opening_count > 0 && --opening_count == 0) {
+        end = ptr - str.begin() + 1;
+        return true;
+      }
+    }
+  }
+  return false;
+}

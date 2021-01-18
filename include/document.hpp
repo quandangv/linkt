@@ -15,7 +15,6 @@ namespace lini {
 
   struct document {
     struct error : error_base { using error_base::error_base; };
-
     using sec_map = std::map<string, size_t>;
     using doc_map = std::map<string, sec_map>;
 

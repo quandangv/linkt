@@ -32,7 +32,7 @@ vector<delink_test> delink_tests = {
     {"test2", "interpolation-trick", "$ ${test.key-a}", "$ a"},
     {"test2", "interpolation-trick-2", "} ${test.key-a}", "} a"},
     {"test2", "escape", "\\${test.key-a}", "${test.key-a}"},
-    {"test2", "not-escape", "\\$${test.key-a}", "$a"},
+    {"test2", "not-escape", "\\$${test.key-a}", "\\$a"},
   },
   {
     {"test", "ref-cyclic-1", "${ref-cyclic-2}", "${ref-cyclic-1}"},

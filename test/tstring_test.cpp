@@ -169,6 +169,34 @@ TEST_P(erase_mid_test_intf, erase_mid) {
       << "Start: " << testset.off << ", Length: " << testset.len;
 }
 
+struct find_enclosed_test {
+  string source, start_group, end_group;
+  size_t offset, result_start, result_end;
+  bool fail;
+};
+class find_enclosed_test_intf : public ::testing::Test, public ::testing::WithParamInterface<find_enclosed_test> {};
+
+vector<find_enclosed_test> find_enclosed_tests = {
+  {"${2345}${9}", "${", "}", 0, 0, 7},
+  {"${2345}${9} ", "${", "}", 7, 0, 4},
+  {"${2345}${9}", "${", "}", 2, 5, 9},
+  {"$${3456}${}", "${", "}", 0, 1, 8},
+  {"\\${2345}${9}", "${", "}", 0, 7, 11},
+  {"$$2345;$$$A;;", "$$", ";", 2, 5, 10},
+};
+INSTANTIATE_TEST_SUITE_P(TString, find_enclosed_test_intf, ::testing::ValuesIn(find_enclosed_tests));
+TEST_P(find_enclosed_test_intf, find) {
+  auto testset = GetParam();
+  tstring src(testset.source.data(), testset.offset, testset.source.size());
+  size_t start, end;
+  ASSERT_EQ(find_enclosed(src, testset.source, testset.start_group, testset.end_group, start, end), !testset.fail)
+      << "Source: " << src<< ", start: " << testset.offset;
+  ASSERT_EQ(start, testset.result_start)
+      << "Source: " << src<< ", start: " << testset.offset;
+  ASSERT_EQ(end, testset.result_end)
+      << "Source: " << src<< ", start: " << testset.offset;
+}
+
 struct find_test { string source; char c; int result, r_result; };
 class find_test_intf : public ::testing::Test, public ::testing::WithParamInterface<find_test> {};
 
