@@ -14,19 +14,24 @@ constexpr const char excluded_chars[] = "\t \"'=;#[](){}:.$\\%";
 constexpr const char comment_chars[] = ";#";
 
 std::istream& parse(std::istream& is, document& doc, errorlist& err, const string& initial_section, char line_separator) {
+  // Add initial section
   auto current_sec = &doc.map.emplace(initial_section, document::sec_map{}).first->second;
   string raw;
+  // Iterate through lines
   for (int linecount = 1; std::getline(is, raw, line_separator); linecount++, raw.clear()) {
     tstring line(raw);
-    // Determines if the name is valid
     auto check_name = [&](const tstring& name) {
+      // Determines if the name is valid
       auto invalid = std::find_if(name.begin(), name.end(), [](char ch) { return strchr(excluded_chars, ch); });
       if (invalid == name.end())
         return true;
       err.emplace_back(linecount, "Invalid character '" + string{*invalid} + "' in name");
       return false;
     };
-    trim(line);
+    auto report_err = [&](const string& msg) {
+      err.emplace_back(linecount, msg);
+    };
+    ltrim(line);
     // skip empty and comment lines
     if (!line.empty() && !strchr(comment_chars, line.front())) {
       if (cut_front_back(line, "[", "]")) {
@@ -38,13 +43,14 @@ std::istream& parse(std::istream& is, document& doc, errorlist& err, const strin
         trim(key);
         if (check_name(key)) {
           trim_quotes(line);
+          // Check for duplicates
           if (current_sec->emplace(key, doc.values.size()).second) {
             doc.values.emplace_back(make_unique<onetime_ref>(line));
           } else {
-            err.emplace_back(linecount, "Duplicate key: " + key + ", Existing value: " + doc.values[(*current_sec)[key]]->get());
+            report_err("Duplicate key: " + key + ", Existing value: " + doc.values[(*current_sec)[key]]->get());
           }
-        }
-      } else err.emplace_back(linecount, "Unparsed line");
+        } else report_err("Invalid key");
+      } else report_err("Unparsed line");
     }
   }
   return is;

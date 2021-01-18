@@ -23,7 +23,6 @@ void delink(document& doc, str_errlist& err) {
     if (!value)
       return report_err("Null value detected, possibly due to cyclical referencing", "");
 
-    // Skip if the original value is not a onetime_ref, which means it has already been delinked
     string src;
     std::function<void(tstring&, string_ref_p&)> delink_ref;
 
@@ -77,6 +76,7 @@ void delink(document& doc, str_errlist& err) {
         value = move(ptr);
       };
       if (auto ref_type= cut_front(str, ':'); !ref_type.untouched()) {
+        // Determine the type of reference
         if (ref_type == "file") {
           make_meta_ref(std::make_unique<file_ref>());
         } else if (ref_type == "cmd") {
@@ -84,7 +84,7 @@ void delink(document& doc, str_errlist& err) {
         } else if (ref_type == "env") {
           make_meta_ref(std::make_unique<env_ref>());
         } else if (ref_type == "color") {
-          // Delink color
+          // Color reference
           auto newval = std::make_unique<color_ref>();
           // Parse the modification part
           if (auto mod_str = cut_front(str, ';'); !mod_str.untouched()) {
@@ -96,7 +96,7 @@ void delink(document& doc, str_errlist& err) {
         } else
           report_err("Unsupported reference type: " + ref_type, move(src));
       } else {
-        // Delink local value
+        // Local reference
         string_ref_p fallback;
         take_fallback(fallback);
 
@@ -131,6 +131,7 @@ void delink(document& doc, str_errlist& err) {
           report_err("Referenced key doesn't exist: " + new_sec + "." + new_key, move(src));
       }
     };
+    // Skip if the original value is not a onetime_ref, which means it has already been delinked
     if (auto onetime = dynamic_cast<onetime_ref*>(value.get()); onetime != nullptr) {
       src = onetime->get_onetime();
       tstring str(src);
