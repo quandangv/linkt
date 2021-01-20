@@ -25,11 +25,12 @@ list(APPEND INCLUDE_DIRS ${PUBLIC_HEADERS_DIR} ${PRIVATE_HEADERS_DIR} ${GENERATE
 
 # public headers
 set(PUBLIC_HEADERS
-  ${PUBLIC_HEADER_DIR}/document.hpp
-  ${PUBLIC_HEADER_DIR}/error.hpp
-  ${PUBLIC_HEADER_DIR}/parse_delink.hpp
-  ${PUBLIC_HEADER_DIR}/string_ref.hpp
+  ${PUBLIC_HEADERS_DIR}/document.hpp
+  ${PUBLIC_HEADERS_DIR}/error.hpp
+  ${PUBLIC_HEADERS_DIR}/parse_delink.hpp
+  ${PUBLIC_HEADERS_DIR}/string_ref.hpp
 )
+message(${PUBLIC_HEADERS})
 
 # source files
 set(SOURCES
