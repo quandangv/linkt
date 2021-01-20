@@ -31,7 +31,6 @@ set(PUBLIC_HEADERS
   ${PUBLIC_HEADER_DIR}/string_ref.hpp
 )
 
-message(${TSTRING_SOURCES})
 # source files
 set(SOURCES
   ${SRC_DIR}/delink.cpp
