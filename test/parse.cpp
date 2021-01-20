@@ -85,11 +85,9 @@ TEST(Parse, general) {
     for(auto& line : parse_test.err) {
       auto pos = find_if(err.begin(), err.end(), [&](auto it) { return it.first == line; });
       EXPECT_NE(pos, err.end()) << "Expected parsing error: " << line;
-      if (pos != err.end())
-        err.erase(pos);
     }
     for(auto& e : err) {
-      EXPECT_FALSE(true)
+      EXPECT_NE(find(parse_test.err.begin(), parse_test.err.end(), e.first), parse_test.err.end())
         << "Excess parsing error, line num: " << e.first << endl
         << "Message: " << e.second;
     }
