@@ -1,6 +1,5 @@
 #pragma once
 
-#include "string_inter.hpp"
 #include "error.hpp"
 
 #include <string>
@@ -91,7 +90,8 @@ namespace lini {
       iterator begin() const;
       iterator end() const;
     } replacements;
-    string_inter interpolator;
+    string base;
+    std::vector<size_t> positions;
 
     string get() const;
   };

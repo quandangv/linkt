@@ -45,7 +45,7 @@ void delink(document& doc, str_errlist& err) {
           // Write the part we have moved past to get the token, to the base string
           ss << substr(str, 0, start);
           // Mark the position of the token in the base string
-          newval->interpolator.positions.push_back(ss.tellp());
+          newval->positions.push_back(ss.tellp());
 
           // Make string_ref from the token
           auto token = str.interval(start + 2, end - 1);
@@ -55,7 +55,7 @@ void delink(document& doc, str_errlist& err) {
           str.erase_front(end);
         } while (find_enclosed(str, src, "${", "}", start, end));
         ss << str;
-        newval->interpolator.base = ss.str();
+        newval->base = ss.str();
         value = move(newval);
       }
     };

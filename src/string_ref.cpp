@@ -1,7 +1,7 @@
 #include "string_ref.hpp"
 #include "logger.hpp"
 #include "execstream.hpp"
-#include "string_inter.hpp"
+#include "string_interpolate.hpp"
 
 #include <fstream>
 #include <cstdlib>
@@ -103,7 +103,7 @@ SIRR::iterator SIRR::end() const {
 #undef SIRR
 
 string string_interpolate_ref::get() const {
-  return interpolator.get(replacements);
+  return interpolate(base, positions, replacements);
 }
 
 GLOBAL_NAMESPACE_END
