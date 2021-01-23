@@ -27,22 +27,22 @@ list(APPEND INCLUDE_DIRS ${PUBLIC_HEADERS_DIR} ${PRIVATE_HEADERS_DIR} ${GENERATE
 set(PUBLIC_HEADERS
   ${PUBLIC_HEADERS_DIR}/document.hpp
   ${PUBLIC_HEADERS_DIR}/error.hpp
-  ${PUBLIC_HEADERS_DIR}/parse_delink.hpp
+  ${PUBLIC_HEADERS_DIR}/parse.hpp
   ${PUBLIC_HEADERS_DIR}/string_ref.hpp
 )
 message(${PUBLIC_HEADERS})
 
 # source files
 set(SOURCES
-  ${SRC_DIR}/delink.cpp
   ${SRC_DIR}/document.cpp
   ${SRC_DIR}/execstream.cpp
   ${SRC_DIR}/logger.cpp
+  ${SRC_DIR}/add_key.cpp
   ${SRC_DIR}/parse.cpp
   ${SRC_DIR}/string_ref.cpp
   ${TSTRING_SOURCES}
 )
 
 set(INTERNAL_TESTS execstream_test)
-set(EXTERNAL_TESTS parse delink)
-set(COPIED_FILES delink_file.txt)
+set(EXTERNAL_TESTS parse_file parse_manual)
+set(COPIED_FILES key_file.txt assign_test.txt parse_test.txt)

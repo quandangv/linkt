@@ -8,8 +8,10 @@
 #include <cspace/processor.hpp>
 
 namespace lini {
+  struct document;
+  struct string_ref;
   using std::string;
-  using opt_str = std::optional<string>;
+  using string_ref_p = std::unique_ptr<string_ref>;
 
   struct string_ref {
     struct error : error_base { using error_base::error_base; };
@@ -18,9 +20,9 @@ namespace lini {
     virtual bool readonly() const { return true; }
     virtual void set(const string&) {}
     virtual ~string_ref() {}
+    virtual string_ref_p get_optimized() { return {}; }
   };
-
-  using string_ref_p = std::unique_ptr<string_ref>;
+  [[nodiscard]] string_ref_p optimize(string_ref_p&);
 
   struct onetime_ref : public string_ref {
     mutable string val;
@@ -40,12 +42,23 @@ namespace lini {
   };
 
   struct local_ref : public string_ref {
-    string_ref_p& ref;
+    const string_ref_p& ref;
 
-    local_ref(string_ref_p& ref) : ref(ref) {}
+    local_ref(const string_ref_p& ref) : ref(ref) {}
     string get() const { return ref->get(); }
     bool readonly() const { return ref->readonly(); }
     void set(const string& value) { ref->set(value); }
+  };
+
+  struct soft_local_ref : public string_ref {
+    const document& doc;
+    string section, key;
+    string_ref_p fallback;
+
+    soft_local_ref(string&& section, string&& key, const document& doc, string_ref_p&& fallback)
+      : section(section), key(key), doc(doc), fallback(move(fallback)) {}
+    string get() const;
+    string_ref_p get_optimized();
   };
 
   struct fallback_ref : public string_ref {

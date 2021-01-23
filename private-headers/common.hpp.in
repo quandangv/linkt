@@ -6,6 +6,7 @@
 #include "error.hpp"
 
 using namespace std::literals;
+using namespace std;
 
 constexpr auto DEBUG_SCOPES{"@DEBUG_SCOPES@"sv};
 

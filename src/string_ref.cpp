@@ -2,6 +2,7 @@
 #include "logger.hpp"
 #include "execstream.hpp"
 #include "string_interpolate.hpp"
+#include "document.hpp"
 
 #include <fstream>
 #include <cstdlib>
@@ -10,6 +11,22 @@
 GLOBAL_NAMESPACE
 
 using namespace std;
+
+string_ref_p optimize(string_ref_p& r) {
+  auto res = r->get_optimized();
+  return move(res ? res : r);
+}
+
+string_ref_p soft_local_ref::get_optimized() {
+  auto res = doc.find(section, key);
+  return res ? make_unique<local_ref>(doc.values[*res])
+             : fallback ? optimize(fallback) : throw error("Get reference failed and no fallback available");
+}
+
+string soft_local_ref::get() const {
+  auto res = doc.get(section, key);
+  return res ? *res : fallback ? fallback->get() : throw error("Get reference failed and no fallback available");
+}
 
 string fallback_ref::use_fallback(const string& msg) const {
   if (fallback)
