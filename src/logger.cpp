@@ -4,17 +4,17 @@
 
 #include "format.hpp"
 
-namespace logger {
-  void info(const string& text) {
-    std::cerr << FORMAT_BLUE_BOLD(INFO:) " " << text << std::endl;
+namespace lg {
+  ostream& inf() {
+    return std::cerr << FORMAT_BLUE_BOLD(INFO:) " ";
   }
-  void error(const string& text) {
-    std::cerr << FORMAT_RED_BOLD(ERROR:) " " << text << std::endl;
+  ostream& err() {
+    return std::cerr << FORMAT_RED_BOLD(ERROR:) " ";
   }
-  void warn(const string& text) {
-    std::cerr << FORMAT_YELLOW_BOLD(WARN:) " " << text << std::endl;
+  ostream& wrn() {
+    return std::cerr << FORMAT_YELLOW_BOLD(WARN:) " ";
   }
-  void debug(const string& text) {
-    std::cerr << FORMAT_GREEN_BOLD(DEBUG:) " " << text << std::endl;
+  ostream& deb() {
+    return std::cerr << FORMAT_GREEN_BOLD(DEBUG:) " ";
   }
 }
