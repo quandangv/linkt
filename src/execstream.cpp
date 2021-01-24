@@ -1,5 +1,5 @@
 #include "execstream.hpp"
-#include "logger.hpp"
+#include "common.hpp"
 
 #include <array>
 #include <cstdlib>

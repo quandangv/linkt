@@ -1,5 +1,5 @@
 #include "add_key.hpp"
-#include "logger.hpp"
+#include "common.hpp"
 
 #include <functional>
 
@@ -70,22 +70,25 @@ void add_key(document& doc, const string& section, const string& key, string& ra
     } else {
       string_ref_p fallback;
       take_fallback(fallback);
-
-      string new_sec, new_key;
       if (auto sec_str = cut_front(str, '.'); !sec_str.untouched()) {
-        new_sec = trim(sec_str);
+        return make_unique<local_ref>(doc.add_empty(trim(sec_str), trim(str)), move(fallback));
       } else
         throw document::error("Missing section");
-      new_key = trim(str);
-      return make_unique<soft_local_ref>(move(new_sec), move(new_key), doc, move(fallback));
     }
   };
-  auto value = parse_string(pos);
 
-  if (doc.map[section].emplace(key, doc.values.size()).second) {
+  if (auto res = doc.map[section].emplace(key, doc.values.size()); !res.second) {
+    auto& value = doc.values[res.first->second];
+    if (value) {
+      throw document::error("Duplicate key: " + key);
+    } else {
+      LG_DBUG("add-key: already exist: " << key);
+      value = parse_string(pos);
+    }
+  } else {
+    auto value = parse_string(pos);
     doc.values.emplace_back(move(value));
-  } else
-    throw document::error("Duplicate key: " + key + ", Existing value: " + doc.values[doc.map[section][key]]->get());
+  }
 }
 
 GLOBAL_NAMESPACE_END

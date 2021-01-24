@@ -41,30 +41,22 @@ namespace lini {
     void set(const string& value) { val = value; }
   };
 
-  struct local_ref : public string_ref {
-    const string_ref_p& ref;
-
-    local_ref(const string_ref_p& ref) : ref(ref) {}
-    string get() const { return ref->get(); }
-    bool readonly() const { return ref->readonly(); }
-    void set(const string& value) { ref->set(value); }
-  };
-
-  struct soft_local_ref : public string_ref {
-    const document& doc;
-    string section, key;
-    string_ref_p fallback;
-
-    soft_local_ref(string&& section, string&& key, const document& doc, string_ref_p&& fallback)
-      : section(section), key(key), doc(doc), fallback(move(fallback)) {}
-    string get() const;
-    string_ref_p get_optimized();
-  };
-
   struct fallback_ref : public string_ref {
     string_ref_p fallback;
 
+    fallback_ref() {}
+    fallback_ref(string_ref_p&& fallback) : fallback(move(fallback)) {}
     string use_fallback(const string& error_message) const;
+  };
+
+  struct local_ref : public fallback_ref {
+    const string_ref_p& ref;
+
+    local_ref(const string_ref_p& ref, string_ref_p&& fallback)
+        : ref(ref), fallback_ref(move(fallback)) {}
+    string get() const;
+    bool readonly() const;
+    void set(const string& value);
   };
 
   struct meta_ref : public fallback_ref {

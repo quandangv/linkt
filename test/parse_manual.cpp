@@ -88,9 +88,11 @@ TEST_P(ParseTest, general) {
     if (test.fail)
       EXPECT_THROW(doc.add(test.section, test.key, move(test.value)), document::error)
           << "Key: " << fullkey << endl << "Expected error";
-    else
+    else {
       EXPECT_NO_THROW(doc.add(test.section, test.key, move(test.value)))
           << "Key: " << fullkey << endl << "Unexpected error";
+      cout << "add key successful" << *doc.get(test.section, test.key) << endl;
+    }
   }
   // Optimize document and check content of keys
   for(auto test : testset) {
@@ -101,14 +103,18 @@ TEST_P(ParseTest, general) {
       // Check for existence
       auto index = doc.find(test.section, test.key);
       ASSERT_TRUE(index) << "Key: " << fullkey << endl << "parsed key doesn't exist";
+      auto& ref = doc.values[*index];
+      ASSERT_TRUE(ref) << "Key: " << fullkey << endl << "parsed key doesn't exist";
+      cout << "key exists" << ref->get() << endl;
 
       // Optimize the reference
-      auto& ref = doc.values[*index];
       if (auto op = ref->get_optimized(); op) ref = move(op);
+      cout << "key optimized" << ref->get() << typeid(*ref).name() << endl;
 
       // Check the content of the key
       ASSERT_EQ(ref->get(), test.parsed)
           << "Key: " << fullkey << endl << "Value of parsed key doesn't match expectation";
+      cout << "key tested" << endl;
     } catch (const exception& e) {
       EXPECT_TRUE(test.exception)
           << "Key: " << fullkey << endl

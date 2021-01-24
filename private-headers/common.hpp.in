@@ -2,8 +2,7 @@
 
 #include <string_view>
 #include <string>
-
-#include "error.hpp"
+#include <iostream>
 
 using namespace std::literals;
 using namespace std;
@@ -12,3 +11,29 @@ constexpr auto DEBUG_SCOPES{"@DEBUG_SCOPES@"sv};
 
 #define GLOBAL_NAMESPACE namespace lini {
 #define GLOBAL_NAMESPACE_END }
+
+#cmakedefine LG_ERR(msg) std::cerr << FORMAT_RED_BOLD(ERROR:) " " << msg << std::endl;
+#ifndef LG_ERR
+#  define LG_ERR(msg)
+#endif
+
+#cmakedefine LG_WARN(msg) std::cerr << FORMAT_YELLOW_BOLD(WARN:) " " << msg << std::endl;
+#ifndef LG_WARN
+#  define LG_WARN(msg)
+#endif
+
+#cmakedefine LG_DBUG(msg) std::cerr << FORMAT_GREEN_BOLD(DEBUG:) " " << msg << std::endl;
+#ifndef LG_DBUG
+#  define LG_DBUG(msg)
+#endif
+
+#cmakedefine LG_INFO(msg) std::cerr << FORMAT_BLUE_BOLD(INFO:) " " << msg << std::endl;
+#ifndef LG_INFO
+#  define LG_INFO(msg)
+#endif
+
+#cmakedefine PLATFORM_LINUX
+
+#include "error.hpp"
+#include "format.hpp"
+

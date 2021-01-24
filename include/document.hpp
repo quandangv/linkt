@@ -20,6 +20,7 @@ namespace lini {
     std::vector<string_ref_p> values;
 
     void add(const string& section, const string& key, string&& value);
+    string_ref_p& add_empty(const string& section, const string& key);
     std::optional<size_t> find(const string& section, const string& key) const;
     std::optional<string> get(const string& section, const string& key) const;
     string get(const string& section, const string& key, string&& fallback) const;

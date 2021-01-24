@@ -1,5 +1,5 @@
 #include "string_ref.hpp"
-#include "logger.hpp"
+#include "common.hpp"
 #include "execstream.hpp"
 #include "string_interpolate.hpp"
 #include "document.hpp"
@@ -17,18 +17,24 @@ string_ref_p optimize(string_ref_p& r) {
   return move(res ? res : r);
 }
 
-string_ref_p soft_local_ref::get_optimized() {
-  auto res = doc.find(section, key);
-  return res ? make_unique<local_ref>(doc.values[*res])
-             : fallback ? optimize(fallback) : throw error("Get reference failed and no fallback available");
+string local_ref::get() const {
+  LG_DBUG("local-ref-get: reference " << (bool)ref << " type: " << typeid(ref).name());
+  if (ref)
+    return ref->get();
+  return use_fallback("Referenced key doesn't exist");
 }
 
-string soft_local_ref::get() const {
-  auto res = doc.get(section, key);
-  return res ? *res : fallback ? fallback->get() : throw error("Get reference failed and no fallback available");
+bool local_ref::readonly() const {
+  return ref && ref->readonly();
+}
+
+void local_ref::set(const string& val) {
+  if (ref)
+    ref->set(val);
 }
 
 string fallback_ref::use_fallback(const string& msg) const {
+  LG_DBUG("use-fallback: fallback: " << fallback.get());
   if (fallback)
     return fallback->get();
   throw error("Reference failed: " + msg + ". And no fallback was found");

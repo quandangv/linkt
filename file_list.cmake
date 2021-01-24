@@ -11,17 +11,7 @@ get_filename_component(TEST_DIR              ${CMAKE_CURRENT_LIST_DIR}/test ABSO
 get_filename_component(LIBRARY_DIR           ${CMAKE_CURRENT_LIST_DIR}/lib ABSOLUTE)
 list(APPEND INCLUDE_DIRS ${PUBLIC_HEADERS_DIR} ${PRIVATE_HEADERS_DIR} ${GENERATED_HEADERS_DIR})
 
-# configure files {{{
-  if(PLATFORM EQUAL "Linux")
-    add_compile_definitions(PLATFORM_LINUX)
-  endif()
-
-  configure_file(${PRIVATE_HEADERS_DIR}/common.hpp.in 
-    ${GENERATED_HEADERS_DIR}/common.hpp
-    ESCAPE_QUOTES)
-
-  unset(DEBUG_SCOPES CACHE)
-# }}}
+unset(DEBUG_SCOPES CACHE)
 
 # public headers
 set(PUBLIC_HEADERS

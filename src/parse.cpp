@@ -1,5 +1,5 @@
 #include "parse.hpp"
-#include "logger.hpp"
+#include "common.hpp"
 #include "tstring.hpp"
 #include "add_key.hpp"
 
@@ -24,6 +24,7 @@ std::istream& parse(std::istream& is, document& doc, errorlist& err, const strin
   string raw, current_section = initial_section;
   // Iterate through lines
   for (int linecount = 1; std::getline(is, raw); linecount++, raw.clear()) {
+    LG_DBUG("parse: line: " << raw);
     tstring line(raw);
     auto report_err_line = [&](const string& msg) {
       err.emplace_back("line " + to_string(linecount), msg);
@@ -53,16 +54,19 @@ std::istream& parse(std::istream& is, document& doc, errorlist& err, const strin
           try {
             add_key(doc, current_section, key, raw, line);
           } catch (const exception& err) {
+            LG_DBUG("parse: key error: " << err.what());
             report_err_key(current_section, key, err.what());
           }
         } else report_err_line("Invalid key");
       } else report_err_line("Unparsed line");
     }
   }
+  LG_DBUG("start optimize");
   for(auto& section : doc.map) {
     for(auto& key : section.second) {
       try {
         auto& ref = doc.values[key.second];
+        if (!ref) continue;
         if (auto op = ref->get_optimized(); op) ref = move(op);
       } catch(const exception& e) {
         report_err_key(section.first, key.first, e.what());
