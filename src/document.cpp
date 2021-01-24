@@ -19,7 +19,7 @@ optional<size_t> document::find(const string& section, const string& key) const 
 
 optional<string> document::get(const string& section, const string& key) const {
   if (auto index = find(section, key); index) {
-    auto value = get_ptr(*index);
+    auto& value = get_ptr(*index);
     if (value)
       return value->get();
   }
