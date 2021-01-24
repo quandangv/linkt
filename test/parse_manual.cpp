@@ -46,6 +46,8 @@ vector<parse_test> parse_tests = {
 //  },
   {{"", "file", "${file: key_file.txt }", "content"}},
   {{"", "file", "${file:key_file.txt?fail}", "content"}},
+  {{"", "assign", "${key: .key-a = hello } ${.key-a}", " hello"}},
+  {{"", "assign", "${.key-a}${key: .key-a = hello }", "hello"}},
   {
     {"", "ext", "txt", "txt"},
     {"", "file", "${file:key_file.${.ext} ? fail}", "content"},

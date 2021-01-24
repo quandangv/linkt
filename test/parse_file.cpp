@@ -42,6 +42,22 @@ vector<ParseSet> parse_tests = {
       "key test2.key-c"
     }, ""
   },
+  {
+    "lemonbar_test",
+    {
+      {"", "simple", "hello"},
+      {"", "compact", " %{F#f00}CPU 69% %{F#ff0}RAM 96% %{F#0f0}TEMP 99*C %{F#0ff}BAT 0% "},
+      {"mod", "cpu", "%{F#f00}CPU 69%"},
+      {"mod", "ram", "%{F#ff0}RAM 96%"},
+      {"mod", "temp", "%{F#0f0}TEMP 99*C"},
+      {"mod", "bat", "%{F#0ff}BAT 0%"},
+      {"stat", "cpu", "69"},
+      {"stat", "ram", "96"},
+      {"stat", "temp-c", "99"},
+      {"stat", "bat", "0"},
+    },
+    {}, ""
+  }
 };
 
 TEST(parse, file) {
@@ -52,25 +68,35 @@ TEST(parse, file) {
     document doc;
     errorlist err;
     parse(ifs, doc, err, parse_test.initial_section);
+
+    // Check for expected errors
     for(auto& e : parse_test.err) {
       auto pos = find_if(err.begin(), err.end(), [&](auto it) { return it.first == e; });
       EXPECT_NE(pos, err.end()) << "Expected parsing error at: " << e;
     }
+    // Check for unexpected errors
     for(auto& e : err) {
       EXPECT_NE(find(parse_test.err.begin(), parse_test.err.end(), e.first), parse_test.err.end())
         << "Excess parsing error, at: " << e.first << endl
         << "Message: " << e.second;
     }
+    // Check the keys
     vector<string> found;
     for(auto& key : parse_test.keys) {
       auto fullkey = get<0>(key) + "." + get<1>(key);
-      auto& ptr = doc.map[get<0>(key)][get<1>(key)];
-      EXPECT_TRUE(ptr && *ptr)
-          << "Parse, find: Key: " << fullkey << endl;
-      EXPECT_EQ((*ptr)->get(), get<2>(key))
-          << "Parse, compare: Key: " << fullkey << endl;
+      try {
+        auto& ptr = doc.map[get<0>(key)][get<1>(key)];
+        EXPECT_TRUE(ptr && *ptr)
+            << "Parse, find: Key: " << fullkey << endl;
+        EXPECT_EQ((*ptr)->get(), get<2>(key))
+            << "Parse, compare: Key: " << fullkey << endl;
+      } catch (const exception& e) {
+        ADD_FAILURE() << "Key: " << fullkey << endl
+            << "Exception while checking: " << e.what();
+      }
       found.emplace_back(fullkey);
     }
+    // Check for excess keys
     for(auto& section : doc.map) {
       for(auto& keyval : section.second) {
         auto fullkey = section.first + "." + keyval.first;

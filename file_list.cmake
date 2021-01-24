@@ -35,4 +35,4 @@ set(SOURCES
 
 set(INTERNAL_TESTS execstream_test)
 set(EXTERNAL_TESTS parse_file parse_manual)
-set(COPIED_FILES key_file.txt assign_test.txt parse_test.txt)
+set(COPIED_FILES key_file.txt assign_test.txt parse_test.txt lemonbar_test.txt)

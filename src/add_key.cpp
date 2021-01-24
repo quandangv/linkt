@@ -11,7 +11,7 @@ void add_key(document& doc, const string& section, const string& key, string& ra
   // Delink an arbitrary string into `value`. The main thing this does is handling string interpolations. Otherwise, it would call delink_ref
   auto parse_string = [&](tstring& str)->string_ref_p {
     size_t start, end;
-    if (!find_enclosed(str, raw, "${", "}", start, end)) {
+    if (!find_enclosed(str, raw, "${", "{", "}", start, end)) {
       // There is no token inside the string, it's a normal string
       return make_unique<const_ref>(str);
     } else if (start == 0 && end == str.size()) {
@@ -26,14 +26,17 @@ void add_key(document& doc, const string& section, const string& key, string& ra
       do {
         // Write the part we have moved past to get the token, to the base string
         ss << substr(str, 0, start);
-        // Mark the position of the token in the base string
-        newval->positions.push_back(ss.tellp());
 
         // Make string_ref from the token
         auto token = str.interval(start + 2, end - 1);
-        newval->replacements.list.emplace_back(parse_ref(token));
+        auto value = parse_ref(token);
+        if (value) {
+          // Mark the position of the token in the base string
+          newval->positions.push_back(ss.tellp());
+          newval->replacements.list.emplace_back(move(value));
+        }
         str.erase_front(end);
-      } while (find_enclosed(str, raw, "${", "}", start, end));
+      } while (find_enclosed(str, raw, "${", "{", "}", start, end));
       ss << str;
       newval->base = ss.str();
       return move(newval);
@@ -48,6 +51,8 @@ void add_key(document& doc, const string& section, const string& key, string& ra
     auto make_meta_ref = [&]<typename T>(unique_ptr<T>&& ptr) {
       take_fallback(ptr->fallback);
       ptr->value = parse_string(trim_quotes(str));
+      if (!ptr->value)
+        throw document::error("Invalid content for this type of reference");
       return move(ptr);
     };
     if (auto ref_type= cut_front(str, ':'); !ref_type.untouched()) {
@@ -65,20 +70,32 @@ void add_key(document& doc, const string& section, const string& key, string& ra
           newval->processor.add_modification(mod_str);
         }
         return make_meta_ref(move(newval));
+      } else if (ref_type == "key") {
+        if (auto new_key = cut_front(str, '='); !new_key.empty()) {
+          LG_DBUG("new-key: " <<new_key)
+          trim(new_key);
+          if (auto new_section = cut_front(new_key, '.'); !new_section.untouched()) {
+            add_key(doc, new_section, new_key, raw, trim_quotes(str));
+            return {};
+          }
+        }
+        throw document::error("Invalid assigned key name");
       } else
-        throw document::error("Unsupported reference type: " + ref_type);
+      throw document::error("Unsupported reference type: " + ref_type);
     } else {
       string_ref_p fallback;
       take_fallback(fallback);
-      if (auto sec_str = cut_front(str, '.'); !sec_str.untouched()) {
-        return make_unique<local_ref>(doc.add(trim(sec_str), trim(str)), move(fallback));
+      if (auto new_section = cut_front(str, '.'); !new_section.untouched()) {
+        return make_unique<local_ref>(doc.add(trim(new_section), trim(str)), move(fallback));
       } else
         throw document::error("Missing section");
     }
   };
 
+  auto value = parse_string(pos);
+  if (!value) return;
   if (auto place = doc.add(section, key); !*place) {
-    *place = move(parse_string(pos));
+    *place = move(value);
   } else
     throw document::error("Duplicate key: " + key);
 }
