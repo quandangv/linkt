@@ -61,17 +61,6 @@ std::istream& parse(std::istream& is, document& doc, errorlist& err, const strin
       } else report_err_line("Unparsed line");
     }
   }
-  LG_DBUG("start optimize");
-  for(auto& section_pair : doc.map) {
-    auto& section = section_pair.second;
-    for(auto key_it = section.begin(); key_it != section.end(); key_it++) {
-      try {
-        doc.optimize(key_it->second);
-      } catch(const exception& e) {
-        report_err_key(section_pair.first, key_it->first, e.what());
-      }
-    }
-  }
   return is;
 }
 

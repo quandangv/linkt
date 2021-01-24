@@ -26,9 +26,6 @@ namespace lini {
     virtual void
     set(const string&) {}
 
-    virtual string_ref_p
-    get_optimized() { return {}; }
-
     virtual ~string_ref() {}
   };
 

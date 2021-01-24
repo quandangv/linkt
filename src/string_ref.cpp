@@ -12,11 +12,6 @@ GLOBAL_NAMESPACE
 
 using namespace std;
 
-string_ref_p optimize(string_ref_p& r) {
-  auto res = r->get_optimized();
-  return move(res ? res : r);
-}
-
 string local_ref::get() const {
   if (*ref)
     return (*ref)->get();

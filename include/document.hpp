@@ -34,9 +34,6 @@ namespace lini {
     string
     get(const string& section, const string& key, string&& fallback) const;
 
-    static void
-    optimize(string_ref_p2 value);
-
     bool
     set(const string& section, const string& key, const string& value);
   };

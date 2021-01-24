@@ -56,10 +56,4 @@ string_ref_p2 document::add(const string& sec, const string& key) {
   return ptr;
 }
 
-void document::optimize(string_ref_p2 value) {
-  if (!value || !*value) return;
-  if (auto newval = value->get()->get_optimized(); newval)
-    *value = move(newval);
-}
-
 GLOBAL_NAMESPACE_END
