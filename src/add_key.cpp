@@ -13,7 +13,7 @@ void add_key(document& doc, const string& section, const string& key, string& ra
     size_t start, end;
     if (!find_enclosed(str, raw, "${", "}", start, end)) {
       // There is no token inside the string, it's a normal string
-      return make_unique<const_ref>(str);
+      return make_shared<const_ref>(str);
     } else if (start == 0 && end == str.size()) {
       // There is a token inside, but string interpolation is unecessary
       str.erase_front(2);
@@ -22,7 +22,7 @@ void add_key(document& doc, const string& section, const string& key, string& ra
     } else {
       // String interpolation
       stringstream ss;
-      auto newval = make_unique<string_interpolate_ref>();
+      auto newval = make_shared<string_interpolate_ref>();
       do {
         // Write the part we have moved past to get the token, to the base string
         ss << substr(str, 0, start);
@@ -45,20 +45,20 @@ void add_key(document& doc, const string& section, const string& key, string& ra
       if (auto fb_str = cut_back(str, '?'); !fb_str.untouched())
         fallback = parse_string(trim_quotes(fb_str));
     };
-    auto make_meta_ref = [&]<typename T>(unique_ptr<T>&& ptr) {
+    auto make_meta_ref = [&]<typename T>(shared_ptr<T>&& ptr) {
       take_fallback(ptr->fallback);
       ptr->value = parse_string(trim_quotes(str));
       return move(ptr);
     };
     if (auto ref_type= cut_front(str, ':'); !ref_type.untouched()) {
       if (ref_type == "file") {
-        return make_meta_ref(std::make_unique<file_ref>());
+        return make_meta_ref(std::make_shared<file_ref>());
       } else if (ref_type == "cmd") {
-        return make_meta_ref(std::make_unique<cmd_ref>());
+        return make_meta_ref(std::make_shared<cmd_ref>());
       } else if (ref_type == "env") {
-        return make_meta_ref(std::make_unique<env_ref>());
+        return make_meta_ref(std::make_shared<env_ref>());
       } else if (ref_type == "color") {
-        auto newval = std::make_unique<color_ref>();
+        auto newval = std::make_shared<color_ref>();
         if (auto mod_str = cut_front(str, ';'); !mod_str.untouched()) {
           if (auto colorspace = cut_front(mod_str, ':'); !colorspace.untouched())
             newval->processor.inter = cspace::stospace(trim(colorspace));
@@ -71,23 +71,23 @@ void add_key(document& doc, const string& section, const string& key, string& ra
       string_ref_p fallback;
       take_fallback(fallback);
       if (auto sec_str = cut_front(str, '.'); !sec_str.untouched()) {
-        return make_unique<local_ref>(doc.add_empty(trim(sec_str), trim(str)), move(fallback));
+        return make_shared<local_ref>(doc.add_empty(trim(sec_str), trim(str)), move(fallback));
       } else
         throw document::error("Missing section");
     }
   };
 
+  auto parsed = parse_string(pos);
   if (auto res = doc.map[section].emplace(key, doc.values.size()); !res.second) {
-    auto& value = doc.values[res.first->second];
+    auto& value = *doc.values[res.first->second];
     if (value) {
       throw document::error("Duplicate key: " + key);
-    } else {
-      LG_DBUG("add-key: already exist: " << key);
-      value = parse_string(pos);
     }
+    LG_DBUG("add-key: " << key << ", existing index: " << res.first->second)
+    value = move(parsed);
   } else {
-    auto value = parse_string(pos);
-    doc.values.emplace_back(move(value));
+    LG_DBUG("add-key: " << key << ", new index: " << doc.values.size())
+    doc.values.emplace_back() = make_shared<string_ref_p>(move(parsed));
   }
 }
 

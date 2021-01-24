@@ -65,7 +65,7 @@ std::istream& parse(std::istream& is, document& doc, errorlist& err, const strin
   for(auto& section : doc.map) {
     for(auto& key : section.second) {
       try {
-        auto& ref = doc.values[key.second];
+        auto& ref = *doc.values[key.second];
         if (!ref) continue;
         if (auto op = ref->get_optimized(); op) ref = move(op);
       } catch(const exception& e) {
@@ -79,7 +79,7 @@ std::istream& parse(std::istream& is, document& doc, errorlist& err, const strin
 ostream& write(ostream& os, const document& doc) {
   auto print_keyval = [&](const document::sec_map::value_type& keyval) {
     os << keyval.first << " = ";
-    auto value = doc.values[keyval.second]->get();
+    auto value = (*doc.values[keyval.second])->get();
     if (value.empty())
       os << endl;
     else if (value.front() == ' ' || value.back() == ' ')

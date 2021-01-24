@@ -15,12 +15,13 @@ namespace lini {
     struct error : error_base { using error_base::error_base; };
     using sec_map = std::map<string, size_t>;
     using doc_map = std::map<string, sec_map>;
+    using value_t = std::shared_ptr<string_ref_p>;
 
     doc_map map;
-    std::vector<string_ref_p> values;
+    std::vector<value_t> values;
 
     void add(const string& section, const string& key, string&& value);
-    string_ref_p& add_empty(const string& section, const string& key);
+    value_t add_empty(const string& section, const string& key);
     std::optional<size_t> find(const string& section, const string& key) const;
     std::optional<string> get(const string& section, const string& key) const;
     string get(const string& section, const string& key, string&& fallback) const;

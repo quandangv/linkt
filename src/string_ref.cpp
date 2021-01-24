@@ -18,23 +18,23 @@ string_ref_p optimize(string_ref_p& r) {
 }
 
 string local_ref::get() const {
-  LG_DBUG("local-ref-get: reference " << (bool)ref << " type: " << typeid(ref).name());
-  if (ref)
-    return ref->get();
+  //LG_DBUG("local-ref-get: reference " << (bool)ref << " type: " << typeid(ref).name());
+  if (*ref)
+    return (*ref)->get();
   return use_fallback("Referenced key doesn't exist");
 }
 
 bool local_ref::readonly() const {
-  return ref && ref->readonly();
+  return *ref && (*ref)->readonly();
 }
 
 void local_ref::set(const string& val) {
-  if (ref)
-    ref->set(val);
+  if (*ref)
+    (*ref)->set(val);
 }
 
 string fallback_ref::use_fallback(const string& msg) const {
-  LG_DBUG("use-fallback: fallback: " << fallback.get());
+  //LG_DBUG("use-fallback: fallback: " << fallback.get());
   if (fallback)
     return fallback->get();
   throw error("Reference failed: " + msg + ". And no fallback was found");

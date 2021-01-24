@@ -67,7 +67,7 @@ TEST(Parse, general) {
       auto fullkey = get<0>(key) + "." + get<1>(key);
       EXPECT_TRUE(section.find(get<1>(key)) != section.end())
           << "Parse, find: Key: " << fullkey << endl;
-      EXPECT_EQ(doc.values[section[get<1>(key)]]->get(), get<2>(key))
+      EXPECT_EQ((*doc.values[section[get<1>(key)]])->get(), get<2>(key))
           << "Parse, compare: Key: " << fullkey << endl;
       found.emplace_back(fullkey);
     }
@@ -98,7 +98,7 @@ TEST(parse, assign_test) {
     // Make sure the key is assignable
     auto index = doc.find("", key);
     ASSERT_TRUE(index) << "Key not found";
-    auto& ref = *doc.values[*index];
+    auto& ref = **doc.values[*index];
     ASSERT_FALSE(ref.readonly()) << "Key is readonly";
 
     ref.set(newval);

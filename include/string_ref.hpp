@@ -11,7 +11,7 @@ namespace lini {
   struct document;
   struct string_ref;
   using std::string;
-  using string_ref_p = std::unique_ptr<string_ref>;
+  using string_ref_p = std::shared_ptr<string_ref>;
 
   struct string_ref {
     struct error : error_base { using error_base::error_base; };
@@ -22,7 +22,6 @@ namespace lini {
     virtual ~string_ref() {}
     virtual string_ref_p get_optimized() { return {}; }
   };
-  [[nodiscard]] string_ref_p optimize(string_ref_p&);
 
   struct onetime_ref : public string_ref {
     mutable string val;
@@ -50,10 +49,10 @@ namespace lini {
   };
 
   struct local_ref : public fallback_ref {
-    const string_ref_p& ref;
+    std::shared_ptr<string_ref_p> ref;
 
-    local_ref(const string_ref_p& ref, string_ref_p&& fallback)
-        : ref(ref), fallback_ref(move(fallback)) {}
+    local_ref(std::shared_ptr<string_ref_p>&& ref, string_ref_p&& fallback)
+        : ref(move(ref)), fallback_ref(move(fallback)) {}
     string get() const;
     bool readonly() const;
     void set(const string& value);
