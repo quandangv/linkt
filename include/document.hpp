@@ -11,19 +11,31 @@
 namespace lini {
   using std::string;
 
-  struct document {
+  class document {
+    std::vector<string_ref_p2> values;
+  public:
     struct error : error_base { using error_base::error_base; };
     using sec_map = std::map<string, size_t>;
     using doc_map = std::map<string, sec_map>;
-    using value_t = std::shared_ptr<string_ref_p>;
 
     doc_map map;
-    std::vector<value_t> values;
 
-    void add(const string& section, const string& key, string&& value);
-    value_t add_empty(const string& section, const string& key);
-    std::optional<size_t> find(const string& section, const string& key) const;
-    std::optional<string> get(const string& section, const string& key) const;
-    string get(const string& section, const string& key, string&& fallback) const;
+    void
+    add(const string& section, const string& key, string&& value);
+
+    string_ref_p2
+    add(const string& section, const string& key);
+
+    std::optional<size_t>
+    find(const string& section, const string& key) const;
+
+    string_ref_p&
+    get_ptr(size_t index) const;
+
+    std::optional<string>
+    get(const string& section, const string& key) const;
+
+    string
+    get(const string& section, const string& key, string&& fallback) const;
   };
 }

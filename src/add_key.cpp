@@ -71,24 +71,16 @@ void add_key(document& doc, const string& section, const string& key, string& ra
       string_ref_p fallback;
       take_fallback(fallback);
       if (auto sec_str = cut_front(str, '.'); !sec_str.untouched()) {
-        return make_shared<local_ref>(doc.add_empty(trim(sec_str), trim(str)), move(fallback));
+        return make_shared<local_ref>(doc.add(trim(sec_str), trim(str)), move(fallback));
       } else
         throw document::error("Missing section");
     }
   };
 
-  auto parsed = parse_string(pos);
-  if (auto res = doc.map[section].emplace(key, doc.values.size()); !res.second) {
-    auto& value = *doc.values[res.first->second];
-    if (value) {
-      throw document::error("Duplicate key: " + key);
-    }
-    LG_DBUG("add-key: " << key << ", existing index: " << res.first->second)
-    value = move(parsed);
-  } else {
-    LG_DBUG("add-key: " << key << ", new index: " << doc.values.size())
-    doc.values.emplace_back() = make_shared<string_ref_p>(move(parsed));
-  }
+  if (auto place = doc.add(section, key); !*place) {
+    *place = move(parse_string(pos));
+  } else
+    throw document::error("Duplicate key: " + key);
 }
 
 GLOBAL_NAMESPACE_END

@@ -102,7 +102,7 @@ TEST_P(ParseTest, general) {
       // Check for existence
       auto index = doc.find(test.section, test.key);
       ASSERT_TRUE(index) << "Key: " << fullkey << endl << "parsed key doesn't exist";
-      auto& ref = *doc.values[*index];
+      auto& ref = doc.get_ptr(*index);
       ASSERT_TRUE(ref) << "Key: " << fullkey << endl << "parsed key is null";
 
       // Optimize the reference

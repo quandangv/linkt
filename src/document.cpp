@@ -18,13 +18,10 @@ optional<size_t> document::find(const string& section, const string& key) const 
 }
 
 optional<string> document::get(const string& section, const string& key) const {
-  LG_DBUG("document-get: " << key)
   if (auto index = find(section, key); index) {
-    LG_DBUG("document-get: found " << *index)
-    auto value = *values.at(*index);
+    auto value = get_ptr(*index);
     if (value)
       return value->get();
-    LG_DBUG("document-get: key is empty")
   }
   return {};
 }
@@ -35,19 +32,21 @@ string document::get(const string& section, const string& key, string&& fallback
   return forward<string>(fallback);
 }
 
+string_ref_p& document::get_ptr(size_t index) const {
+  auto ptr = values.at(index);
+  if (!ptr) throw error("Invalid value at: " + to_string(index));
+  return *ptr;
+}
+
 void document::add(const string& sec, const string& key, string&& value) {
   tstring ts(value);
   add_key(*this, sec, key, value, ts);
-  LG_DBUG("document-add: key: " << key);
 }
 
-document::value_t document::add_empty(const string& sec, const string& key) {
-  LG_DBUG("document-add-empty: start: " << key);
+string_ref_p2 document::add(const string& sec, const string& key) {
   if (auto res = map[sec].emplace(key, values.size()); !res.second) {
-    LG_DBUG("document-add-empty: key already exist: " << sec << "." << key << " index: " << res.first->second);
     return values[res.first->second];
   } else {
-    LG_DBUG("document-add-empty: key not exist: " << sec << "." << key << ", add index: " << values.size());
     return values.emplace_back(make_shared<string_ref_p>());
   }
 }

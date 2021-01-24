@@ -12,15 +12,24 @@ namespace lini {
   struct string_ref;
   using std::string;
   using string_ref_p = std::shared_ptr<string_ref>;
+  using string_ref_p2 = std::shared_ptr<string_ref_p>;
 
   struct string_ref {
     struct error : error_base { using error_base::error_base; };
 
-    virtual string get() const = 0;
-    virtual bool readonly() const { return true; }
-    virtual void set(const string&) {}
+    virtual string
+    get() const = 0;
+
+    virtual bool
+    readonly() const { return true; }
+
+    virtual void
+    set(const string&) {}
+
+    virtual string_ref_p
+    get_optimized() { return {}; }
+
     virtual ~string_ref() {}
-    virtual string_ref_p get_optimized() { return {}; }
   };
 
   struct onetime_ref : public string_ref {
@@ -49,9 +58,9 @@ namespace lini {
   };
 
   struct local_ref : public fallback_ref {
-    std::shared_ptr<string_ref_p> ref;
+    string_ref_p2 ref;
 
-    local_ref(std::shared_ptr<string_ref_p>&& ref, string_ref_p&& fallback)
+    local_ref(string_ref_p2&& ref, string_ref_p&& fallback)
         : ref(move(ref)), fallback_ref(move(fallback)) {}
     string get() const;
     bool readonly() const;
