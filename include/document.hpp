@@ -12,10 +12,12 @@ namespace lini {
   using std::string;
 
   class document {
-    std::vector<string_ref_p2> values;
+    string_ref_p2
+    get_ptr(const string& section, const string& key) const;
+
   public:
     struct error : error_base { using error_base::error_base; };
-    using sec_map = std::map<string, size_t>;
+    using sec_map = std::map<string, string_ref_p2>;
     using doc_map = std::map<string, sec_map>;
 
     doc_map map;
@@ -26,16 +28,16 @@ namespace lini {
     string_ref_p2
     add(const string& section, const string& key);
 
-    std::optional<size_t>
-    find(const string& section, const string& key) const;
-
-    string_ref_p&
-    get_ptr(size_t index) const;
-
     std::optional<string>
     get(const string& section, const string& key) const;
 
     string
     get(const string& section, const string& key, string&& fallback) const;
+
+    static void
+    optimize(string_ref_p2 value);
+
+    bool
+    set(const string& section, const string& key, const string& value);
   };
 }

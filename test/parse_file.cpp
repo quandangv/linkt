@@ -44,7 +44,7 @@ vector<ParseSet> parse_tests = {
   },
 };
 
-TEST(Parse, general) {
+TEST(parse, file) {
   for(auto& parse_test : parse_tests) {
     ifstream ifs{parse_test.path + ".txt"};
     ASSERT_FALSE(ifs.fail());
@@ -63,11 +63,11 @@ TEST(Parse, general) {
     }
     vector<string> found;
     for(auto& key : parse_test.keys) {
-      auto& section = doc.map[get<0>(key)];
       auto fullkey = get<0>(key) + "." + get<1>(key);
-      EXPECT_TRUE(section.find(get<1>(key)) != section.end())
+      auto& ptr = doc.map[get<0>(key)][get<1>(key)];
+      EXPECT_TRUE(ptr && *ptr)
           << "Parse, find: Key: " << fullkey << endl;
-      EXPECT_EQ(doc.get_ptr(section[get<1>(key)])->get(), get<2>(key))
+      EXPECT_EQ((*ptr)->get(), get<2>(key))
           << "Parse, compare: Key: " << fullkey << endl;
       found.emplace_back(fullkey);
     }
@@ -96,14 +96,7 @@ TEST(parse, assign_test) {
   document doc;
   auto set_key = [&](const string& key, const string& newval) {
     // Make sure the key is assignable
-    auto index = doc.find("", key);
-    ASSERT_TRUE(index) << "Key not found";
-    auto& ptr = doc.get_ptr(*index);
-    ASSERT_TRUE(ptr) << "Key is empty";
-    auto& ref = *ptr;
-    ASSERT_FALSE(ref.readonly()) << "Key is readonly";
-
-    ref.set(newval);
+    doc.set("", key, newval);
     ASSERT_EQ(newval, doc.get("", key)) << "Unexpected value after assignment";
   };
 

@@ -62,14 +62,13 @@ std::istream& parse(std::istream& is, document& doc, errorlist& err, const strin
     }
   }
   LG_DBUG("start optimize");
-  for(auto& section : doc.map) {
-    for(auto& key : section.second) {
+  for(auto& section_pair : doc.map) {
+    auto& section = section_pair.second;
+    for(auto key_it = section.begin(); key_it != section.end(); key_it++) {
       try {
-        auto& ref = doc.get_ptr(key.second);
-        if (!ref) continue;
-        if (auto op = ref->get_optimized(); op) ref = move(op);
+        doc.optimize(key_it->second);
       } catch(const exception& e) {
-        report_err_key(section.first, key.first, e.what());
+        report_err_key(section_pair.first, key_it->first, e.what());
       }
     }
   }
@@ -77,9 +76,11 @@ std::istream& parse(std::istream& is, document& doc, errorlist& err, const strin
 }
 
 ostream& write(ostream& os, const document& doc) {
-  auto print_keyval = [&](const document::sec_map::value_type& keyval) {
-    os << keyval.first << " = ";
-    auto value = doc.get_ptr(keyval.second)->get();
+  auto print_key_pair = [&](const document::sec_map::value_type& key_pair) {
+    auto& ptr = key_pair.second;
+    if (!ptr || !*ptr) return;
+    auto value = (*key_pair.second)->get();
+    os << key_pair.first << " = ";
     if (value.empty())
       os << endl;
     else if (value.front() == ' ' || value.back() == ' ')
@@ -93,8 +94,8 @@ ostream& write(ostream& os, const document& doc) {
   for(auto& sec : doc.map) {
     if(!sec.first.empty())
       os << endl << '[' << sec.first << ']' << endl;
-    for(auto& keyval : sec.second)
-      print_keyval(keyval);
+    for(auto& key_pair : sec.second)
+      print_key_pair(key_pair);
   }
   return os;
 }

@@ -75,7 +75,7 @@ vector<parse_test> parse_tests = {
 class ParseTest : public ::testing::Test, public ::testing::WithParamInterface<parse_test> {};
 INSTANTIATE_TEST_SUITE_P(parse, ParseTest, ::testing::ValuesIn(parse_tests));
 
-TEST_P(ParseTest, general) {
+TEST_P(ParseTest, manual) {
   // Prepare the environment variables
   setenv("test_env", "test_env", true);
   unsetenv("nexist");
@@ -99,17 +99,11 @@ TEST_P(ParseTest, general) {
     if (test.fail) continue;
     auto fullkey = test.section + "." + test.key;
     try {
-      // Check for existence
-      auto index = doc.find(test.section, test.key);
-      ASSERT_TRUE(index) << "Key: " << fullkey << endl << "parsed key doesn't exist";
-      auto& ref = doc.get_ptr(*index);
-      ASSERT_TRUE(ref) << "Key: " << fullkey << endl << "parsed key is null";
-
-      // Optimize the reference
-      if (auto op = ref->get_optimized(); op) ref = move(op);
-
       // Check the content of the key
-      ASSERT_EQ(ref->get(), test.parsed)
+      auto result = doc.get(test.section, test.key);
+      ASSERT_TRUE(result)
+          << "Key: " << fullkey << endl << "Can't retrieve key";
+      ASSERT_EQ(*result, test.parsed)
           << "Key: " << fullkey << endl << "Value of parsed key doesn't match expectation";
     } catch (const exception& e) {
       EXPECT_TRUE(test.exception)
