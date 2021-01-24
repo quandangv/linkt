@@ -24,12 +24,16 @@ string local_ref::get() const {
 }
 
 bool local_ref::readonly() const {
-  return *ref && (*ref)->readonly();
+  if (*ref)
+    return (*ref)->readonly();
+  return !fallback || fallback->readonly();
 }
 
 void local_ref::set(const string& val) {
   if (*ref)
     (*ref)->set(val);
+  else if (fallback)
+    fallback->set(val);
 }
 
 string fallback_ref::use_fallback(const string& msg) const {
