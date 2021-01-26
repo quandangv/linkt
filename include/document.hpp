@@ -2,6 +2,7 @@
 
 #include "string_ref.hpp"
 #include "error.hpp"
+#include "tstring.hpp"
 
 #include <map>
 #include <vector>
@@ -11,30 +12,31 @@
 namespace lini {
   using std::string;
 
-  class document {
-    string_ref_p2
-    get_ptr(const string& section, const string& key) const;
-
+  class document : public string_ref, public addable {
+    string_ref_p
+    parse_ref(string& raw, tstring& str);
   public:
     struct error : error_base { using error_base::error_base; };
-    using sec_map = std::map<string, string_ref_p2>;
-    using doc_map = std::map<string, sec_map>;
+    using map_type = std::map<string, string_ref_p2>;
 
-    doc_map map;
+    map_type map;
 
-    void
-    add(const string& section, const string& key, string&& value);
 
     string_ref_p2
-    add(const string& section, const string& key);
+    add(tstring path, string_ref_p&& value, bool duplicate = false);
 
-    std::optional<string>
-    get(const string& section, const string& key) const;
+    void
+    add(tstring path, string& raw, tstring value);
 
-    string
-    get(const string& section, const string& key, string&& fallback) const;
+    void
+    add(tstring path, string raw);
 
-    bool
-    set(const string& section, const string& key, const string& value);
+    string_ref_p2
+    get_child_ptr(tstring path) const;
+
+    string get() const { return ""; }
+
+    string_ref_p
+    parse_string(string& raw, tstring& str);
   };
 }

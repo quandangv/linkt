@@ -1,6 +1,7 @@
 # Load strings submodule
 include(lib/strings/file_list)
-list(APPEND INCLUDE_DIRS ${PUBLIC_HEADERS_DIR})
+set(STRINGS_PUBLIC_HEADERS_DIR ${PUBLIC_HEADERS_DIR})
+list(APPEND INCLUDE_DIRS ${STRINGS_PUBLIC_HEADERS_DIR})
 
 # paths to various directories
 get_filename_component(GENERATED_HEADERS_DIR ${CMAKE_BINARY_DIR}/generated-headers ABSOLUTE)
@@ -14,13 +15,14 @@ list(APPEND INCLUDE_DIRS ${PUBLIC_HEADERS_DIR} ${PRIVATE_HEADERS_DIR} ${GENERATE
 unset(DEBUG_SCOPES CACHE)
 
 # public headers
+message(${STRINGS_PUBLIC_HEADERS_DIR}/tstring.hpp)
 set(PUBLIC_HEADERS
   ${PUBLIC_HEADERS_DIR}/document.hpp
   ${PUBLIC_HEADERS_DIR}/error.hpp
   ${PUBLIC_HEADERS_DIR}/parse.hpp
   ${PUBLIC_HEADERS_DIR}/string_ref.hpp
+  ${STRINGS_PUBLIC_HEADERS_DIR}/tstring.hpp
 )
-message(${PUBLIC_HEADERS})
 
 # source files
 set(SOURCES
@@ -34,5 +36,5 @@ set(SOURCES
 )
 
 set(INTERNAL_TESTS execstream_test)
-set(EXTERNAL_TESTS parse_file parse_manual)
+set(EXTERNAL_TESTS parse_manual parse_file)
 set(COPIED_FILES key_file.txt assign_test.txt parse_test.txt lemonbar_test.txt)

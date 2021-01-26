@@ -1,6 +1,7 @@
 #pragma once
 
 #include "error.hpp"
+#include "tstring.hpp"
 
 #include <string>
 #include <optional>
@@ -20,24 +21,43 @@ namespace lini {
     virtual string
     get() const = 0;
 
+    virtual ~string_ref() {}
+  };
+
+  struct settable {
     virtual bool
     readonly() const { return true; }
 
     virtual void
     set(const string&) {}
-
-    virtual ~string_ref() {}
   };
 
-  struct onetime_ref : public string_ref {
-    mutable string val;
+  struct container {
+    virtual string_ref_p2
+    get_child_ptr(tstring path) const { return {}; }
 
-    onetime_ref(string&& val) : val(val) {}
-    string get() const { return val; }
-    string get_onetime() const { return move(val); }
+    bool
+    has_child(const tstring& path) const;
+
+    std::optional<string>
+    get_child(const tstring& path) const;
+
+    string
+    get_child(const tstring& path, string&& fallback) const;
+
+    string_ref&
+    get_child_ref(const tstring& path) const;
+
+    bool
+    set(const tstring& path, const string& value);
   };
-    
-  struct const_ref : public string_ref {
+
+  struct addable : public container {
+    virtual string_ref_p2
+    add(tstring path, string_ref_p&& value, bool duplicate = false) = 0;
+  };
+
+  struct const_ref : public string_ref, settable {
     string val;
 
     const_ref(string&& val) : val(val) {}
@@ -54,11 +74,11 @@ namespace lini {
     string use_fallback(const string& error_message) const;
   };
 
-  struct local_ref : public fallback_ref {
+  struct local_ref : public fallback_ref, settable {
     string_ref_p2 ref;
 
-    local_ref(string_ref_p2&& ref, string_ref_p&& fallback)
-        : ref(move(ref)), fallback_ref(move(fallback)) {}
+    local_ref(const string_ref_p2& ref, string_ref_p&& fallback)
+        : ref(ref), fallback_ref(move(fallback)) {}
     string get() const;
     bool readonly() const;
     void set(const string& value);
@@ -74,9 +94,9 @@ namespace lini {
     string get() const;
   };
 
-  struct env_ref : public meta_ref {
+  struct env_ref : public meta_ref, settable {
     string get() const;
-    bool readonly() const;
+    bool readonly() const { return false; }
     void set(const string& value);
   };
 
@@ -84,9 +104,9 @@ namespace lini {
     string get() const;
   };
 
-  struct file_ref : public meta_ref {
+  struct file_ref : public meta_ref, settable {
     string get() const;
-    bool readonly() const;
+    bool readonly() const { return false; }
     void set(const string& value);
     struct error : error_base { using error_base::error_base; };
 

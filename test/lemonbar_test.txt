@@ -1,4 +1,5 @@
-simple = hello
+msg = hello
+simple = ' ${stat.cpu} ${stat.ram} ${stat.bat} '
 compact = ' ${mod.cpu} ${mod.ram} ${mod.temp} ${mod.bat}${key:mod.cpu=%{F#f00}CPU ${stat.cpu}%}${key:mod.ram=%{F#ff0}RAM ${stat.ram}%}${key:mod.temp=%{F#0f0}TEMP ${stat.temp-c}*C}${key:mod.bat=%{F#0ff}BAT ${stat.bat}%} '
 
 [stat]

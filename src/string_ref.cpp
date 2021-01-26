@@ -12,23 +12,74 @@ GLOBAL_NAMESPACE
 
 using namespace std;
 
+bool container::has_child(const tstring& path) const {
+  auto ptr = get_child_ptr(path);
+  return ptr && *ptr;
+}
+
+optional<string> container::get_child(const tstring& path) const {
+  if (auto ptr = get_child_ptr(path); ptr) {
+    if (auto& value = *ptr; value) {
+      return value->get();
+    } else
+      LG_INFO("document-get: failed due to value being null: " << path);
+  } else
+    LG_INFO("document-get: failed due to key not found: " << path);
+  return {};
+}
+
+string container::get_child(const tstring& path, string&& fallback) const {
+  if (auto result = get_child(path); result)
+    return *result;
+  return forward<string>(fallback);
+}
+
+string_ref& container::get_child_ref(const tstring& path) const {
+  auto ptr = get_child_ptr(path);
+  if (ptr && *ptr)
+    return **ptr;
+  throw string_ref::error("Key is empty");
+}
+
+bool container::set(const tstring& path, const string& value) {
+  if (auto ptr = get_child_ptr(path); ptr) {
+    if (auto settable_ref = dynamic_cast<settable*>(ptr->get()); settable_ref && !settable_ref->readonly()) {
+      settable_ref->set(value);
+      return true;
+    }
+  }
+  return false;
+}
+
 string local_ref::get() const {
-  if (*ref)
+  if (ref && *ref)
     return (*ref)->get();
   return use_fallback("Referenced key doesn't exist");
 }
 
 bool local_ref::readonly() const {
-  if (*ref)
-    return (*ref)->readonly();
-  return !fallback || fallback->readonly();
+  if (*ref) {
+    if (auto settable_ref = dynamic_cast<settable*>(ref->get()); settable_ref) {
+      return settable_ref->readonly();
+    }
+  } else if (fallback) {
+    if (auto settable_ref = dynamic_cast<settable*>(fallback.get()); settable_ref) {
+      return settable_ref->readonly();
+    }
+  }
+  return false;
 }
 
 void local_ref::set(const string& val) {
-  if (*ref)
-    (*ref)->set(val);
-  else if (fallback)
-    fallback->set(val);
+  if (*ref) {
+    if (auto settable_ref = dynamic_cast<settable*>(ref->get()); settable_ref) {
+      settable_ref->set(val);
+    }
+  } else if (fallback) {
+    if (auto settable_ref = dynamic_cast<settable*>(fallback.get()); settable_ref) {
+      settable_ref->set(val);
+    }
+  }
 }
 
 string fallback_ref::use_fallback(const string& msg) const {
@@ -44,10 +95,6 @@ string env_ref::get() const {
   return string(result);
 }
 
-bool env_ref::readonly() const {
-  return false;
-}
-
 void env_ref::set(const string& newval) {
   setenv(value->get().data(), newval.data(), true);
 }
@@ -61,10 +108,6 @@ string file_ref::get() const {
   auto last_line = result.find_last_not_of("\r\n");
   result.erase(last_line + 1);
   return move(result);
-}
-
-bool file_ref::readonly() const {
-  return false;
 }
 
 void file_ref::set(const string& content) {
