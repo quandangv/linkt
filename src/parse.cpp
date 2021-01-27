@@ -15,16 +15,7 @@ constexpr const char comment_chars[] = ";#";
 
 
 std::istream& parse(std::istream& is, document& doc, errorlist& err) {
-  auto report_err_key = [&](const string& section, const string& key, const string& msg) {
-    err.emplace_back("key " + section + "." + key, msg);
-  };
-  string section;
-  auto add_section = [&](const tstring& name) {
-    section = name;
-    doc.add(section, make_unique<document>(), true)->get();
-  };
-  // Add initial section
-  add_section(tstring());
+  string prefix;
   string raw;
   // Iterate through lines
   for (int linecount = 1; std::getline(is, raw); linecount++, raw.clear()) {
@@ -47,7 +38,7 @@ std::istream& parse(std::istream& is, document& doc, errorlist& err) {
       if (cut_front_back(line, "[", "]")) {
         // detected section header
         if (check_name(line)) {
-          add_section(line);
+          prefix = line + ".";
         }
       } else if (auto key = cut_front(line, '='); !key.untouched()) {
         // detected key line
@@ -55,7 +46,7 @@ std::istream& parse(std::istream& is, document& doc, errorlist& err) {
         if (check_name(key)) {
           trim_quotes(line);
           try {
-            doc.add(section + "." + key, raw, line);
+            doc.add(prefix + key, raw, line);
           } catch (const exception& err) {
             LG_DBUG("parse: key error: " << err.what());
             report_err_line(err.what());

@@ -27,7 +27,7 @@ namespace lini {
 
   struct addable : public container {
     virtual string_ref_p2
-    add(tstring path, string_ref_p&& value, bool ignore_dup = false) = 0;
+    add(tstring path, string_ref_p&& value) = 0;
 
     void
     add(tstring path, string& raw, tstring value);

@@ -22,7 +22,7 @@ namespace lini {
 
 
     string_ref_p2
-    add(tstring path, string_ref_p&& value, bool ignore_dup = false);
+    add(tstring path, string_ref_p&& value);
 
     string_ref_p2
     get_child_ptr(tstring path) const;

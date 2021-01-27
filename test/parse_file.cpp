@@ -18,12 +18,13 @@ vector<file_test_param> parse_tests = {
   {
     "parse_test",
     {
-      {".key-rogue", "rogue"},
+      {"key-rogue", "rogue"},
       {"test.key-a", "a"},
       {"test.key-cmt", ";cmt"},
       {"test.key-c", "c"},
       {"test.key-empty", ""},
       {"test.key-test", "test"},
+      {"test.key", "key"},
       {"test2.key-test2", "test2"},
       {"test2.key-b", "b  "},
       {"test2.key-c", "  c  "},
@@ -41,14 +42,15 @@ vector<file_test_param> parse_tests = {
       "line 13",
       "line 19",
       "line 21",
+      "line 31",
     }
   },
   {
     "lemonbar_test",
     {
-      {".msg", "hello"},
-      {".simple", " 69 96 0 "},
-      {".compact", " %{F#f00}CPU 69% %{F#ff0}RAM 96% %{F#0f0}TEMP 99*C %{F#0ff}BAT 0% "},
+      {"msg", "hello"},
+      {"simple", " 69 96 0 "},
+      {"compact", " %{F#f00}CPU 69% %{F#ff0}RAM 96% %{F#0f0}TEMP 99*C %{F#0ff}BAT 0% "},
       {"mod.cpu", "%{F#f00}CPU 69%"},
       {"mod.ram", "%{F#ff0}RAM 96%"},
       {"mod.temp", "%{F#0f0}TEMP 99*C"},
@@ -72,11 +74,6 @@ struct file_test : public TestWithParam<file_test_param> {
     errorlist err;
     parse(ifs, doc, err);
 
-    // Check for expected errors
-    for(auto& e : testset.err) {
-      auto pos = find_if(err.begin(), err.end(), [&](auto it) { return it.first == e; });
-      EXPECT_NE(pos, err.end()) << "Expected parsing error at: " << e;
-    }
     // Check for unexpected errors
     for(auto& e : err) {
       EXPECT_NE(find(testset.err.begin(), testset.err.end(), e.first), testset.err.end())
@@ -97,6 +94,11 @@ struct file_test : public TestWithParam<file_test_param> {
             << "Exception while checking: " << e.what();
       }
       found.emplace_back(pair.path);
+    }
+    // Check for expected errors
+    for(auto& e : testset.err) {
+      auto pos = find_if(err.begin(), err.end(), [&](auto it) { return it.first == e; });
+      EXPECT_NE(pos, err.end()) << "Expected parsing error at: " << e;
     }
 
     //// Check document export
@@ -121,8 +123,8 @@ TEST(parse, assign_test) {
   document doc;
   auto set_key = [&](const string& key, const string& newval) {
     // Make sure the key is assignable
-    doc.set("." + key, newval);
-    ASSERT_EQ(newval, doc.get_child("." + key)) << "Unexpected value after assignment";
+    doc.set(key, newval);
+    ASSERT_EQ(newval, doc.get_child(key)) << "Unexpected value after assignment";
   };
 
   ifstream ifs{"assign_test.txt"};
@@ -133,19 +135,19 @@ TEST(parse, assign_test) {
   ifs.close();
 
   // Test document functionalities
-  EXPECT_FALSE(doc.get_child(".nexist"));
-  EXPECT_EQ(doc.get_child(".nexist", "fallback"), "fallback");
-  EXPECT_EQ(doc.get_child(".key-a", "fallback"), "a");
+  EXPECT_NO_FATAL_FAILURE(EXPECT_FALSE(doc.get_child("nexist")));
+  EXPECT_NO_FATAL_FAILURE(EXPECT_EQ(doc.get_child("nexist", "fallback"), "fallback"));
+  EXPECT_NO_FATAL_FAILURE(EXPECT_EQ(doc.get_child("key-a", "fallback"), "a"));
 
   // Test local_ref assignments
   EXPECT_NO_FATAL_FAILURE(set_key("key-a", "a"));
   EXPECT_NO_FATAL_FAILURE(set_key("ref-a", "foo"));
   EXPECT_NO_FATAL_FAILURE(set_key("ref-ref-a", "bar"));
-  EXPECT_EQ("bar", *doc.get_child(".key-a"));
+  EXPECT_NO_FATAL_FAILURE(EXPECT_EQ("bar", *doc.get_child("key-a")));
 
   // Test fallback assignments
   EXPECT_NO_FATAL_FAILURE(set_key("ref-default-a", "foobar"));
-  EXPECT_EQ("foobar", *doc.get_child(".key-a"));
+  EXPECT_NO_FATAL_FAILURE(EXPECT_EQ("foobar", *doc.get_child("key-a")));
 
   // Test file_ref assignments
   EXPECT_NO_FATAL_FAILURE(set_key("ref-nexist", "barfoo"));
@@ -155,7 +157,7 @@ TEST(parse, assign_test) {
   string content;
   getline(ifs, content);
   ifs.close();
-  EXPECT_EQ("foo", content);
+  EXPECT_NO_FATAL_FAILURE(EXPECT_EQ("foo", content));
   
   // Test env_ref assignments
   EXPECT_NO_FATAL_FAILURE(set_key("env", "foo"));
@@ -164,7 +166,7 @@ TEST(parse, assign_test) {
   EXPECT_NO_FATAL_FAILURE(set_key("file-parse", "content"));
 
   // Test document key
-  EXPECT_EQ(doc.get_child(".doc.foo", "fail"), "hello");
-  EXPECT_EQ(doc.get_child(".doc.bar", "fail"), "world");
+  EXPECT_NO_FATAL_FAILURE(EXPECT_EQ(doc.get_child("doc.foo", "fail"), "hello"));
+  EXPECT_NO_FATAL_FAILURE(EXPECT_EQ(doc.get_child("doc.bar", "fail"), "world"));
 }
 

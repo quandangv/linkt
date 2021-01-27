@@ -20,7 +20,7 @@ string_ref_p2 document::get_child_ptr(tstring path) const {
   return {};
 }
 
-string_ref_p2 document::add(tstring path, string_ref_p&& value, bool dup) {
+string_ref_p2 document::add(tstring path, string_ref_p&& value) {
   if (auto immediate_path = cut_front(path, '.'); !immediate_path.untouched()) {
     // This isn't the final node of the path
     auto& ptr = map[immediate_path];
@@ -30,11 +30,11 @@ string_ref_p2 document::add(tstring path, string_ref_p&& value, bool dup) {
     auto& child_ptr = *ptr;
     if (!child_ptr) {
       auto tmp = make_unique<document>();
-      auto res = tmp->add(path, move(value), dup);
+      auto res = tmp->add(path, move(value));
       child_ptr = move(tmp);
       return res;
     } if (auto child = dynamic_cast<addable*>(child_ptr.get()); child)
-      return child->add(path, move(value), dup);
+      return child->add(path, move(value));
     throw error("Child " + immediate_path + " already exists but can't be added to");
 
   } else {
@@ -43,7 +43,6 @@ string_ref_p2 document::add(tstring path, string_ref_p&& value, bool dup) {
     if (!place) {
       place = make_shared<string_ref_p>();
     } else if (*place) {
-      if (dup) return place;
       throw error("Duplicate key: " + static_cast<string>(path));
     }
     *place = move(value);

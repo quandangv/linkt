@@ -24,3 +24,8 @@ ref-rogue= \${.key-rogue}
 ref-nexist   = \${test.key-nexist: " f a i l ' } 
 
 key-a = '    a"
+[test]
+key = key
+
+[key-rogue]
+foo = foo
