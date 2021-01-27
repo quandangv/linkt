@@ -1,6 +1,5 @@
 #include "string_ref.hpp"
 #include "common.hpp"
-#include "execstream.hpp"
 #include "string_interpolate.hpp"
 #include "document.hpp"
 
@@ -93,12 +92,12 @@ string color_ref::get() const {
 string cmd_ref::get() const {
   string result;
   try {
-    execstream exec(value->get().data(), execstream::type_out);
-    result = exec.readall();
-    if (auto exitstat = WEXITSTATUS(exec.close()); exitstat)
-      use_fallback("Process exited with status " + to_string(exitstat) + ": " + value->get());
+    auto file = popen(value->get().data(), "r");
+    array<char, 128> buf;
+    while (fgets(buf.data(), 128, file) != nullptr)
+      result += buf.data();
   } catch (const exception& e) {
-    use_fallback("Can't start process due to: " + string(e.what()));
+    use_fallback("Encountered error: " + string(e.what()));
   }
   auto last_line = result.find_last_not_of("\r\n");
   result.erase(last_line + 1);

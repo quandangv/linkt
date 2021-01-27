@@ -5,7 +5,7 @@
 namespace lini {
   struct container {
     struct error : error_base { using error_base::error_base; };
-    
+
     virtual string_ref_p2
     get_child_ptr(tstring path) const { return {}; }
 
