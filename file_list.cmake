@@ -21,6 +21,7 @@ set(PUBLIC_HEADERS
   ${PUBLIC_HEADERS_DIR}/error.hpp
   ${PUBLIC_HEADERS_DIR}/parse.hpp
   ${PUBLIC_HEADERS_DIR}/string_ref.hpp
+  ${PUBLIC_HEADERS_DIR}/container.hpp
   ${STRINGS_PUBLIC_HEADERS_DIR}/tstring.hpp
 )
 
@@ -28,9 +29,8 @@ set(PUBLIC_HEADERS
 set(SOURCES
   ${SRC_DIR}/document.cpp
   ${SRC_DIR}/execstream.cpp
-  ${SRC_DIR}/logger.cpp
-  ${SRC_DIR}/add_key.cpp
   ${SRC_DIR}/parse.cpp
+  ${SRC_DIR}/container.cpp
   ${SRC_DIR}/string_ref.cpp
   ${TSTRING_SOURCES}
 )

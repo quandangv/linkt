@@ -75,10 +75,10 @@ vector<parse_test> parse_tests = {
     {".color-mod", "${color: cielch: lum * 1.5, hue + 60; ${.color}}", "#633E5C"},
   },
 };
-class ParseTest : public ::testing::Test, public ::testing::WithParamInterface<parse_test> {};
-INSTANTIATE_TEST_SUITE_P(parse, ParseTest, ::testing::ValuesIn(parse_tests));
+class manual_test : public ::testing::Test, public ::testing::WithParamInterface<parse_test> {};
+INSTANTIATE_TEST_SUITE_P(parse, manual_test, ::testing::ValuesIn(parse_tests));
 
-TEST_P(ParseTest, manual) {
+TEST_P(manual_test, manual) {
   // Prepare the environment variables
   setenv("test_env", "test_env", true);
   unsetenv("nexist");
@@ -88,7 +88,7 @@ TEST_P(ParseTest, manual) {
   // Add keys and check errors
   for(auto test : testset) {
     if (test.fail)
-      EXPECT_THROW(doc.add(test.path, move(test.value)), document::error)
+      EXPECT_THROW(doc.add(test.path, move(test.value)), container::error)
           << "Key: " << test.path << endl << "Expected error";
     else {
       EXPECT_NO_THROW(doc.add(test.path, move(test.value)))

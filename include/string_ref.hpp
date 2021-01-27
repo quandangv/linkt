@@ -32,31 +32,6 @@ namespace lini {
     set(const string&) {}
   };
 
-  struct container {
-    virtual string_ref_p2
-    get_child_ptr(tstring path) const { return {}; }
-
-    bool
-    has_child(const tstring& path) const;
-
-    std::optional<string>
-    get_child(const tstring& path) const;
-
-    string
-    get_child(const tstring& path, string&& fallback) const;
-
-    string_ref&
-    get_child_ref(const tstring& path) const;
-
-    bool
-    set(const tstring& path, const string& value);
-  };
-
-  struct addable : public container {
-    virtual string_ref_p2
-    add(tstring path, string_ref_p&& value, bool duplicate = false) = 0;
-  };
-
   struct const_ref : public string_ref, settable {
     string val;
 

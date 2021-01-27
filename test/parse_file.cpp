@@ -133,19 +133,19 @@ TEST(parse, assign_test) {
   ifs.close();
 
   // Test document functionalities
-  EXPECT_FALSE(doc.get_child(tstring(".nexist")));
-  EXPECT_EQ(doc.get_child(tstring(".nexist"), "fallback"), "fallback");
-  EXPECT_EQ(doc.get_child(tstring(".key-a"), "fallback"), "a");
+  EXPECT_FALSE(doc.get_child(".nexist"));
+  EXPECT_EQ(doc.get_child(".nexist", "fallback"), "fallback");
+  EXPECT_EQ(doc.get_child(".key-a", "fallback"), "a");
 
   // Test local_ref assignments
   EXPECT_NO_FATAL_FAILURE(set_key("key-a", "a"));
   EXPECT_NO_FATAL_FAILURE(set_key("ref-a", "foo"));
   EXPECT_NO_FATAL_FAILURE(set_key("ref-ref-a", "bar"));
-  EXPECT_EQ("bar", *doc.get_child(tstring(".key-a")));
+  EXPECT_EQ("bar", *doc.get_child(".key-a"));
 
   // Test fallback assignments
   EXPECT_NO_FATAL_FAILURE(set_key("ref-default-a", "foobar"));
-  EXPECT_EQ("foobar", *doc.get_child(tstring(".key-a")));
+  EXPECT_EQ("foobar", *doc.get_child(".key-a"));
 
   // Test file_ref assignments
   EXPECT_NO_FATAL_FAILURE(set_key("ref-nexist", "barfoo"));

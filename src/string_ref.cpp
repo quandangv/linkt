@@ -12,45 +12,6 @@ GLOBAL_NAMESPACE
 
 using namespace std;
 
-bool container::has_child(const tstring& path) const {
-  auto ptr = get_child_ptr(path);
-  return ptr && *ptr;
-}
-
-optional<string> container::get_child(const tstring& path) const {
-  if (auto ptr = get_child_ptr(path); ptr) {
-    if (auto& value = *ptr; value) {
-      return value->get();
-    } else
-      LG_INFO("document-get: failed due to value being null: " << path);
-  } else
-    LG_INFO("document-get: failed due to key not found: " << path);
-  return {};
-}
-
-string container::get_child(const tstring& path, string&& fallback) const {
-  if (auto result = get_child(path); result)
-    return *result;
-  return forward<string>(fallback);
-}
-
-string_ref& container::get_child_ref(const tstring& path) const {
-  auto ptr = get_child_ptr(path);
-  if (ptr && *ptr)
-    return **ptr;
-  throw string_ref::error("Key is empty");
-}
-
-bool container::set(const tstring& path, const string& value) {
-  if (auto ptr = get_child_ptr(path); ptr) {
-    if (auto settable_ref = dynamic_cast<settable*>(ptr->get()); settable_ref && !settable_ref->readonly()) {
-      settable_ref->set(value);
-      return true;
-    }
-  }
-  return false;
-}
-
 string local_ref::get() const {
   if (ref && *ref)
     return (*ref)->get();
