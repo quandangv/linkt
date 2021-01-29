@@ -8,8 +8,6 @@
 
 GLOBAL_NAMESPACE
 
-using namespace std;
-
 constexpr const char excluded_chars[] = "\t \"'=;#[](){}:$\\%";
 constexpr const char comment_chars[] = ";#";
 
@@ -22,7 +20,7 @@ std::istream& parse(std::istream& is, document& doc, errorlist& err) {
     LG_DBUG("parse: line: " << raw);
     tstring line(raw);
     auto report_err_line = [&](const string& msg) {
-      err.emplace_back("line " + to_string(linecount), msg);
+      err.emplace_back("line " + std::to_string(linecount), msg);
     };
     auto check_name = [&](const tstring& name) {
       // Determines if the name is valid
@@ -47,7 +45,7 @@ std::istream& parse(std::istream& is, document& doc, errorlist& err) {
           trim_quotes(line);
           try {
             doc.add(prefix + key, raw, line);
-          } catch (const exception& err) {
+          } catch (const std::exception& err) {
             LG_DBUG("parse: key error: " << err.what());
             report_err_line(err.what());
           }
@@ -58,8 +56,8 @@ std::istream& parse(std::istream& is, document& doc, errorlist& err) {
   return is;
 }
 
-ostream& write(ostream& os, const container& doc, const string& prefix) {
-  vector<pair<string, const container*>> containers;
+std::ostream& write(std::ostream& os, const container& doc, const string& prefix) {
+  vector<std::pair<string, const container*>> containers;
   doc.iterate_children([&](const string& name, const string_ref& child) {
     auto ctn = dynamic_cast<const container*>(&child);
     if(ctn) {

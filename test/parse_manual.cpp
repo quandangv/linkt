@@ -106,7 +106,7 @@ TEST_P(manual_test, manual) {
           << "Key: " << test.path << endl << "Can't retrieve key";
       ASSERT_EQ(*result, test.parsed)
           << "Key: " << test.path << endl << "Value of parsed key doesn't match expectation";
-    } catch (const exception& e) {
+    } catch (const std::exception& e) {
       EXPECT_TRUE(test.exception)
           << "Key: " << test.path << endl
           << "Exception: " << e.what() << endl

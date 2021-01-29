@@ -5,7 +5,7 @@
 #include <iostream>
 
 using namespace std::literals;
-using namespace std;
+using std::vector, std::endl, std::string;
 
 constexpr auto DEBUG_SCOPES{"@DEBUG_SCOPES@"sv};
 

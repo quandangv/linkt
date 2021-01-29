@@ -67,7 +67,7 @@ vector<file_test_param> parse_tests = {
 struct file_test : public TestWithParam<file_test_param> {
   void test() {
     auto testset = GetParam();
-    ifstream ifs{testset.path + ".txt"};
+    std::ifstream ifs{testset.path + ".txt"};
     ASSERT_FALSE(ifs.fail());
 
     document doc;
@@ -89,7 +89,7 @@ struct file_test : public TestWithParam<file_test_param> {
             << "Key doesn't exist: " << pair.path << endl;
         EXPECT_EQ(*result, pair.value)
             << "Key have wrong value: " << pair.path << endl;
-      } catch (const exception& e) {
+      } catch (const std::exception& e) {
         ADD_FAILURE() << "Key: " << pair.path << endl
             << "Exception while checking: " << e.what();
       }
@@ -102,12 +102,12 @@ struct file_test : public TestWithParam<file_test_param> {
     }
 
     // Check document export
-    ofstream ofs{testset.path + "_export.txt"};
+    std::ofstream ofs{testset.path + "_export.txt"};
     write(ofs, doc);
     auto command = "diff -z '" + testset.path + "_output.txt' '" + testset.path + "_export.txt'";
     auto file = popen(command.data(), "r");
     ASSERT_TRUE(file);
-    array<char, 2> buf;
+    std::array<char, 2> buf;
     fgets(buf.data(), 2, file);
     EXPECT_TRUE(feof(file))
         << "Output of command not empty: " << command;
@@ -129,7 +129,7 @@ TEST(parse, assign_test) {
     ASSERT_EQ(newval, doc.get_child(key)) << "Unexpected value after assignment";
   };
 
-  ifstream ifs{"assign_test.txt"};
+  std::ifstream ifs{"assign_test.txt"};
   ASSERT_FALSE(ifs.fail());
   errorlist err;
   parse(ifs, doc, err);

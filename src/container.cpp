@@ -10,7 +10,7 @@ bool container::has_child(const tstring& path) const {
   return ptr && *ptr;
 }
 
-optional<string> container::get_child(const tstring& path) const {
+std::optional<string> container::get_child(const tstring& path) const {
   if (auto ptr = get_child_ptr(path); ptr) {
     if (auto& value = *ptr; value) {
       return value->get();
@@ -60,7 +60,7 @@ string_ref_p addable::parse_ref(string& raw, tstring& str) {
     if (auto fb_str = cut_back(str, '?'); !fb_str.untouched())
       fallback = parse_string(raw, trim_quotes(fb_str));
   };
-  auto make_meta_ref = [&]<typename T>(unique_ptr<T>&& ptr) {
+  auto make_meta_ref = [&]<typename T>(std::unique_ptr<T>&& ptr) {
     take_fallback(ptr->fallback);
     ptr->value = parse_string(raw, trim_quotes(str));
     if (!ptr->value)
@@ -91,7 +91,7 @@ string_ref_p addable::parse_ref(string& raw, tstring& str) {
       }
       throw error("Missing assigned key name");
     } else if (ref_type == "doc") {
-      auto subdoc = make_unique<document>();
+      auto subdoc = std::make_unique<document>();
       tstring line;
       while(!(line = get_token<';'>(str)).untouched()) {
         LG_DBUG("Before cut: " << line)
@@ -109,7 +109,7 @@ string_ref_p addable::parse_ref(string& raw, tstring& str) {
     auto ptr = get_child_ptr(str);
     if (!ptr)
       ptr = add(str, string_ref_p{});
-    return make_unique<local_ref>(ptr, move(fallback));
+    return std::make_unique<local_ref>(ptr, move(fallback));
   }
 }
 
@@ -117,7 +117,7 @@ string_ref_p addable::parse_string(string& raw, tstring& str) {
   size_t start, end;
   if (!find_enclosed(str, raw, "${", "{", "}", start, end)) {
     // There is no token inside the string, it's a normal string
-    return make_unique<const_ref>(str);
+    return std::make_unique<const_ref>(str);
   } else if (start == 0 && end == str.size()) {
     // There is a token inside, but string interpolation is unecessary
     str.erase_front(2);
@@ -125,8 +125,8 @@ string_ref_p addable::parse_string(string& raw, tstring& str) {
     return parse_ref(raw, str);
   }
   // String interpolation
-  stringstream ss;
-  auto newval = make_unique<string_interpolate_ref>();
+  std::stringstream ss;
+  auto newval = std::make_unique<string_interpolate_ref>();
   do {
     // Write the part we have moved past to the base string
     ss << substr(str, 0, start);

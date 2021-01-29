@@ -9,8 +9,6 @@
 
 GLOBAL_NAMESPACE
 
-using namespace std;
-
 string local_ref::get() const {
   if (ref && *ref)
     return (*ref)->get();
@@ -60,10 +58,10 @@ void env_ref::set(const string& newval) {
 }
 
 string file_ref::get() const {
-  ifstream ifs(value->get().data());
+  std::ifstream ifs(value->get().data());
   if (ifs.fail())
     return use_fallback("Can't read file: " + value->get());
-  string result(istreambuf_iterator<char>{ifs}, {});
+  string result(std::istreambuf_iterator<char>{ifs}, {});
   ifs.close();
   auto last_line = result.find_last_not_of("\r\n");
   result.erase(last_line + 1);
@@ -71,7 +69,7 @@ string file_ref::get() const {
 }
 
 void file_ref::set(const string& content) {
-  ofstream ofs(value->get().data(), ios_base::trunc);
+  std::ofstream ofs(value->get().data(), std::ios_base::trunc);
   if (ofs.fail())
     throw error("Can't write to file: " + value->get());
   ofs << content;
@@ -84,7 +82,7 @@ string color_ref::get() const {
     if (result.empty() && fallback)
       return fallback->get();
     return result;
-  } catch(const exception& e) {
+  } catch(const std::exception& e) {
     return use_fallback("Color processing failed, due to: " + string(e.what()));
   }
 }
@@ -93,10 +91,10 @@ string cmd_ref::get() const {
   string result;
   try {
     auto file = popen(value->get().data(), "r");
-    array<char, 128> buf;
+    std::array<char, 128> buf;
     while (fgets(buf.data(), 128, file) != nullptr)
       result += buf.data();
-  } catch (const exception& e) {
+  } catch (const std::exception& e) {
     use_fallback("Encountered error: " + string(e.what()));
   }
   auto last_line = result.find_last_not_of("\r\n");

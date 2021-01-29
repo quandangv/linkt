@@ -4,5 +4,5 @@
 
 #include <iostream>
 
-using namespace std;
 using namespace ::testing;
+using std::vector, std::endl, std::string;
