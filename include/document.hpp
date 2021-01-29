@@ -27,6 +27,9 @@ namespace lini {
     string_ref_p2
     get_child_ptr(tstring path) const;
 
+    void
+    iterate_children(std::function<void(const string&, const string_ref&)> processor) const;
+
     string get() const { return ""; }
   };
 }

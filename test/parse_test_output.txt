@@ -1,21 +1,19 @@
-key-rogue=rogue 
+key-rogue = rogue
 
 [test]
-key-a = a 
-key b = b
-key-cmt = ;cmt
+key = key
+key-a = a
 key-c = c
-key-empty=   
-key-test= test 
-ref-ref-a=\${test2.ref-a:failed}
+key-cmt = ;cmt
+key-empty =
+key-test = test 
+ref-ref-a = \${test2.ref-a:failed}
 
 [test2]
-key-test2 = test2
-key-b='b  '
-key-b = 'dup'
-key-c = "  c  "   
-key-c = "dup"   
-ref-a = \${test.key-a} 
-ref-rogue= \${.key-rogue} 
-ref-nexist   = \${test.key-nexist: " f a i l ' } 
 key-a = '    a"
+key-b = "b  "
+key-c = "  c  "   
+key-test2 = test2
+ref-a = \${test.key-a} 
+ref-nexist = \${test.key-nexist: " f a i l ' } 
+ref-rogue = \${.key-rogue} 

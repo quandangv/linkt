@@ -1,6 +1,6 @@
 key-rogue=rogue 
 [test-excess];excess
-[test.forbidden]
+[test$forbidden]
 
 [test]
 key-a = a 

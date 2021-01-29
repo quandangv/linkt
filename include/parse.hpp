@@ -7,5 +7,5 @@
 namespace lini {
   using errorlist = std::vector<std::pair<std::string, std::string>>;
   std::istream& parse(std::istream&, document&, errorlist&);
-  //std::ostream& write(std::ostream&, const document&);
+  std::ostream& write(std::ostream&, const container&, const string& prefix = "");
 }

@@ -10,7 +10,7 @@ GLOBAL_NAMESPACE
 
 using namespace std;
 
-constexpr const char excluded_chars[] = "\t \"'=;#[](){}:.$\\%";
+constexpr const char excluded_chars[] = "\t \"'=;#[](){}:$\\%";
 constexpr const char comment_chars[] = ";#";
 
 
@@ -57,30 +57,31 @@ std::istream& parse(std::istream& is, document& doc, errorlist& err) {
   }
   return is;
 }
-//
-//ostream& write(ostream& os, const document& doc) {
-//  auto print_key_pair = [&](const document::sec_map::value_type& key_pair) {
-//    auto& ptr = key_pair.second;
-//    if (!ptr || !*ptr) return;
-//    auto value = (*key_pair.second)->get();
-//    os << key_pair.first << " = ";
-//    if (value.empty())
-//      os << endl;
-//    else if (value.front() == ' ' || value.back() == ' ')
-//      os << '"' << value << '"' << endl;
-//    else {
-//      if (auto pos = value.find("${"); pos != string::npos)
-//        value.insert(value.begin() + pos, '\\');
-//      os << value << endl;
-//    }
-//  };
-//  for(auto& sec : doc.map) {
-//    if(!sec.first.empty())
-//      os << endl << '[' << sec.first << ']' << endl;
-//    for(auto& key_pair : sec.second)
-//      print_key_pair(key_pair);
-//  }
-//  return os;
-//}
-//
+
+ostream& write(ostream& os, const container& doc, const string& prefix) {
+  vector<pair<string, const container*>> containers;
+  doc.iterate_children([&](const string& name, const string_ref& child) {
+    auto ctn = dynamic_cast<const container*>(&child);
+    if(ctn) {
+      containers.push_back(std::make_pair(name, ctn));
+      return;
+    }
+    auto value = child.get();
+    size_t opening = 0;
+    while((opening = value.find("${", opening)) != string::npos) {
+      value.insert(value.begin() + opening, '\\');
+      opening += 2;
+    }
+    if (isspace(value.front()) || isspace(value.back()))
+      os << name << " = " << '"' << value << '"' << endl;
+    else
+      os << name << " = " << value << endl;
+  });
+  for(auto pair : containers) {
+    os << endl << '[' << prefix << pair.first << ']' << endl;
+    write(os, *pair.second);
+  }
+  return os;
+}
+
 GLOBAL_NAMESPACE_END

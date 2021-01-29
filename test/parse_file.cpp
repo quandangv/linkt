@@ -101,15 +101,17 @@ struct file_test : public TestWithParam<file_test_param> {
       EXPECT_NE(pos, err.end()) << "Expected parsing error at: " << e;
     }
 
-    //// Check document export
-    //ofstream ofs{testset.path + "_export.txt"};
-    //write(ofs, doc);
-    //auto file = popen(("diff " + testset.path + ".txt " + testset.path + "_export.txt").data(), "r");
-    //ASSERT_TRUE(file);
-    //array<char, 2> buf;
-    //fgets(buf.data(), 1, file);
-    //EXPECT_TRUE(feof);
-    //pclose(file);
+    // Check document export
+    ofstream ofs{testset.path + "_export.txt"};
+    write(ofs, doc);
+    auto command = "diff -z '" + testset.path + "_output.txt' '" + testset.path + "_export.txt'";
+    auto file = popen(command.data(), "r");
+    ASSERT_TRUE(file);
+    array<char, 2> buf;
+    fgets(buf.data(), 2, file);
+    EXPECT_TRUE(feof(file))
+        << "Output of command not empty: " << command;
+    pclose(file);
   }
 };
 

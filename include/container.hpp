@@ -2,12 +2,17 @@
 
 #include "string_ref.hpp"
 
+#include <functional>
+
 namespace lini {
   struct container {
     struct error : error_base { using error_base::error_base; };
 
     virtual string_ref_p2
     get_child_ptr(tstring path) const { return {}; }
+
+    virtual void
+    iterate_children(std::function<void(const string&, const string_ref&)> processor) const {}
 
     bool
     has_child(const tstring& path) const;
