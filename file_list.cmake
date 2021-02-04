@@ -18,7 +18,6 @@ list(APPEND INCLUDE_DIRS ${PUBLIC_HEADERS_DIR} ${PRIVATE_HEADERS_DIR} ${GENERATE
 unset(DEBUG_SCOPES CACHE)
 
 # public headers
-message(${STRINGS_PUBLIC_HEADERS_DIR}/tstring.hpp)
 set(PUBLIC_HEADERS
   ${PUBLIC_HEADERS_DIR}/document.hpp
   ${PUBLIC_HEADERS_DIR}/error.hpp
@@ -39,4 +38,11 @@ set(SOURCES
 
 set(INTERNAL_TESTS)
 set(EXTERNAL_TESTS parse_manual parse_file)
-set(COPIED_FILES key_file.txt assign_test.txt parse_test.txt parse_test_output.txt lemonbar_test.txt)
+set(COPIED_FILES
+  key_file.txt
+  assign_test.txt
+  parse_test.txt
+  parse_test_output.txt
+  lemonbar_test.txt
+  lemonbar_untangled_test.txt
+)

@@ -57,6 +57,7 @@ vector<parse_test> parse_tests = {
   {{".file", "${file:nexist.txt ? ${file:key_file.txt}}", "content"}},
   {{".file", "${file:nexist.txt ? \" f a i l ' }", "\" f a i l '"}},
   {{".file", "${file:nexist.txt}", "${file:nexist.txt}", false, true}},
+  {{".interpolate", "%{${color:hsv(0, 1, 0.5)}}", "%{#800000}"}},
   {{".dumb", "${dumb:nexist.txt}", "${dumb:nexist.txt}", true}},
   {{".dumb", "", ""}},
   {{".cmd", "${cmd:echo hello world}", "hello world"}},

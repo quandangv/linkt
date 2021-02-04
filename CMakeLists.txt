@@ -16,6 +16,3 @@ configure_file(${PRIVATE_HEADERS_DIR}/common.hpp.in  ${GENERATED_HEADERS_DIR}/co
 if(BUILD_TESTS)
   include(cmake/test)
 endif()
-
-unset(DEBUG_SCOPES CACHE)
-

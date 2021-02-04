@@ -13,7 +13,11 @@ bool container::has_child(const tstring& path) const {
 std::optional<string> container::get_child(const tstring& path) const {
   if (auto ptr = get_child_ptr(path); ptr) {
     if (auto& value = *ptr; value) {
-      return value->get();
+      try {
+        return value->get();
+      } catch(const std::exception& e) {
+        throw error("Exception while retrieving value of '" + path + "': " + e.what());
+      }
     } else
       LG_INFO("document-get: failed due to value being null: " << path);
   } else

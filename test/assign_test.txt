@@ -4,6 +4,7 @@ ref-a = ${key-a}
 ref-default-a = ${key-nexist?${key-a}}
 ref-fallback-a = ${ .key-a ? fail }
 ref-nexist = ${key-nexist? " f a i l ' }
+ref-fail = ${key-nexist}
 file-parse = ${file: key_file.txt }
 env = ${env: test_env? fail}
 env-nexist = ${env:nexist? " f a i l " }

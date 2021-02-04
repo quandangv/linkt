@@ -61,7 +61,7 @@ vector<file_test_param> parse_tests = {
       {"stat.bat", "0"},
     },
     {}
-  }
+  },
 };
 
 struct file_test : public TestWithParam<file_test_param> {
@@ -104,7 +104,7 @@ struct file_test : public TestWithParam<file_test_param> {
     // Check document export
     std::ofstream ofs{testset.path + "_export.txt"};
     write(ofs, doc);
-    auto command = "diff -z '" + testset.path + "_output.txt' '" + testset.path + "_export.txt'";
+    auto command = "diff -Z '" + testset.path + "_output.txt' '" + testset.path + "_export.txt'";
     auto file = popen(command.data(), "r");
     ASSERT_TRUE(file);
     std::array<char, 2> buf;
@@ -140,6 +140,7 @@ TEST(parse, assign_test) {
   EXPECT_NO_FATAL_FAILURE(EXPECT_FALSE(doc.get_child("nexist")));
   EXPECT_NO_FATAL_FAILURE(EXPECT_EQ(doc.get_child("nexist", "fallback"), "fallback"));
   EXPECT_NO_FATAL_FAILURE(EXPECT_EQ(doc.get_child("key-a", "fallback"), "a"));
+  EXPECT_THROW(doc.get_child("ref-fail"), container::error);
 
   // Test local_ref assignments
   EXPECT_NO_FATAL_FAILURE(set_key("key-a", "a"));
