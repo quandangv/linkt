@@ -104,7 +104,7 @@ struct file_test : public TestWithParam<file_test_param> {
     // Check document export
     std::ofstream ofs{testset.path + "_export.txt"};
     write(ofs, doc);
-    auto command = "diff -Z '" + testset.path + "_output.txt' '" + testset.path + "_export.txt'";
+    auto command = "diff -Z '" + testset.path + "_output.txt' '" + testset.path + "_export.txt' 2>&1";
     auto file = popen(command.data(), "r");
     ASSERT_TRUE(file);
     std::array<char, 2> buf;
@@ -124,8 +124,7 @@ TEST_P(file_test, general) {
 TEST(parse, assign_test) {
   document doc;
   auto set_key = [&](const string& key, const string& newval) {
-    // Make sure the key is assignable
-    doc.set(key, newval);
+    EXPECT_TRUE(doc.set(key, newval));
     ASSERT_EQ(newval, doc.get_child(key)) << "Unexpected value after assignment";
   };
 
@@ -137,9 +136,13 @@ TEST(parse, assign_test) {
   ifs.close();
 
   // Test document functionalities
-  EXPECT_NO_FATAL_FAILURE(EXPECT_FALSE(doc.get_child("nexist")));
-  EXPECT_NO_FATAL_FAILURE(EXPECT_EQ(doc.get_child("nexist", "fallback"), "fallback"));
-  EXPECT_NO_FATAL_FAILURE(EXPECT_EQ(doc.get_child("key-a", "fallback"), "a"));
+  EXPECT_FALSE(doc.get_child("nexist"));
+  EXPECT_FALSE(doc.has_child("nexist"));
+  EXPECT_EQ(doc.get_child("nexist", "fallback"), "fallback");
+  EXPECT_THROW(doc.get_child_ref("nexist"), string_ref::error);
+  EXPECT_EQ(doc.get_child("key-a", "fallback"), "a");
+  EXPECT_EQ(doc.get_child_ref("key-a").get(), "a");
+  EXPECT_EQ(doc.get(), "");
   EXPECT_THROW(doc.get_child("ref-fail"), container::error);
 
   // Test local_ref assignments
