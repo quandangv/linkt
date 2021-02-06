@@ -10,8 +10,9 @@
 GLOBAL_NAMESPACE
 
 string local_ref::get() const {
-  if (ref && *ref)
+  if (ref && *ref) {
     return (*ref)->get();
+  }
   return use_fallback("Referenced key doesn't exist");
 }
 
@@ -109,7 +110,7 @@ struct SIRR::iterator {
   iterator(const std::vector<string_ref_p>::const_iterator& it) : it(it) {}
   iterator(const iterator& other) : it(other.it) {}
   string operator*() { return (*it)->get(); }
-  iterator& operator++() { it++; return *this; }
+  iterator& operator++() { ++it; return *this; }
   iterator operator++(int) { iterator res(it); operator++(); return res; }
   bool operator==(const iterator& other) { return other.it == it; }
 };

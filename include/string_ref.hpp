@@ -35,7 +35,7 @@ namespace lini {
   struct const_ref : public string_ref, settable {
     string val;
 
-    const_ref(string&& val) : val(val) {}
+    explicit const_ref(string&& val) : val(val) {}
     string get() const { return val; }
     bool readonly() const { return false; }
     void set(const string& value) { val = value; }
@@ -45,7 +45,7 @@ namespace lini {
     string_ref_p fallback;
 
     fallback_ref() {}
-    fallback_ref(string_ref_p&& fallback) : fallback(move(fallback)) {}
+    explicit fallback_ref(string_ref_p&& fallback) : fallback(move(fallback)) {}
     string use_fallback(const string& error_message) const;
   };
 

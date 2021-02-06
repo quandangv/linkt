@@ -98,7 +98,6 @@ string_ref_p addable::parse_ref(string& raw, tstring& str) {
       auto subdoc = std::make_unique<document>();
       tstring line;
       while(!(line = get_token<';'>(str)).untouched()) {
-        LG_DBUG("Before cut: " << line)
         if (auto new_key = cut_front(line, '='); trim(new_key).empty()) {
           throw new error("Missing assigned key name");
         } else
