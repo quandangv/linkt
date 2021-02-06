@@ -44,5 +44,6 @@ set(COPIED_FILES
   parse_test.txt
   parse_test_output.txt
   lemonbar_test.txt
+  lemonbar_test_output.txt
   lemonbar_untangled_test.txt
 )
