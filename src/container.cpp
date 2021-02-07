@@ -48,15 +48,16 @@ bool container::set(const tstring& path, const string& value) {
   return false;
 }
 
-void addable::add(tstring path, string& raw, tstring value) {
+string_ref_p2 addable::add(tstring path, string& raw, tstring value) {
   auto node = parse_string(raw, value);
   if (node)
-    add(path, move(node));
+    return add(path, move(node));
+  return {};
 }
 
-void addable::add(tstring path, string raw) {
+string_ref_p2 addable::add(tstring path, string raw) {
   tstring value(raw);
-  add(path, raw, value);
+  return add(path, raw, value);
 }
 
 string_ref_p addable::parse_ref(string& raw, tstring& str) {
@@ -139,8 +140,7 @@ string_ref_p addable::parse_string(string& raw, tstring& str) {
     auto value = parse_ref(raw, token);
     if (value) {
       // Mark the position of the token in the base string
-      newval->positions.push_back(ss.tellp());
-      newval->replacements.list.emplace_back(move(value));
+      newval->spots.push_back({size_t(ss.tellp()), "", move(value)});
     }
     str.erase_front(end);
   } while (find_enclosed(str, raw, "${", "{", "}", start, end));

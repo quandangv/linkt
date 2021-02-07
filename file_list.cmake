@@ -21,7 +21,7 @@ unset(DEBUG_SCOPES CACHE)
 set(PUBLIC_HEADERS
   ${PUBLIC_HEADERS_DIR}/document.hpp
   ${PUBLIC_HEADERS_DIR}/error.hpp
-  ${PUBLIC_HEADERS_DIR}/parse.hpp
+  ${PUBLIC_HEADERS_DIR}/languages.hpp
   ${PUBLIC_HEADERS_DIR}/string_ref.hpp
   ${PUBLIC_HEADERS_DIR}/container.hpp
   ${STRINGS_PUBLIC_HEADERS_DIR}/tstring.hpp
@@ -30,19 +30,22 @@ set(PUBLIC_HEADERS
 # source files
 set(SOURCES
   ${SRC_DIR}/document.cpp
-  ${SRC_DIR}/parse.cpp
+  ${SRC_DIR}/lang_ini.cpp
+  ${SRC_DIR}/lang_yml.cpp
   ${SRC_DIR}/container.cpp
   ${SRC_DIR}/string_ref.cpp
+  ${SRC_DIR}/string_interpolate_ref.cpp
   ${TSTRING_SOURCES}
 )
 
 set(INTERNAL_TESTS)
-set(EXTERNAL_TESTS parse_manual parse_file)
+set(EXTERNAL_TESTS container languages)
 set(COPIED_FILES
   key_file.txt
   assign_test.txt
-  parse_test.txt
-  parse_test_output.txt
+  ini_test.txt
+  ini_test_output.txt
+  yml_test.txt
   lemonbar_test.txt
   lemonbar_test_output.txt
   lemonbar_untangled_test.txt

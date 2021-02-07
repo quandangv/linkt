@@ -1,0 +1,15 @@
+compact = " %{F#f00}CPU 69% %{F#ff0}RAM 96% %{F#0f0}TEMP 99*C %{F#0ff}BAT 0% "
+msg = hello
+simple = " 69 96 0 "
+
+[mod]
+bat = %{F#0ff}BAT 0%
+cpu = %{F#f00}CPU 69%
+ram = %{F#ff0}RAM 96%
+temp = %{F#0f0}TEMP 99*C
+
+[stat]
+bat = 0
+cpu = 69
+ram = 96
+temp-c = 99

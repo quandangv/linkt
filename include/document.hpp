@@ -19,7 +19,7 @@ namespace lini {
     using addable::add;
 
     map_type map;
-
+    string_ref_p value;
 
     string_ref_p2
     add(tstring path, string_ref_p&& value);
@@ -30,6 +30,7 @@ namespace lini {
     void
     iterate_children(std::function<void(const string&, const string_ref&)> processor) const;
 
-    string get() const { return ""; }
+    string
+    get() const;
   };
 }

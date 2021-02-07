@@ -84,19 +84,16 @@ namespace lini {
     bool readonly() const { return false; }
     void set(const string& value);
     struct error : error_base { using error_base::error_base; };
-
   };
 
   struct string_interpolate_ref : public string_ref {
-    struct replacement_list : public std::iterator<std::forward_iterator_tag, string> {
-      struct iterator;
-      std::vector<string_ref_p> list;
-
-      iterator begin() const;
-      iterator end() const;
-    } replacements;
+    struct replace_spot {
+      size_t position;
+      std::string name;
+      string_ref_p replacement;
+    };
     string base;
-    std::vector<size_t> positions;
+    std::vector<replace_spot> spots;
 
     string get() const;
   };

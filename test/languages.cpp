@@ -1,4 +1,4 @@
-#include "parse.hpp"
+#include "languages.hpp"
 #include "test.h"
 
 #include <fstream>
@@ -9,14 +9,14 @@ using namespace lini;
 struct file_test_param {
   struct expectation { string path, value; };
 
-  string path;
+  string path, language;
   vector<expectation> expectations;
   vector<string> err;
 };
 
 vector<file_test_param> parse_tests = {
   {
-    "parse_test",
+    "ini_test", "ini",
     {
       {"key-rogue", "rogue"},
       {"test.key-a", "a"},
@@ -46,7 +46,7 @@ vector<file_test_param> parse_tests = {
     }
   },
   {
-    "lemonbar_test",
+    "lemonbar_test", "ini",
     {
       {"msg", "hello"},
       {"simple", " 69 96 0 "},
@@ -62,6 +62,16 @@ vector<file_test_param> parse_tests = {
     },
     {}
   },
+  {
+    "yml_test", "yml",
+    {
+      {"bar", "%{F#fff}%{B#FF54CB} BAT 99% "},
+      {"bar.F", "#fff"},
+      {"bar.bat", "%{B#FF54CB} BAT 99%"},
+      {"bar.bat.B", "#FF54CB"},
+    },
+    {}
+  },
 };
 
 struct file_test : public TestWithParam<file_test_param> {
@@ -72,7 +82,10 @@ struct file_test : public TestWithParam<file_test_param> {
 
     document doc;
     errorlist err;
-    parse(ifs, doc, err);
+    if (testset.language == "ini")
+      parse_ini(ifs, doc, err);
+    else if (testset.language == "yml")
+      parse_yml(ifs, doc, err);
 
     // Check for unexpected errors
     for(auto& e : err) {
@@ -103,7 +116,10 @@ struct file_test : public TestWithParam<file_test_param> {
 
     // Check document export
     std::ofstream ofs{testset.path + "_export.txt"};
-    write(ofs, doc);
+    if (testset.language == "ini")
+      write_ini(ofs, doc);
+    //else if (testset.language == "yml")
+    //  write_yml(ofs, doc);
     auto command = "diff -Z '" + testset.path + "_output.txt' '" + testset.path + "_export.txt' 2>&1";
     auto file = popen(command.data(), "r");
     ASSERT_TRUE(file);
@@ -131,7 +147,7 @@ TEST(parse, assign_test) {
   std::ifstream ifs{"assign_test.txt"};
   ASSERT_FALSE(ifs.fail());
   errorlist err;
-  parse(ifs, doc, err);
+  parse_ini(ifs, doc, err);
   ASSERT_TRUE(err.empty());
   ifs.close();
 

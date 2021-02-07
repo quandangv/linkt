@@ -34,10 +34,10 @@ namespace lini {
     virtual string_ref_p2
     add(tstring path, string_ref_p&& value) = 0;
 
-    void
+    string_ref_p2
     add(tstring path, string& raw, tstring value);
 
-    void
+    string_ref_p2
     add(tstring path, string raw);
 
     string_ref_p

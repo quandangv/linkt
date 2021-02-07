@@ -1,0 +1,11 @@
+compact: " ${mod.cpu} ${mod.ram} ${mod.temp} ${mod.bat} "
+mod:
+  cpu: %{F#f00}CPU ${stat.cpu}%;
+  ram: %{F#ff0}RAM ${stat.ram}%
+  temp: %{F#0f0}TEMP ${stat.temp-c}*C
+  bat: %{F#0ff}BAT ${stat.bat}%
+stat:
+  cpu: ${cmd: echo 69}
+  ram: ${cmd: echo 96}
+  temp-c: ${cmd: echo 99}
+  bat: ${cmd: echo 0}

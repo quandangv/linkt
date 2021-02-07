@@ -1,4 +1,4 @@
-#include "parse.hpp"
+#include "languages.hpp"
 #include "common.hpp"
 #include "tstring.hpp"
 
@@ -12,7 +12,7 @@ constexpr const char excluded_chars[] = "\t \"'=;#[](){}:$\\%";
 constexpr const char comment_chars[] = ";#";
 
 
-std::istream& parse(std::istream& is, document& doc, errorlist& err) {
+std::istream& parse_ini(std::istream& is, document& doc, errorlist& err) {
   string prefix;
   string raw;
   // Iterate through lines
@@ -22,13 +22,12 @@ std::istream& parse(std::istream& is, document& doc, errorlist& err) {
     auto report_err_line = [&](const string& msg) {
       err.emplace_back("line " + std::to_string(linecount), msg);
     };
+    // Determines if the name is valid
     auto check_name = [&](const tstring& name) {
-      // Determines if the name is valid
-      auto invalid = std::find_if(name.begin(), name.end(), [](char ch) { return strchr(excluded_chars, ch); });
-      if (invalid == name.end())
-        return true;
-      report_err_line("Invalid character '" + string{*invalid} + "' in name");
-      return false;
+      for(char c : name)
+        if (auto invalid = strchr(excluded_chars, c); invalid)
+          return report_err_line("Invalid character '" + string{*invalid} + "' in name"), false;
+      return true;
     };
     ltrim(line);
     // skip empty and comment lines
@@ -56,7 +55,7 @@ std::istream& parse(std::istream& is, document& doc, errorlist& err) {
   return is;
 }
 
-std::ostream& write(std::ostream& os, const container& doc, const string& prefix) {
+std::ostream& write_ini(std::ostream& os, const container& doc, const string& prefix) {
   vector<std::pair<string, const container*>> containers;
   doc.iterate_children([&](const string& name, const string_ref& child) {
     auto ctn = dynamic_cast<const container*>(&child);
@@ -77,7 +76,7 @@ std::ostream& write(std::ostream& os, const container& doc, const string& prefix
   });
   for(auto pair : containers) {
     os << endl << '[' << prefix << pair.first << ']' << endl;
-    write(os, *pair.second);
+    write_ini(os, *pair.second);
   }
   return os;
 }

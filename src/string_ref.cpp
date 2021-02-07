@@ -1,6 +1,5 @@
 #include "string_ref.hpp"
 #include "common.hpp"
-#include "string_interpolate.hpp"
 #include "document.hpp"
 
 #include <fstream>
@@ -101,31 +100,6 @@ string cmd_ref::get() const {
   auto last_line = result.find_last_not_of("\r\n");
   result.erase(last_line + 1);
   return result;
-}
-
-#define SIRR string_interpolate_ref::replacement_list
-struct SIRR::iterator {
-  vector<string_ref_p>::const_iterator it;
-
-  iterator(const std::vector<string_ref_p>::const_iterator& it) : it(it) {}
-  iterator(const iterator& other) : it(other.it) {}
-  string operator*() { return (*it)->get(); }
-  iterator& operator++() { ++it; return *this; }
-  iterator operator++(int) { iterator res(it); operator++(); return res; }
-  bool operator==(const iterator& other) { return other.it == it; }
-};
-
-SIRR::iterator SIRR::begin() const {
-  return iterator(list.begin());
-}
-
-SIRR::iterator SIRR::end() const {
-  return iterator(list.end());
-}
-#undef SIRR
-
-string string_interpolate_ref::get() const {
-  return interpolate(base, positions, replacements);
 }
 
 GLOBAL_NAMESPACE_END

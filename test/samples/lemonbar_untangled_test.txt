@@ -1,0 +1,13 @@
+bar = ${mod.bat} ${mod.cpu} ${mod.ram} ${mod.temp}
+
+[mod]
+bat = BAT ${stat.bat}%
+cpu = BAT ${stat.cpt}%
+ram = BAT ${stat.ram}%
+temp = BAT ${stat.temp}*C 
+
+[stat]
+bat =  99
+cpu =  99
+ram =  99
+temp =  99

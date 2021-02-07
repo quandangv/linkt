@@ -1,0 +1,9 @@
+bar: '%{F${F}}${bat} '
+  F: #fff
+  bat: %{B${B}} ${label} ${stat}${unit}
+    B: ${color: cielch(0.8, 1, ${H})}
+      H: 0
+      L: 0.8
+    label: BAT
+    stat: 99
+    unit: %

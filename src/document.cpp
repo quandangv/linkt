@@ -55,4 +55,8 @@ void document::iterate_children(std::function<void(const string&, const string_r
   }
 }
 
+string document::get() const {
+  return value ? value->get() : "";
+}
+
 GLOBAL_NAMESPACE_END
