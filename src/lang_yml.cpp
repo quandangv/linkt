@@ -15,13 +15,16 @@ std::istream& parse_yml(std::istream& is, document& doc, errorlist& err) {
   vector<int> indents{-1};
   vector<addable*> parents{&doc};
   string raw;
+
   // Iterate through lines
   for (int linecount = 1; std::getline(is, raw); linecount++, raw.clear()) {
     LG_DBUG("parse: line: " << raw);
     tstring line(raw);
+
     auto report_err_line = [&](const string& msg) {
       err.emplace_back("line " + std::to_string(linecount), msg);
     };
+
     // Determines if the name is valid
     auto check_name = [&](const tstring& name) {
       for(char c : name)
@@ -29,6 +32,7 @@ std::istream& parse_yml(std::istream& is, document& doc, errorlist& err) {
           return report_err_line("Invalid character '" + string{*invalid} + "' in name"), false;
       return true;
     };
+
     int indent = ltrim(line);
     // skip empty and comment lines
     if (!line.empty() && !strchr(comment_chars, line.front())) {
@@ -44,19 +48,15 @@ std::istream& parse_yml(std::istream& is, document& doc, errorlist& err) {
         trim(key);
         if (check_name(key)) {
           trim_quotes(line);
-          LG_DBUG("Add")
           try {
-            auto node = std::make_unique<document>();
+            auto node = new document();
             node->value = node->parse_string(raw, line);
-            auto item = parents.back()->add(key, move(node));
-            auto newparent = item ? dynamic_cast<addable*>(item->get()) : nullptr;
-            parents.push_back(newparent);
+            parents.back()->add(key, string_ref_p(node));
+            parents.push_back(node);
             indents.push_back(indent);
           } catch (const std::exception& err) {
-            LG_DBUG("parse: key error: " << err.what());
             report_err_line(err.what());
           }
-          LG_DBUG("Add done")
         } else report_err_line("Invalid key");
       } else report_err_line("Unparsed line");
     }
@@ -64,7 +64,28 @@ std::istream& parse_yml(std::istream& is, document& doc, errorlist& err) {
   return is;
 }
 
-//std::ostream& write_yml(std::ostream& os, const container& doc, const string& prefix) {
-//}
+std::ostream& write_yml(std::ostream& os, const container& doc, int indent) {
+  doc.iterate_children([&](const string& name, const string_ref& child) {
+    auto value = child.get();
+    size_t opening = 0;
+    while((opening = value.find("${", opening)) != string::npos) {
+      value.insert(value.begin() + opening, '\\');
+      opening += 2;
+    }
+
+    // Indent the line
+    std::fill_n(std::ostream_iterator<char>(os), indent, ' ');
+    if (isspace(value.front()) || isspace(value.back()))
+      os << name << ": " << '"' << value << '"' << endl;
+    else
+      os << name << ": " << value << endl;
+    
+    auto ctn = dynamic_cast<const container*>(&child);
+    if(ctn) {
+      write_yml(os, *ctn, indent + 2);
+    }
+  });
+  return os;
+}
 
 GLOBAL_NAMESPACE_END

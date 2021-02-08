@@ -32,7 +32,7 @@ std::istream& parse_ini(std::istream& is, document& doc, errorlist& err) {
     ltrim(line);
     // skip empty and comment lines
     if (!line.empty() && !strchr(comment_chars, line.front())) {
-      if (cut_front_back(line, "[", "]")) {
+      if (cut_front_back(line, "["_ts, "]"_ts)) {
         // detected section header
         if (check_name(line)) {
           prefix = line + ".";

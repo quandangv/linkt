@@ -46,6 +46,7 @@ set(COPIED_FILES
   ini_test.txt
   ini_test_output.txt
   yml_test.txt
+  yml_test_output.txt
   lemonbar_test.txt
   lemonbar_test_output.txt
   lemonbar_untangled_test.txt

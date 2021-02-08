@@ -73,13 +73,13 @@ string_ref_p addable::parse_ref(string& raw, tstring& str) {
     return move(ptr);
   };
   if (auto ref_type= cut_front(str, ':'); !ref_type.untouched()) {
-    if (ref_type == "file") {
+    if (ref_type == "file"_ts) {
       return make_meta_ref(std::make_unique<file_ref>());
-    } else if (ref_type == "cmd") {
+    } else if (ref_type == "cmd"_ts) {
       return make_meta_ref(std::make_unique<cmd_ref>());
-    } else if (ref_type == "env") {
+    } else if (ref_type == "env"_ts) {
       return make_meta_ref(std::make_unique<env_ref>());
-    } else if (ref_type == "color") {
+    } else if (ref_type == "color"_ts) {
       auto newval = std::make_unique<color_ref>();
       if (auto mod_str = cut_front(str, ';'); !mod_str.untouched()) {
         if (auto colorspace = cut_front(mod_str, ':'); !colorspace.untouched())
@@ -87,7 +87,7 @@ string_ref_p addable::parse_ref(string& raw, tstring& str) {
         newval->processor.add_modification(mod_str);
       }
       return make_meta_ref(move(newval));
-    } else if (ref_type == "key") {
+    } else if (ref_type == "key"_ts) {
       if (auto new_key = cut_front(str, '='); !new_key.untouched()) {
         trim(new_key);
         LG_DBUG("parse-key: add key: " + new_key);
@@ -95,7 +95,7 @@ string_ref_p addable::parse_ref(string& raw, tstring& str) {
         return {};
       }
       throw error("Missing assigned key name");
-    } else if (ref_type == "doc") {
+    } else if (ref_type == "doc"_ts) {
       auto subdoc = std::make_unique<document>();
       tstring line;
       while(!(line = get_token<';'>(str)).untouched()) {

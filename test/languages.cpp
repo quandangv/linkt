@@ -118,8 +118,8 @@ struct file_test : public TestWithParam<file_test_param> {
     std::ofstream ofs{testset.path + "_export.txt"};
     if (testset.language == "ini")
       write_ini(ofs, doc);
-    //else if (testset.language == "yml")
-    //  write_yml(ofs, doc);
+    else if (testset.language == "yml")
+      write_yml(ofs, doc);
     auto command = "diff -Z '" + testset.path + "_output.txt' '" + testset.path + "_export.txt' 2>&1";
     auto file = popen(command.data(), "r");
     ASSERT_TRUE(file);
@@ -152,24 +152,24 @@ TEST(parse, assign_test) {
   ifs.close();
 
   // Test document functionalities
-  EXPECT_FALSE(doc.get_child("nexist"));
-  EXPECT_FALSE(doc.has_child("nexist"));
-  EXPECT_EQ(doc.get_child("nexist", "fallback"), "fallback");
-  EXPECT_THROW(doc.get_child_ref("nexist"), string_ref::error);
-  EXPECT_EQ(doc.get_child("key-a", "fallback"), "a");
-  EXPECT_EQ(doc.get_child_ref("key-a").get(), "a");
+  EXPECT_FALSE(doc.get_child("nexist"_ts));
+  EXPECT_FALSE(doc.has_child("nexist"_ts));
+  EXPECT_EQ(doc.get_child("nexist"_ts, "fallback"), "fallback");
+  EXPECT_THROW(doc.get_child_ref("nexist"_ts), string_ref::error);
+  EXPECT_EQ(doc.get_child("key-a"_ts, "fallback"), "a");
+  EXPECT_EQ(doc.get_child_ref("key-a"_ts).get(), "a");
   EXPECT_EQ(doc.get(), "");
-  EXPECT_THROW(doc.get_child("ref-fail"), container::error);
+  EXPECT_THROW(doc.get_child("ref-fail"_ts), container::error);
 
   // Test local_ref assignments
   EXPECT_NO_FATAL_FAILURE(set_key("key-a", "a"));
   EXPECT_NO_FATAL_FAILURE(set_key("ref-a", "foo"));
   EXPECT_NO_FATAL_FAILURE(set_key("ref-ref-a", "bar"));
-  EXPECT_NO_FATAL_FAILURE(EXPECT_EQ("bar", *doc.get_child("key-a")));
+  EXPECT_NO_FATAL_FAILURE(EXPECT_EQ("bar", *doc.get_child("key-a"_ts)));
 
   // Test fallback assignments
   EXPECT_NO_FATAL_FAILURE(set_key("ref-default-a", "foobar"));
-  EXPECT_NO_FATAL_FAILURE(EXPECT_EQ("foobar", *doc.get_child("key-a")));
+  EXPECT_NO_FATAL_FAILURE(EXPECT_EQ("foobar", *doc.get_child("key-a"_ts)));
 
   // Test file_ref assignments
   EXPECT_NO_FATAL_FAILURE(set_key("ref-nexist", "barfoo"));
@@ -188,7 +188,7 @@ TEST(parse, assign_test) {
   EXPECT_NO_FATAL_FAILURE(set_key("file-parse", "content"));
 
   // Test document key
-  EXPECT_NO_FATAL_FAILURE(EXPECT_EQ(doc.get_child("doc.foo", "fail"), "hello"));
-  EXPECT_NO_FATAL_FAILURE(EXPECT_EQ(doc.get_child("doc.bar", "fail"), "world"));
+  EXPECT_NO_FATAL_FAILURE(EXPECT_EQ(doc.get_child("doc.foo"_ts, "fail"), "hello"));
+  EXPECT_NO_FATAL_FAILURE(EXPECT_EQ(doc.get_child("doc.bar"_ts, "fail"), "world"));
 }
 
