@@ -1,0 +1,37 @@
+#include "languages.hpp"
+#include "common.hpp"
+
+GLOBAL_NAMESPACE
+
+void errorlist::report_error(int linecount, const string& msg) {
+  emplace_back("line " +std::to_string(linecount), msg);
+}
+
+bool errorlist::extract_key(tstring& line, int linecount, char separator, tstring& key) {
+  key = cut_front(line, separator);
+  if (key.untouched())
+    return report_error(linecount, "Line ignored: " + line), false;
+  trim_quotes(line);
+  return check_name(trim(key), linecount);
+}
+
+bool errorlist::check_name(const tstring& name, int linecount) {
+  for(char c : name)
+    if(auto invalid = strchr(" #$\"'(){}[]", c); invalid)
+      return report_error(linecount, "Invalid character '" + string{*invalid} + "' in name: " + name), false;
+  return true;
+}
+
+void write_key(std::ostream& os, const string& prefix, string&& value) {
+  size_t opening = 0;
+  while((opening = value.find("${", opening)) != string::npos) {
+    value.insert(value.begin() + opening, '\\');
+    opening += 2;
+  }
+  if (isspace(value.front()) || isspace(value.back()))
+    os << prefix << '"' << value << '"' << endl;
+  else
+    os << prefix << value << endl;
+}
+
+GLOBAL_NAMESPACE_END

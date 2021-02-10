@@ -11,14 +11,14 @@ struct replacement_iterator {
   vector<spot>::const_iterator it;
   replacement_iterator(const std::vector<spot>::const_iterator& it) : it(it) {}
   replacement_iterator& operator++() { ++it; return *this; }
-  bool operator==(const replacement_iterator& other) { return other.it == it; }
+  bool operator==(const replacement_iterator& other) const { return other.it == it; }
   string operator*() { return (*it).replacement->get(); }
 };
 struct position_iterator {
   vector<spot>::const_iterator it;
   position_iterator(const std::vector<spot>::const_iterator& it) : it(it) {}
   position_iterator& operator++() { ++it; return *this; }
-  bool operator==(const position_iterator& other) { return other.it == it; }
+  bool operator==(const position_iterator& other) const { return other.it == it; }
   size_t operator*() { return (*it).position; }
 };
 template<typename IteratorType>

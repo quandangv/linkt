@@ -1,9 +1,9 @@
 [submodule "cmake"]
 	path = cmake
-	url = https://github.com/DRKblade/cmake_module
+	url = https://github.com/quandangv/cmake_module
 [submodule "lib/googletest"]
 	path = lib/googletest
 	url = https://github.com/google/googletest.git
 [submodule "lib/strings"]
 	path = lib/strings
-	url = https://github.com/DRKblade/strings
+	url = https://github.com/quandangv/strings
