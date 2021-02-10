@@ -34,6 +34,7 @@ set(SOURCES
   ${SRC_DIR}/lang_yml.cpp
   ${SRC_DIR}/container.cpp
   ${SRC_DIR}/string_ref.cpp
+  ${SRC_DIR}/languages.cpp
   ${SRC_DIR}/string_interpolate_ref.cpp
   ${TSTRING_SOURCES}
 )
