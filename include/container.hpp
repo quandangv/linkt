@@ -42,7 +42,7 @@ namespace lini {
 
     string_ref_p
     parse_string(string& raw, tstring& str);
-  private:
+
     string_ref_p
     parse_ref(string& raw, tstring& str);
   };

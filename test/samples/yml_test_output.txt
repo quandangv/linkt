@@ -3,7 +3,7 @@ bar: "%{F#fff}%{B#FF54CB} BAT 99% "
   bat: %{B#FF54CB} BAT 99%
     B: #FF54CB
       H: 0
-      L: 0.8
+      L: 99
     label: BAT
     stat: 99
     unit: %

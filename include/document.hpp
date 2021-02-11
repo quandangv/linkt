@@ -12,8 +12,7 @@
 namespace lini {
   using std::string;
 
-  class document : public string_ref, public addable {
-  public:
+  struct document : public string_ref, public addable {
     struct error : error_base { using error_base::error_base; };
     using map_type = std::map<string, string_ref_p2>;
     using addable::add;

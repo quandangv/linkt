@@ -11,7 +11,6 @@ bool errorlist::extract_key(tstring& line, int linecount, char separator, tstrin
   key = cut_front(line, separator);
   if (key.untouched())
     return report_error(linecount, "Line ignored: " + line), false;
-  trim_quotes(line);
   return check_name(trim(key), linecount);
 }
 

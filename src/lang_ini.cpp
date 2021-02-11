@@ -26,6 +26,7 @@ void parse_ini(std::istream& is, document& doc, errorlist& err) {
         if (err.check_name(line, linecount))
           prefix = line + ".";
       } else if (tstring key; err.extract_key(line, linecount, '=', key)) {
+        trim_quotes(line);
         try {
           doc.add(prefix + key, raw, line);
         } catch (const std::exception& e) {
