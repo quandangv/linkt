@@ -72,64 +72,61 @@ string_ref_p addable::parse_ref(string& raw, tstring& str) {
       throw error("Invalid content for this type of reference");
     return move(ptr);
   };
-  if (auto ref_type= cut_front(str, ':'); !ref_type.untouched()) {
-    if (ref_type == "file"_ts) {
-      return make_meta_ref(std::make_unique<file_ref>());
-    } else if (ref_type == "cmd"_ts) {
-      return make_meta_ref(std::make_unique<cmd_ref>());
-    } else if (ref_type == "env"_ts) {
-      return make_meta_ref(std::make_unique<env_ref>());
-    } else if (ref_type == "map"_ts) {
-      auto newval = std::make_unique<map_ref>();
-      auto from = cut_front(str, ';');
-      if (from.untouched())
-        throw error("Expected 3 components separated by ';'");
-      if (auto min = cut_front(from, ':'); !min.untouched())
-        newval->from_min = convert<float, strtof>(trim(min));
-      newval->from_range = convert<float, strtof>(trim(from));
-      auto to = cut_front(str, ';');
-      if (to.untouched())
-        throw error("Expected 3 components separated by ';'");
-      if (auto min = cut_front(to, ':'); !min.untouched())
-        newval->to_min = convert<float, strtof>(trim(min));
-      newval->to_range = convert<float, strtof>(trim(to));
-      return make_meta_ref(move(newval));
-    } else if (ref_type == "color"_ts) {
-      auto newval = std::make_unique<color_ref>();
-      if (auto mod_str = cut_front(str, ';'); !mod_str.untouched()) {
-        if (auto colorspace = cut_front(mod_str, ':'); !colorspace.untouched())
-          newval->processor.inter = cspace::stospace(trim(colorspace));
-        newval->processor.add_modification(mod_str);
-      }
-      return make_meta_ref(move(newval));
-    } else if (ref_type == "key"_ts) {
-      if (auto new_key = cut_front(str, '='); !new_key.untouched()) {
-        trim(new_key);
-        LG_DBUG("parse-key: add key: " + new_key);
-        add(new_key, raw, trim_quotes(str));
-        return {};
-      }
-      throw error("Missing assigned key name");
-    } else if (ref_type == "doc"_ts) {
-      auto subdoc = std::make_unique<document>();
-      tstring line;
-      while(!(line = get_token<';'>(str)).untouched()) {
-        if (auto new_key = cut_front(line, '='); trim(new_key).empty()) {
-          throw new error("Missing assigned key name");
-        } else
-          subdoc->add(new_key, raw, trim_quotes(line));
-      }
-      return move(subdoc);
-    } else
-      throw error("Unsupported reference type: " + ref_type);
-  } else {
+  auto ref_type = cut_front(str, ':');
+  if (ref_type.untouched()) {
     string_ref_p fallback;
     take_fallback(fallback);
     auto ptr = get_child_ptr(str);
     if (!ptr)
       ptr = add(str, string_ref_p{});
     return std::make_unique<local_ref>(ptr, move(fallback));
-  }
+  } else if (ref_type == "file"_ts) {
+    return make_meta_ref(std::make_unique<file_ref>());
+  } else if (ref_type == "cmd"_ts) {
+    return make_meta_ref(std::make_unique<cmd_ref>());
+  } else if (ref_type == "env"_ts) {
+    return make_meta_ref(std::make_unique<env_ref>());
+  } else if (ref_type == "map"_ts) {
+    auto newval = std::make_unique<map_ref>();
+    auto from = cut_front(str, ';');
+    if (from.untouched())
+      throw error("Expected 3 components separated by ';'");
+    if (auto min = cut_front(from, ':'); !min.untouched())
+      newval->from_min = convert<float, strtof>(trim(min));
+    newval->from_range = convert<float, strtof>(trim(from));
+    auto to = cut_front(str, ';');
+    if (to.untouched())
+      throw error("Expected 3 components separated by ';'");
+    if (auto min = cut_front(to, ':'); !min.untouched())
+      newval->to_min = convert<float, strtof>(trim(min));
+    newval->to_range = convert<float, strtof>(trim(to));
+    return make_meta_ref(move(newval));
+  } else if (ref_type == "color"_ts) {
+    auto newval = std::make_unique<color_ref>();
+    if (auto mod_str = cut_front(str, ';'); !mod_str.untouched()) {
+      if (auto space = cut_front(mod_str, ':'); !space.untouched())
+        newval->processor.inter = cspace::stospace(trim(space));
+      newval->processor.add_modification(mod_str);
+    }
+    return make_meta_ref(move(newval));
+  } else if (ref_type == "key"_ts) {
+    if (auto new_key = cut_front(str, '='); !new_key.untouched()) {
+      add(trim(new_key), raw, trim_quotes(str));
+      return {};
+    }
+    throw error("Missing assigned key name");
+  } else if (ref_type == "doc"_ts) {
+    auto subdoc = std::make_unique<document>();
+    tstring line;
+    while(!(line = get_token<';'>(str)).untouched()) {
+      if (auto new_key = cut_front(line, '='); !new_key.untouched()) {
+        subdoc->add(trim(new_key), raw, trim_quotes(line));
+      } else
+        throw error("Missing assigned key name");
+    }
+    return move(subdoc);
+  } else
+    throw error("Unsupported reference type: " + ref_type);
 }
 
 string_ref_p addable::parse_string(string& raw, tstring& str) {
@@ -155,7 +152,7 @@ string_ref_p addable::parse_string(string& raw, tstring& str) {
     auto value = parse_ref(raw, token);
     if (value) {
       // Mark the position of the token in the base string
-      newval->spots.push_back({size_t(ss.tellp()), "", move(value)});
+      newval->spots.push_back({int(ss.tellp()), "", move(value)});
     }
     str.erase_front(end);
   } while (find_enclosed(str, raw, "${", "{", "}", start, end));

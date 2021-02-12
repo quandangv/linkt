@@ -103,7 +103,7 @@ string cmd_ref::get() const {
 }
 
 string map_ref::get() const {
-  auto str = value->get();
+  auto str = value ? value->get() : use_fallback("Value key doesn't exist");
   size_t remaining;
   auto num =  std::stof(str, &remaining);
   if (remaining != str.size())

@@ -87,14 +87,13 @@ namespace lini {
   };
 
   struct map_ref : public meta_ref {
-    string_ref_p value;
     float from_min, from_range, to_min, to_range;
     string get() const;
   };
 
   struct string_interpolate_ref : public string_ref {
     struct replace_spot {
-      size_t position;
+      int position;
       std::string name;
       string_ref_p replacement;
     };

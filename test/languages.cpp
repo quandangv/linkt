@@ -36,7 +36,6 @@ vector<file_test_param> parse_tests = {
     },
     {
       "line 2",
-      "line 3",
       "line 7",
       "line 9",
       "line 13",
@@ -137,20 +136,22 @@ TEST_P(file_test, general) {
   test();
 }
 
-TEST(parse, assign_test) {
-  document doc;
-  auto set_key = [&](const string& key, const string& newval) {
-    EXPECT_TRUE(doc.set(key, newval));
-    ASSERT_EQ(newval, doc.get_child(key)) << "Unexpected value after assignment";
-  };
+document doc;
+void set_key(const string& key, const string& newval) {
+  EXPECT_TRUE(doc.set(key, newval));
+  ASSERT_EQ(newval, doc.get_child(key)) << "Unexpected value after assignment";
+}
 
+TEST(assign_test, load_doc) {
   std::ifstream ifs{"assign_test.txt"};
   ASSERT_FALSE(ifs.fail());
   errorlist err;
   parse_ini(ifs, doc, err);
   ASSERT_TRUE(err.empty());
   ifs.close();
+}
 
+TEST(assign_test, doc) {
   // Test document functionalities
   EXPECT_FALSE(doc.get_child("nexist"_ts));
   EXPECT_FALSE(doc.has_child("nexist"_ts));
@@ -160,7 +161,9 @@ TEST(parse, assign_test) {
   EXPECT_EQ(doc.get_child_ref("key-a"_ts).get(), "a");
   EXPECT_EQ(doc.get(), "");
   EXPECT_THROW(doc.get_child("ref-fail"_ts), container::error);
+}
 
+TEST(assign_test, local_ref) {
   // Test local_ref assignments
   EXPECT_NO_FATAL_FAILURE(set_key("key-a", "a"));
   EXPECT_NO_FATAL_FAILURE(set_key("ref-a", "foo"));
@@ -170,23 +173,27 @@ TEST(parse, assign_test) {
   // Test fallback assignments
   EXPECT_NO_FATAL_FAILURE(set_key("ref-default-a", "foobar"));
   EXPECT_NO_FATAL_FAILURE(EXPECT_EQ("foobar", *doc.get_child("key-a"_ts)));
+}
 
+TEST(assign_test, file_env_ref) {
   // Test file_ref assignments
   EXPECT_NO_FATAL_FAILURE(set_key("ref-nexist", "barfoo"));
   EXPECT_NO_FATAL_FAILURE(set_key("env-nexist", "barbar"));
   EXPECT_NO_FATAL_FAILURE(set_key("file-parse", "foo"));
-  ifs.open("key_file.txt");
+  std::ifstream ifs("key_file.txt");
   string content;
   getline(ifs, content);
   ifs.close();
   EXPECT_NO_FATAL_FAILURE(EXPECT_EQ("foo", content));
-  
+
   // Test env_ref assignments
   EXPECT_NO_FATAL_FAILURE(set_key("env", "foo"));
 
   // Revert file contents back to its original
   EXPECT_NO_FATAL_FAILURE(set_key("file-parse", "content"));
+}
 
+TEST(assign_test, paths) {
   // Test document key
   EXPECT_NO_FATAL_FAILURE(EXPECT_EQ(doc.get_child("doc.foo"_ts, "fail"), "hello"));
   EXPECT_NO_FATAL_FAILURE(EXPECT_EQ(doc.get_child("doc.bar"_ts, "fail"), "world"));

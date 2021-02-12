@@ -11,13 +11,6 @@ bool errorlist::extract_key(tstring& line, int linecount, char separator, tstrin
   key = cut_front(line, separator);
   if (key.untouched())
     return report_error(linecount, "Line ignored: " + line), false;
-  return check_name(trim(key), linecount);
-}
-
-bool errorlist::check_name(const tstring& name, int linecount) {
-  for(char c : name)
-    if(auto invalid = strchr(" #$\"'(){}[]", c); invalid)
-      return report_error(linecount, "Invalid character '" + string{*invalid} + "' in name: " + name), false;
   return true;
 }
 

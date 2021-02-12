@@ -23,8 +23,7 @@ void parse_ini(std::istream& is, document& doc, errorlist& err) {
     if (!line.empty() && !strchr(comment_chars, line.front())) {
       if (cut_front_back(line, "["_ts, "]"_ts)) {
         // detected section header
-        if (err.check_name(line, linecount))
-          prefix = line + ".";
+        prefix = line + ".";
       } else if (tstring key; err.extract_key(line, linecount, '=', key)) {
         trim_quotes(line);
         try {

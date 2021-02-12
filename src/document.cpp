@@ -19,6 +19,12 @@ string_ref_p2 document::get_child_ptr(tstring path) const {
 }
 
 string_ref_p2 document::add(tstring path, string_ref_p&& value) {
+  // Check path for invalid characters
+  trim(path);
+  for(char c : path)
+    if(auto invalid = strchr(" #$\"'(){}[]", c); invalid)
+      throw error("Invalid character '" + string{*invalid} + "' in path: " + path);
+    
   if (auto immediate_path = cut_front(path, '.'); !immediate_path.untouched()) {
     // This isn't the final node of the path
     auto& ptr = map[immediate_path];
