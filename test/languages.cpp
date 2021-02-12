@@ -41,7 +41,6 @@ vector<file_test_param> parse_tests = {
       "line 13",
       "line 19",
       "line 21",
-      "line 31",
     }
   },
   {

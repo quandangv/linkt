@@ -1,5 +1,8 @@
 key-rogue = rogue
 
+[key-rogue]
+foo = foo
+
 [test]
 key = key
 key-a = a

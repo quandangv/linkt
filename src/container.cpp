@@ -19,9 +19,9 @@ std::optional<string> container::get_child(const tstring& path) const {
         throw error("Exception while retrieving value of '" + path + "': " + e.what());
       }
     } else
-      LG_INFO("document-get: failed due to value being null: " << path);
+      LG_INFO("contriner-get_child: failed due to value being null: " << path);
   } else
-    LG_INFO("document-get: failed due to key not found: " << path);
+    LG_INFO("container-get_child: failed due to key not found: " << path);
   return {};
 }
 

@@ -37,19 +37,26 @@ string_ref_p2 document::add(tstring path, string_ref_p&& value) {
       auto res = tmp->add(path, move(value));
       child_ptr = move(tmp);
       return res;
-    } if (auto child = dynamic_cast<addable*>(child_ptr.get()); child)
+    } else if (auto child = dynamic_cast<addable*>(child_ptr.get()); child) {
       return child->add(path, move(value));
-    throw error("Child " + immediate_path + " already exists but can't be added to");
-
+    } else {
+      auto doc = new document();
+      doc->value = move(child_ptr);
+      child_ptr = string_ref_p(doc);
+      return doc->add(path, move(value));
+    }
   } else {
     // This is the final node of the path
     auto& place = map[path];
     if (!place) {
-      place = std::make_shared<string_ref_p>();
+      place = std::make_shared<string_ref_p>(move(value));
     } else if (*place) {
-      throw error("Duplicate key: " + static_cast<string>(path));
-    }
-    *place = move(value);
+      if (auto doc = dynamic_cast<document*>(place->get()); doc) {
+        doc->value = move(value);
+      } else
+        throw error("Duplicate key: " + static_cast<string>(path));
+    } else
+      *place = move(value);
     return place;
   }
 }

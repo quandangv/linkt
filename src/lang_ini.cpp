@@ -42,9 +42,10 @@ void write_ini(std::ostream& os, const container& doc, const string& prefix) {
     auto ctn = dynamic_cast<const container*>(&child);
     if(ctn) {
       containers.push_back(std::make_pair(name, ctn));
-      return;
-    }
-    write_key(os, name + " = ", child.get());
+      if (auto value = child.get(); !value.empty())
+        write_key(os, name + " = ", move(value));
+    } else
+      write_key(os, name + " = ", child.get());
   });
   for(auto pair : containers) {
     os << endl << '[' << prefix << pair.first << ']' << endl;
