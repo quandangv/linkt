@@ -86,6 +86,12 @@ namespace lini {
     struct error : error_base { using error_base::error_base; };
   };
 
+  struct map_ref : public meta_ref {
+    string_ref_p value;
+    float from_min, from_range, to_min, to_range;
+    string get() const;
+  };
+
   struct string_interpolate_ref : public string_ref {
     struct replace_spot {
       size_t position;

@@ -102,4 +102,13 @@ string cmd_ref::get() const {
   return result;
 }
 
+string map_ref::get() const {
+  auto str = value->get();
+  size_t remaining;
+  auto num =  std::stof(str, &remaining);
+  if (remaining != str.size())
+    throw std::invalid_argument("value is not a number");
+  return std::to_string(to_min + to_range/from_range*(num - from_min));
+}
+
 GLOBAL_NAMESPACE_END

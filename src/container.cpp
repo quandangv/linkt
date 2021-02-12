@@ -79,6 +79,21 @@ string_ref_p addable::parse_ref(string& raw, tstring& str) {
       return make_meta_ref(std::make_unique<cmd_ref>());
     } else if (ref_type == "env"_ts) {
       return make_meta_ref(std::make_unique<env_ref>());
+    } else if (ref_type == "map"_ts) {
+      auto newval = std::make_unique<map_ref>();
+      auto from = cut_front(str, ';');
+      if (from.untouched())
+        throw error("Expected 3 components separated by ';'");
+      if (auto min = cut_front(from, ':'); !min.untouched())
+        newval->from_min = convert<float, strtof>(trim(min));
+      newval->from_range = convert<float, strtof>(trim(from));
+      auto to = cut_front(str, ';');
+      if (to.untouched())
+        throw error("Expected 3 components separated by ';'");
+      if (auto min = cut_front(to, ':'); !min.untouched())
+        newval->to_min = convert<float, strtof>(trim(min));
+      newval->to_range = convert<float, strtof>(trim(to));
+      return make_meta_ref(move(newval));
     } else if (ref_type == "color"_ts) {
       auto newval = std::make_unique<color_ref>();
       if (auto mod_str = cut_front(str, ';'); !mod_str.untouched()) {

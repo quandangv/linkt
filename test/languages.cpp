@@ -65,9 +65,9 @@ vector<file_test_param> parse_tests = {
   {
     "yml_test", "yml",
     {
-      {"bar", "%{F#fff}%{B#FF54CB} BAT 99% "},
+      {"bar", "%{F#fff}%{B#FF54CB} BAT 60% "},
       {"bar.F", "#fff"},
-      {"bar.bat", "%{B#FF54CB} BAT 99%"},
+      {"bar.bat", "%{B#FF54CB} BAT 60%"},
       {"bar.bat.B", "#FF54CB"},
     },
     {}

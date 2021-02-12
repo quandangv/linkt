@@ -68,6 +68,8 @@ vector<parse_test> parse_tests = {
   },
   {{".env", "${env: test_env? fail}", "test_env"}},
   {{".env", "${env:nexist? \" f a i l \" }", " f a i l "}},
+  {{".map", "${map: 5:5; 0:2; 7.5}", "1.000000"}},
+  {{".map", "${map: 5:5; 2; 7.5}", "1.000000"}},
   {
     {".color", "${color: #123456 }", "#123456"},
     {".color-fallback", "${color: nexist(1) ? #ffffff }", "#ffffff"},
