@@ -17,12 +17,12 @@ vector<parse_test> parse_tests = {
     {"a.ref-space", "${ .key }", "foo"},
   },
   {
-    {"test2.ref-file-default-before", "${file: nexist.txt ? ${test.ref-ref-a}}", "a"},
+    {"test2.ref-file-default-before", "${file nexist.txt ? ${test.ref-ref-a}}", "a"},
     {"test2.ref-before", "${test2.ref-a}", "a"},
     {"test.key-a", "a", "a"},
     {"test2.ref-a", "${test.key-a}", "a"},
     {"test2.ref-default-a", "${test.key-nexist?${test.key-a}}", "a"},
-    {"test2.ref-file-default", "${file: nexist.txt ? ${test.key-a}}", "a"},
+    {"test2.ref-file-default", "${file nexist.txt ? ${test.key-a}}", "a"},
     {"test.ref-ref-a", "${test2.ref-a?failed}", "a"},
     {"test2.ref-fallback-a", "${ test.key-a ? fail }", "a"},
     {"test2.ref-nexist", "${test.key-nexist? \" f a i l ' }", "\" f a i l '"},
@@ -45,43 +45,43 @@ vector<parse_test> parse_tests = {
 //    {"", "ref-not-cyclic-1", "${.ref-not-cyclic-2}", ""},
 //    {"", "ref-not-cyclic-2", "", ""}
 //  },
-  {{".file", "${file: key_file.txt }", "content"}},
-  {{".file", "${file:key_file.txt?fail}", "content"}},
-  {{".assign", "${key: .key-a = hello } ${.key-a}", " hello"}},
-  {{".assign", "${.key-a}${key: .key-a = hello }", "hello"}},
+  {{".file", "${file key_file.txt }", "content"}},
+  {{".file", "${file key_file.txt?fail}", "content"}},
+  {{".assign", "${key .key-a = hello } ${.key-a}", " hello"}},
+  {{".assign", "${.key-a}${key .key-a = hello }", "hello"}},
   {
     {".ext", "txt", "txt"},
-    {".file", "${file:key_file.${.ext} ? fail}", "content"},
-    {".file-fail", "${file:nexist.${.ext} ? Can't find ${.ext} file}", "Can't find txt file"},
+    {".file", "${file key_file.${.ext} ? fail}", "content"},
+    {".file-fail", "${file nexist.${.ext} ? Can't find ${.ext} file}", "Can't find txt file"},
   },
-  {{".file", "${file:nexist.txt ? ${file:key_file.txt}}", "content"}},
-  {{".file", "${file:nexist.txt ? \" f a i l ' }", "\" f a i l '"}},
-  {{".file", "${file:nexist.txt}", "${file:nexist.txt}", false, true}},
-  {{".interpolate", "%{${color:hsv(0, 1, 0.5)}}", "%{#800000}"}},
-  {{".dumb", "${dumb:nexist.txt}", "${dumb:nexist.txt}", true}},
+  {{".file", "${file nexist.txt ? ${file key_file.txt}}", "content"}},
+  {{".file", "${file nexist.txt ? \" f a i l ' }", "\" f a i l '"}},
+  {{".file", "${file nexist.txt}", "${file nexist.txt}", false, true}},
+  {{".interpolate", "%{${color hsv(0, 1, 0.5)}}", "%{#800000}"}},
+  {{".dumb", "${dumb nexist.txt}", "${dumb nexist.txt}", true}},
   {{".dumb", "", ""}},
-  {{".cmd", "${cmd:echo hello world}", "hello world"}},
-  {{".cmd", "${cmd:nexist}", "", false, true}},
+  {{".cmd", "${cmd echo hello world}", "hello world"}},
+  {{".cmd", "${cmd nexist}", "", false, true}},
   {
     {".msg", "foo bar", "foo bar"},
-    {".cmd", "${cmd:echo ${.msg}}", "foo bar"},
+    {".cmd", "${cmd echo ${.msg}}", "foo bar"},
   },
-  {{".env", "${env: test_env? fail}", "test_env"}},
-  {{".env", "${env:nexist? \" f a i l \" }", " f a i l "}},
-  {{".map", "${map: 5:5; 0:2; 7.5}", "1.000000"}},
-  {{".map", "${map: 5:5; 2; 7.5}", "1.000000"}},
+  {{".env", "${env test_env? fail}", "test_env"}},
+  {{".env", "${env nexist? \" f a i l \" }", " f a i l "}},
+  {{".map", "${map 5:5; 0:2; 7.5}", "1.000000"}},
+  {{".map", "${map 5:5; 2; 7.5}", "1.000000"}},
   {
-    {".color", "${color: #123456 }", "#123456"},
-    {".color-fallback", "${color: nexist(1) ? #ffffff }", "#ffffff"},
-    {".color-hsv", "${color: hsv(180, 1, 0.75)}", "#00BFBF"},
-    {".color-ref", "${color: ${.color}}", "#123456"},
-    {".color-mod", "${color: cielch: lum * 1.5, hue + 60; ${.color}}", "#633E5C"},
+    {".color", "${color #123456 }", "#123456"},
+    {".color-fallback", "${color nexist(1) ? #ffffff }", "#ffffff"},
+    {".color-hsv", "${color hsv(180, 1, 0.75)}", "#00BFBF"},
+    {".color-ref", "${color ${.color}}", "#123456"},
+    {".color-mod", "${color cielch: lum * 1.5, hue + 60; ${.color}}", "#633E5C"},
   },
 };
-class manual_test : public ::testing::Test, public ::testing::WithParamInterface<parse_test> {};
-INSTANTIATE_TEST_SUITE_P(parse, manual_test, ::testing::ValuesIn(parse_tests));
+class container_test : public ::testing::Test, public ::testing::WithParamInterface<parse_test> {};
+INSTANTIATE_TEST_SUITE_P(parse, container_test, ::testing::ValuesIn(parse_tests));
 
-TEST_P(manual_test, manual) {
+TEST_P(container_test, general) {
   // Prepare the environment variables
   setenv("test_env", "test_env", true);
   unsetenv("nexist");

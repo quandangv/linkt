@@ -10,7 +10,7 @@ key-c = c
 key-cmt = ;cmt
 key-empty =
 key-test = test 
-ref-ref-a = \${test2.ref-a:failed}
+ref-ref-a = \${test2.ref-a ? failed}
 
 [test2]
 key-a = '    a"
@@ -18,5 +18,5 @@ key-b = "b  "
 key-c = "  c  "   
 key-test2 = test2
 ref-a = \${test.key-a} 
-ref-nexist = \${test.key-nexist: " f a i l ' } 
+ref-nexist = \${test.key-nexist ? " f a i l ' } 
 ref-rogue = \${.key-rogue} 

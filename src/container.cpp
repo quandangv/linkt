@@ -65,17 +65,17 @@ string_ref_p addable::parse_ref(string& raw, tstring& str) {
     if (auto fb_str = cut_back(str, '?'); !fb_str.untouched())
       fallback = parse_string(raw, trim_quotes(fb_str));
   };
+  string_ref_p fallback;
+  take_fallback(fallback);
   auto make_meta_ref = [&]<typename T>(std::unique_ptr<T>&& ptr) {
-    take_fallback(ptr->fallback);
+    ptr->fallback = move(fallback);
     ptr->value = parse_string(raw, trim_quotes(str));
     if (!ptr->value)
       throw error("Invalid content for this type of reference");
     return move(ptr);
   };
-  auto ref_type = cut_front(str, ':');
+  auto ref_type = cut_front(trim(str), ' ');
   if (ref_type.untouched()) {
-    string_ref_p fallback;
-    take_fallback(fallback);
     auto ptr = get_child_ptr(str);
     if (!ptr)
       ptr = add(str, string_ref_p{});

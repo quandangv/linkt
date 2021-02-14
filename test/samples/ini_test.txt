@@ -12,7 +12,7 @@ key#forbidden = a
 key-empty=   
 [test-missing
 key-test= test 
-ref-ref-a=\${test2.ref-a:failed}
+ref-ref-a=\${test2.ref-a ? failed}
 [test2]
 key-test2 = test2
 key-b='b  '
@@ -21,7 +21,7 @@ key-c = "  c  "
 key-c = "dup"   
 ref-a = \${test.key-a} 
 ref-rogue= \${.key-rogue} 
-ref-nexist   = \${test.key-nexist: " f a i l ' } 
+ref-nexist   = \${test.key-nexist ? " f a i l ' } 
 
 key-a = '    a"
 [test]

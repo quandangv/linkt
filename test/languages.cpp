@@ -28,10 +28,10 @@ vector<file_test_param> parse_tests = {
       {"test2.key-test2", "test2"},
       {"test2.key-b", "b  "},
       {"test2.key-c", "  c  "},
-      {"test.ref-ref-a", "${test2.ref-a:failed}"},
+      {"test.ref-ref-a", "${test2.ref-a ? failed}"},
       {"test2.ref-a", "${test.key-a}"},
       {"test2.ref-rogue", "${.key-rogue}"},
-      {"test2.ref-nexist", "${test.key-nexist: \" f a i l ' }"},
+      {"test2.ref-nexist", "${test.key-nexist ? \" f a i l ' }"},
       {"test2.key-a", "'    a\""},
     },
     {
