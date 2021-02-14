@@ -8,5 +8,4 @@ ref-fail = ${key-nexist}
 file-parse = ${file key_file.txt }
 env = ${env test_env? fail}
 env-nexist = ${env nexist? " f a i l " }
-doc = ${doc foo = hello; bar = world}
 

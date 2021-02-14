@@ -47,8 +47,6 @@ vector<parse_test> parse_tests = {
 //  },
   {{".file", "${file key_file.txt }", "content"}},
   {{".file", "${file key_file.txt?fail}", "content"}},
-  {{".assign", "${key .key-a = hello } ${.key-a}", " hello"}},
-  {{".assign", "${.key-a}${key .key-a = hello }", "hello"}},
   {
     {".ext", "txt", "txt"},
     {".file", "${file key_file.${.ext} ? fail}", "content"},
@@ -68,14 +66,14 @@ vector<parse_test> parse_tests = {
   },
   {{".env", "${env test_env? fail}", "test_env"}},
   {{".env", "${env nexist? \" f a i l \" }", " f a i l "}},
-  {{".map", "${map 5:5; 0:2; 7.5}", "1.000000"}},
-  {{".map", "${map 5:5; 2; 7.5}", "1.000000"}},
+  {{".map", "${map 5:5 0:2 7.5}", "1.000000"}},
+  {{".map", "${map 5:5 2 7.5}", "1.000000"}},
   {
     {".color", "${color #123456 }", "#123456"},
     {".color-fallback", "${color nexist(1) ? #ffffff }", "#ffffff"},
     {".color-hsv", "${color hsv(180, 1, 0.75)}", "#00BFBF"},
     {".color-ref", "${color ${.color}}", "#123456"},
-    {".color-mod", "${color cielch: lum * 1.5, hue + 60; ${.color}}", "#633E5C"},
+    {".color-mod", "${color cielch 'lum * 1.5, hue + 60' ${.color}}", "#633E5C"},
   },
 };
 class container_test : public ::testing::Test, public ::testing::WithParamInterface<parse_test> {};

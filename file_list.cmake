@@ -50,5 +50,4 @@ set(COPIED_FILES
   yml_test_output.txt
   lemonbar_test.txt
   lemonbar_test_output.txt
-  lemonbar_untangled_test.txt
 )

@@ -191,10 +191,3 @@ TEST(assign_test, file_env_ref) {
   // Revert file contents back to its original
   EXPECT_NO_FATAL_FAILURE(set_key("file-parse", "content"));
 }
-
-TEST(assign_test, paths) {
-  // Test document key
-  EXPECT_NO_FATAL_FAILURE(EXPECT_EQ(doc.get_child("doc.foo"_ts, "fail"), "hello"));
-  EXPECT_NO_FATAL_FAILURE(EXPECT_EQ(doc.get_child("doc.bar"_ts, "fail"), "world"));
-}
-

@@ -3,6 +3,8 @@
 #include "document.hpp"
 #include "token_iterator.hpp"
 
+#include <array>
+
 GLOBAL_NAMESPACE
 
 bool container::has_child(const tstring& path) const {
@@ -61,72 +63,61 @@ string_ref_p2 addable::add(tstring path, string raw) {
 }
 
 string_ref_p addable::parse_ref(string& raw, tstring& str) {
-  auto take_fallback = [&](string_ref_p& fallback) {
-    if (auto fb_str = cut_back(str, '?'); !fb_str.untouched())
-      fallback = parse_string(raw, trim_quotes(fb_str));
-  };
   string_ref_p fallback;
-  take_fallback(fallback);
+  if (auto fb_str = cut_back(str, '?'); !fb_str.untouched())
+    fallback = parse_string(raw, trim_quotes(fb_str));
+
+  std::array<tstring, 5> tokens;
+  auto token_count = fill_tokens(str, tokens);
   auto make_meta_ref = [&]<typename T>(std::unique_ptr<T>&& ptr) {
     ptr->fallback = move(fallback);
-    ptr->value = parse_string(raw, trim_quotes(str));
-    if (!ptr->value)
-      throw error("Invalid content for this type of reference");
+    ptr->value = parse_string(raw, trim_quotes(tokens[token_count - 1]));
     return move(ptr);
   };
-  auto ref_type = cut_front(trim(str), ' ');
-  if (ref_type.untouched()) {
-    auto ptr = get_child_ptr(str);
+  if (token_count == 0)
+    throw error("parse_ref: Empty reference conent");
+  if (token_count == 1) {
+    auto ptr = get_child_ptr(tokens[0]);
     if (!ptr)
-      ptr = add(str, string_ref_p{});
+      ptr = add(tokens[0], string_ref_p{});
     return std::make_unique<local_ref>(ptr, move(fallback));
-  } else if (ref_type == "file"_ts) {
+  } else if (tokens[0] == "file"_ts) {
+    tokens[token_count - 1].merge(tokens[1]);
     return make_meta_ref(std::make_unique<file_ref>());
-  } else if (ref_type == "cmd"_ts) {
+    
+  } else if (tokens[0] == "cmd"_ts) {
+    tokens[token_count - 1].merge(tokens[1]);
     return make_meta_ref(std::make_unique<cmd_ref>());
-  } else if (ref_type == "env"_ts) {
+
+  } else if (tokens[0] == "env"_ts) {
+    if (token_count != 2)
+      throw error("parse_ref: Expected 2 components");
     return make_meta_ref(std::make_unique<env_ref>());
-  } else if (ref_type == "map"_ts) {
+
+  } else if (tokens[0] == "map"_ts) {
+    if (token_count != 4)
+      throw error("parse_ref.map: Expected 3 components");
     auto newval = std::make_unique<map_ref>();
-    auto from = cut_front(str, ';');
-    if (from.untouched())
-      throw error("Expected 3 components separated by ';'");
-    if (auto min = cut_front(from, ':'); !min.untouched())
-      newval->from_min = convert<float, strtof>(trim(min));
-    newval->from_range = convert<float, strtof>(trim(from));
-    auto to = cut_front(str, ';');
-    if (to.untouched())
-      throw error("Expected 3 components separated by ';'");
-    if (auto min = cut_front(to, ':'); !min.untouched())
-      newval->to_min = convert<float, strtof>(trim(min));
-    newval->to_range = convert<float, strtof>(trim(to));
+    if (auto min = cut_front(tokens[1], ':'); !min.untouched())
+      newval->from_min = convert<float, strtof>(min);
+    newval->from_range = convert<float, strtof>(tokens[1]);
+
+    if (auto min = cut_front(tokens[2], ':'); !min.untouched())
+      newval->to_min = convert<float, strtof>(min);
+    newval->to_range = convert<float, strtof>(tokens[2]);
     return make_meta_ref(move(newval));
-  } else if (ref_type == "color"_ts) {
+
+  } else if (tokens[0] == "color"_ts) {
     auto newval = std::make_unique<color_ref>();
-    if (auto mod_str = cut_front(str, ';'); !mod_str.untouched()) {
-      if (auto space = cut_front(mod_str, ':'); !space.untouched())
-        newval->processor.inter = cspace::stospace(trim(space));
-      newval->processor.add_modification(mod_str);
+    if (token_count > 2) {
+      if (token_count > 3)
+        newval->processor.inter = cspace::stospace(tokens[1]);
+      newval->processor.add_modification(tokens[token_count - 2]);
     }
     return make_meta_ref(move(newval));
-  } else if (ref_type == "key"_ts) {
-    if (auto new_key = cut_front(str, '='); !new_key.untouched()) {
-      add(trim(new_key), raw, trim_quotes(str));
-      return {};
-    }
-    throw error("Missing assigned key name");
-  } else if (ref_type == "doc"_ts) {
-    auto subdoc = std::make_unique<document>();
-    tstring line;
-    while(!(line = get_token<';'>(str)).untouched()) {
-      if (auto new_key = cut_front(line, '='); !new_key.untouched()) {
-        subdoc->add(trim(new_key), raw, trim_quotes(line));
-      } else
-        throw error("Missing assigned key name");
-    }
-    return move(subdoc);
+
   } else
-    throw error("Unsupported reference type: " + ref_type);
+    throw error("Unsupported reference type: " + tokens[0]);
 }
 
 string_ref_p addable::parse_string(string& raw, tstring& str) {
@@ -135,7 +126,7 @@ string_ref_p addable::parse_string(string& raw, tstring& str) {
     // There is no token inside the string, it's a normal string
     return std::make_unique<const_ref>(str);
   } else if (start == 0 && end == str.size()) {
-    // There is a token inside, but string interpolation is unecessary
+    // There is a single token inside, interpolation is unecessary
     str.erase_front(2);
     str.erase_back();
     return parse_ref(raw, str);
