@@ -18,6 +18,8 @@ namespace lini {
   struct string_ref {
     struct error : error_base { using error_base::error_base; };
 
+    const string_ref* parent{nullptr};;
+
     virtual string
     get() const = 0;
 

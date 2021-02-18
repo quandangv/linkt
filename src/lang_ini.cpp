@@ -22,12 +22,10 @@ void parse_ini(std::istream& is, document& doc, errorlist& err) {
     // skip empty and comment lines
     if (!line.empty() && !strchr(comment_chars, line.front())) {
       if (cut_front_back(line, "["_ts, "]"_ts)) {
-        // detected section header
         prefix = line + ".";
       } else if (tstring key; err.extract_key(line, linecount, '=', key)) {
-        trim_quotes(line);
         try {
-          doc.add(prefix + key, raw, line);
+          doc.add(prefix + key, raw, trim_quotes(line));
         } catch (const std::exception& e) {
           err.report_error(linecount, e.what());
         }
