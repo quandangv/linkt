@@ -48,14 +48,13 @@ void parse_yml(std::istream& is, document& doc, errorlist& err) {
               continue;
             }
           }
-          switch(type) {
-          case ' ':
-            node->value = node->parse_string(raw, line); break;
-          case '$':
-            node->value = node->parse_ref(raw, line); break;
-          case '^':
-            node->value = parent.parse_ref(raw, line); break;
-          default:
+          if (type == ' ') {
+            node->value = node->parse_string(raw, line);
+          } else if (type == '$') {
+            node->value = node->parse_ref(raw, line);
+          } else if (type == '^') {
+            node->value = parent.parse_ref(raw, line);
+          } else {
             err.report_error(linecount, "Colons ':' are followed by a whitespace");
             continue;
           }
