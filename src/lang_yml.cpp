@@ -44,23 +44,21 @@ void parse_yml(std::istream& is, document& doc, errorlist& err) {
   for (int linecount = 1; std::getline(is, raw); linecount++, raw.clear()) {
     LG_DBUG("parse: line: " << raw);
     tstring line(raw);
-
     int indent = ltrim(line);
     // skip empty and comment lines
     if (!line.empty() && !strchr(comment_chars, line.front())) {
       while (nodes.back().indent >= indent)
         nodes.pop_back();
-      char op;
-      if (tstring key; op = err.extract_key(line, linecount, ':', key)) {
+      if (tstring key; err.extract_key(line, linecount, ':', key)) {
         auto type = line.front();
         line.erase_front();
         trim_quotes(line);
         try {
           auto& parent = nodes.back().wrap();
-          auto& node = nodes.emplace_back(indent, parent.add(key, string_ref_p{}).get());
           local_ref_maker make_parent_ref = [&](tstring& ts, string_ref_p&& fallback) {
             return parent.make_local_ref(ts, move(fallback));
           };
+          auto& node = nodes.emplace_back(indent, parent.add(key, string_ref_p{}).get());
           local_ref_maker make_local_ref = [&](tstring& ts, string_ref_p&& fallback) {
             return node.wrap().make_local_ref(ts, move(fallback));
           };
