@@ -11,9 +11,25 @@ GLOBAL_NAMESPACE
 constexpr const char comment_chars[] = ";#";
 
 struct indentpair {
+  string_ref_p* node;
   int indent;
-  addable* node;
-  indentpair(int indent, addable* node) : node(node), indent(indent) {}
+  document* wrapper;
+  indentpair(int indent, document* wrapper) : wrapper(wrapper), indent(indent), node(nullptr) {}
+  indentpair(int indent, string_ref_p* new_node) : indent(indent), node(new_node) {
+    wrapper = dynamic_cast<document*>(node->get());
+    if (wrapper)
+      node = &wrapper->value;
+  }
+  document& wrap() {
+    if (!wrapper) {
+      wrapper = new document();
+      if (*node)
+        wrapper->value = move(*node);
+      *node = string_ref_p(wrapper);
+      node = &wrapper->value;
+    }
+    return *wrapper;
+  }
 };
 
 string_ref_p throw_ref_maker(const tstring&, string_ref_p&&) {
@@ -40,36 +56,24 @@ void parse_yml(std::istream& is, document& doc, errorlist& err) {
         line.erase_front();
         trim_quotes(line);
         try {
-          auto parent = nodes.back().node;
-          if (!parent)
-            err.report_error(linecount, "Parent can't take children");
-          string_ref_p* place = parent->add(key, string_ref_p{}).get();
-          document* wrapper = dynamic_cast<document*>(place->get());
-          if (wrapper) {
-            place = &wrapper->value;
-          }
+          auto& parent = nodes.back().wrap();
+          auto& node = nodes.emplace_back(indent, parent.add(key, string_ref_p{}).get());
           local_ref_maker make_parent_ref = [&](tstring& ts, string_ref_p&& fallback) {
-            return parent->make_local_ref(ts, move(fallback));
+            return parent.make_local_ref(ts, move(fallback));
           };
           local_ref_maker make_local_ref = [&](tstring& ts, string_ref_p&& fallback) {
-            if (!wrapper) {
-              wrapper = new document();
-              *place = string_ref_p(wrapper);
-              place = &wrapper->value;
-            }
-            return wrapper->make_local_ref(ts, move(fallback));
+            return node.wrap().make_local_ref(ts, move(fallback));
           };
           if (type == ' ') {
-            *place = parse_string(raw, line, make_local_ref);
+            *node.node = parse_string(raw, line, make_local_ref);
           } else if (type == '$') {
-            *place = parse_ref(raw, line, make_local_ref);
+            *node.node = parse_ref(raw, line, make_local_ref);
           } else if (type == '^') {
-            *place = parse_ref(raw, line, make_parent_ref);
+            *node.node = parse_ref(raw, line, make_parent_ref);
           } else {
             err.report_error(linecount, "Invalid character: " + type);
             continue;
           }
-          nodes.emplace_back(indent, wrapper);
         } catch (const std::exception& e) {
           err.report_error(linecount, e.what());
         }

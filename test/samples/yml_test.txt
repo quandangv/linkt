@@ -6,5 +6,6 @@ bar: '%{F${F}}${bat} '
       H: 0
       L:$ map 100 0.5:0.5 ${value}
     label: BAT
+      dumb: lol
     stat: 60
     unit: %
