@@ -41,9 +41,14 @@ namespace lini {
     add(tstring path, string raw);
 
     string_ref_p
-    parse_string(string& raw, tstring& str);
-
-    string_ref_p
-    parse_ref(string& raw, tstring& str);
+    make_local_ref(const tstring&, string_ref_p&&);
   };
+
+  using local_ref_maker = std::function<string_ref_p(tstring&, string_ref_p&&)>;
+
+  string_ref_p
+  parse_string(string& raw, tstring& str, local_ref_maker ref_maker);
+
+  string_ref_p
+  parse_ref(string& raw, tstring& str, local_ref_maker ref_maker);
 }

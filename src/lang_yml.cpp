@@ -12,12 +12,16 @@ constexpr const char comment_chars[] = ";#";
 
 struct indentpair {
   int indent;
-  addable& node;
-  indentpair(int indent, addable& node) : node(node), indent(indent) {}
+  addable* node;
+  indentpair(int indent, addable* node) : node(node), indent(indent) {}
 };
 
+string_ref_p throw_ref_maker(const tstring&, string_ref_p&&) {
+  throw std::invalid_argument("Can't make reference to children");
+}
+
 void parse_yml(std::istream& is, document& doc, errorlist& err) {
-  vector<indentpair> nodes{indentpair(-1, doc)};
+  vector<indentpair> nodes{indentpair(-1, &doc)};
   string raw;
 
   // Iterate through lines
@@ -30,35 +34,42 @@ void parse_yml(std::istream& is, document& doc, errorlist& err) {
     if (!line.empty() && !strchr(comment_chars, line.front())) {
       while (nodes.back().indent >= indent)
         nodes.pop_back();
-      if (tstring key; err.extract_key(line, linecount, ':', key)) {
+      char op;
+      if (tstring key; op = err.extract_key(line, linecount, ':', key)) {
         auto type = line.front();
         line.erase_front();
         trim_quotes(line);
         try {
-          auto& parent = nodes.back().node;
-          document* node;
-          auto existing = parent.get_child_ptr(key);
-          if (!existing || !*existing) {
-            node = new document();
-            parent.add(key, string_ref_p(node));
-          } else {
-            node = dynamic_cast<document*>(existing->get());
-            if (!node || node->value) {
-              err.report_error(linecount, "Duplicate key");
-              continue;
-            }
+          auto parent = nodes.back().node;
+          if (!parent)
+            err.report_error(linecount, "Parent can't take children");
+          string_ref_p* place = parent->add(key, string_ref_p{}).get();
+          document* wrapper = dynamic_cast<document*>(place->get());
+          if (wrapper) {
+            place = &wrapper->value;
           }
+          local_ref_maker make_parent_ref = [&](tstring& ts, string_ref_p&& fallback) {
+            return parent->make_local_ref(ts, move(fallback));
+          };
+          local_ref_maker make_local_ref = [&](tstring& ts, string_ref_p&& fallback) {
+            if (!wrapper) {
+              wrapper = new document();
+              *place = string_ref_p(wrapper);
+              place = &wrapper->value;
+            }
+            return wrapper->make_local_ref(ts, move(fallback));
+          };
           if (type == ' ') {
-            node->value = node->parse_string(raw, line);
+            *place = parse_string(raw, line, make_local_ref);
           } else if (type == '$') {
-            node->value = node->parse_ref(raw, line);
+            *place = parse_ref(raw, line, make_local_ref);
           } else if (type == '^') {
-            node->value = parent.parse_ref(raw, line);
+            *place = parse_ref(raw, line, make_parent_ref);
           } else {
-            err.report_error(linecount, "Colons ':' are followed by a whitespace");
+            err.report_error(linecount, "Invalid character: " + type);
             continue;
           }
-          nodes.emplace_back(indent, *node);
+          nodes.emplace_back(indent, wrapper);
         } catch (const std::exception& e) {
           err.report_error(linecount, e.what());
         }

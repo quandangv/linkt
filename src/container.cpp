@@ -51,7 +51,7 @@ bool container::set(const tstring& path, const string& value) {
 }
 
 string_ref_p2 addable::add(tstring path, string& raw, tstring value) {
-  auto node = parse_string(raw, value);
+  auto node = parse_string(raw, value, [&](tstring& ts, string_ref_p&& fallback) { return make_local_ref(ts, move(fallback)); });
   if (node)
     return add(path, move(node));
   return {};
@@ -62,25 +62,30 @@ string_ref_p2 addable::add(tstring path, string raw) {
   return add(path, raw, value);
 }
 
-string_ref_p addable::parse_ref(string& raw, tstring& str) {
+string_ref_p addable::make_local_ref(const tstring& ts, string_ref_p&& fallback) {
+  LG_DBUG("Local ref: " << ts);
+  auto ptr = get_child_ptr(ts);
+  if (!ptr)
+    ptr = add(ts, string_ref_p{});
+  return std::make_unique<local_ref>(ptr, move(fallback));
+}
+
+string_ref_p parse_ref(string& raw, tstring& str, local_ref_maker ref_maker) {
   string_ref_p fallback;
   if (auto fb_str = cut_back(str, '?'); !fb_str.untouched())
-    fallback = parse_string(raw, trim_quotes(fb_str));
+    fallback = parse_string(raw, trim_quotes(fb_str), ref_maker);
 
   std::array<tstring, 5> tokens;
   auto token_count = fill_tokens(str, tokens);
   auto make_meta_ref = [&]<typename T>(std::unique_ptr<T>&& ptr) {
     ptr->fallback = move(fallback);
-    ptr->value = parse_string(raw, trim_quotes(tokens[token_count - 1]));
+    ptr->value = parse_string(raw, trim_quotes(tokens[token_count - 1]), ref_maker);
     return move(ptr);
   };
   if (token_count == 0)
-    throw error("parse_ref: Empty reference conent");
+    throw addable::error("parse_ref: Empty reference conent");
   if (token_count == 1) {
-    auto ptr = get_child_ptr(tokens[0]);
-    if (!ptr)
-      ptr = add(tokens[0], string_ref_p{});
-    return std::make_unique<local_ref>(ptr, move(fallback));
+    return ref_maker(tokens[0], move(fallback));
   } else if (tokens[0] == "file"_ts) {
     tokens[token_count - 1].merge(tokens[1]);
     return make_meta_ref(std::make_unique<file_ref>());
@@ -91,12 +96,12 @@ string_ref_p addable::parse_ref(string& raw, tstring& str) {
 
   } else if (tokens[0] == "env"_ts) {
     if (token_count != 2)
-      throw error("parse_ref: Expected 2 components");
+      throw addable::error("parse_ref: Expected 2 components");
     return make_meta_ref(std::make_unique<env_ref>());
 
   } else if (tokens[0] == "map"_ts) {
     if (token_count != 4)
-      throw error("parse_ref.map: Expected 3 components");
+      throw addable::error("parse_ref.map: Expected 3 components");
     auto newval = std::make_unique<map_ref>();
     if (auto min = cut_front(tokens[1], ':'); !min.untouched())
       newval->from_min = convert<float, strtof>(min);
@@ -117,10 +122,10 @@ string_ref_p addable::parse_ref(string& raw, tstring& str) {
     return make_meta_ref(move(newval));
 
   } else
-    throw error("Unsupported reference type: " + tokens[0]);
+    throw addable::error("Unsupported reference type: " + tokens[0]);
 }
 
-string_ref_p addable::parse_string(string& raw, tstring& str) {
+string_ref_p parse_string(string& raw, tstring& str, local_ref_maker ref_maker) {
   size_t start, end;
   if (!find_enclosed(str, raw, "${", "{", "}", start, end)) {
     // There is no token inside the string, it's a normal string
@@ -129,7 +134,7 @@ string_ref_p addable::parse_string(string& raw, tstring& str) {
     // There is a single token inside, interpolation is unecessary
     str.erase_front(2);
     str.erase_back();
-    return parse_ref(raw, str);
+    return parse_ref(raw, str, ref_maker);
   }
   // String interpolation
   std::stringstream ss;
@@ -140,7 +145,7 @@ string_ref_p addable::parse_string(string& raw, tstring& str) {
 
     // Make string_ref from the token
     auto token = str.interval(start + 2, end - 1);
-    auto value = parse_ref(raw, token);
+    auto value = parse_ref(raw, token, ref_maker);
     if (value) {
       // Mark the position of the token in the base string
       newval->spots.push_back({int(ss.tellp()), "", move(value)});
