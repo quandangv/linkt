@@ -41,14 +41,14 @@ namespace lini::node {
     add(tstring path, string raw);
 
     base_p
-    make_local_ref(const tstring&, base_p&&);
+    make_ref(const tstring&, base_p&&);
   };
 
-  using local_ref_maker = std::function<base_p(tstring&, base_p&&)>;
+  using ref_maker = std::function<base_p(tstring&, base_p&&)>;
 
   base_p
-  parse_string(string& raw, tstring& str, local_ref_maker ref_maker);
+  parse_string(string& raw, tstring& str, ref_maker ref_maker);
 
   base_p
-  parse_ref(string& raw, tstring& str, local_ref_maker ref_maker);
+  parse(string& raw, tstring& str, ref_maker ref_maker);
 }
