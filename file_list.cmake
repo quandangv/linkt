@@ -21,7 +21,7 @@ set(PUBLIC_HEADERS
   ${PUBLIC_HEADERS_DIR}/wrapper.hpp
   ${PUBLIC_HEADERS_DIR}/error.hpp
   ${PUBLIC_HEADERS_DIR}/languages.hpp
-  ${PUBLIC_HEADERS_DIR}/string_ref.hpp
+  ${PUBLIC_HEADERS_DIR}/node.hpp
   ${PUBLIC_HEADERS_DIR}/container.hpp
   ${STRINGS_PUBLIC_HEADERS_DIR}/tstring.hpp
 )
@@ -32,7 +32,7 @@ set(SOURCES
   ${SRC_DIR}/lang_ini.cpp
   ${SRC_DIR}/lang_yml.cpp
   ${SRC_DIR}/container.cpp
-  ${SRC_DIR}/string_ref.cpp
+  ${SRC_DIR}/node.cpp
   ${SRC_DIR}/languages.cpp
   ${SRC_DIR}/string_interpolate_ref.cpp
   ${TSTRING_SOURCES}

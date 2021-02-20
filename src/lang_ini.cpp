@@ -36,7 +36,7 @@ void parse_ini(std::istream& is, wrapper& root, errorlist& err) {
 
 void write_ini(std::ostream& os, const container& root, const string& prefix) {
   vector<std::pair<string, const container*>> containers;
-  root.iterate_children([&](const string& name, const string_ref& child) {
+  root.iterate_children([&](const string& name, const base& child) {
     auto ctn = dynamic_cast<const container*>(&child);
     if(ctn) {
       containers.push_back(std::make_pair(name, ctn));

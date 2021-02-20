@@ -9,18 +9,18 @@
 #include <cspace/processor.hpp>
 
 namespace lini {
-  struct string_ref;
+  struct base;
   using std::string;
-  using string_ref_p = std::unique_ptr<string_ref>;
+  using string_ref_p = std::unique_ptr<base>;
   using string_ref_p2 = std::shared_ptr<string_ref_p>;
 
-  struct string_ref {
+  struct base {
     struct error : error_base { using error_base::error_base; };
 
     virtual string
     get() const = 0;
 
-    virtual ~string_ref() {}
+    virtual ~base() {}
   };
 
   struct settable {
@@ -31,7 +31,7 @@ namespace lini {
     set(const string&) {}
   };
 
-  struct const_ref : public string_ref, settable {
+  struct const_ref : public base, settable {
     string val;
 
     explicit const_ref(string&& val) : val(val) {}
@@ -40,7 +40,7 @@ namespace lini {
     void set(const string& value) { val = value; }
   };
 
-  struct fallback_ref : public string_ref {
+  struct fallback_ref : public base {
     string_ref_p fallback;
 
     fallback_ref() {}
@@ -90,7 +90,7 @@ namespace lini {
     string get() const;
   };
 
-  struct string_interpolate_ref : public string_ref {
+  struct string_interpolate_ref : public base {
     struct replace_spot {
       int position;
       std::string name;

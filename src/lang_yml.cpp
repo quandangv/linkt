@@ -81,7 +81,7 @@ void parse_yml(std::istream& is, wrapper& root, errorlist& err) {
 }
 
 void write_yml(std::ostream& os, const container& root, int indent) {
-  root.iterate_children([&](const string& name, const string_ref& child) {
+  root.iterate_children([&](const string& name, const base& child) {
     // Indent the line
     std::fill_n(std::ostream_iterator<char>(os), indent, ' ');
     write_key(os, name + ": ", child.get());

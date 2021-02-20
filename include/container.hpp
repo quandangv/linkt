@@ -1,6 +1,6 @@
 #pragma once
 
-#include "string_ref.hpp"
+#include "node.hpp"
 
 #include <functional>
 
@@ -12,7 +12,7 @@ namespace lini {
     get_child_ptr(tstring path) const = 0;
 
     virtual void
-    iterate_children(std::function<void(const string&, const string_ref&)> processor) const = 0;
+    iterate_children(std::function<void(const string&, const base&)> processor) const = 0;
 
     bool
     has_child(const tstring& path) const;
@@ -23,7 +23,7 @@ namespace lini {
     string
     get_child(const tstring& path, string&& fallback) const;
 
-    string_ref&
+    base&
     get_child_ref(const tstring& path) const;
 
     bool

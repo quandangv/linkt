@@ -12,7 +12,7 @@
 namespace lini {
   using std::string;
 
-  struct wrapper : public string_ref, public addable {
+  struct wrapper : public base, public addable {
     struct error : error_base { using error_base::error_base; };
     using map_type = std::map<string, string_ref_p2>;
     using addable::add;
@@ -27,7 +27,7 @@ namespace lini {
     get_child_ptr(tstring path) const;
 
     void
-    iterate_children(std::function<void(const string&, const string_ref&)> processor) const;
+    iterate_children(std::function<void(const string&, const base&)> processor) const;
 
     string
     get() const;

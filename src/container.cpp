@@ -32,11 +32,11 @@ string container::get_child(const tstring& path, string&& fallback) const {
   return forward<string>(fallback);
 }
 
-string_ref& container::get_child_ref(const tstring& path) const {
+base& container::get_child_ref(const tstring& path) const {
   auto ptr = get_child_ptr(path);
   if (ptr && *ptr)
     return **ptr;
-  throw string_ref::error("Key is empty");
+  throw base::error("Key is empty");
 }
 
 bool container::set(const tstring& path, const string& value) {

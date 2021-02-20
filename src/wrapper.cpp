@@ -62,7 +62,7 @@ string_ref_p2 wrapper::add(tstring path, string_ref_p&& value) {
   }
 }
 
-void wrapper::iterate_children(std::function<void(const string&, const string_ref&)> processor) const {
+void wrapper::iterate_children(std::function<void(const string&, const base&)> processor) const {
   for(auto pair : map) {
     if (pair.second && *pair.second)
     processor(pair.first, **pair.second);
