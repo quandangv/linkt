@@ -47,12 +47,6 @@ string_ref_p2 document::add(tstring path, string_ref_p&& value) {
     }
   } else {
     // This is the final part of the path
-    if (value) {
-      if (value->parent)
-        throw error("Added value already have a parent");
-      value->parent = this;
-    }
-
     auto& place = map[path];
     if (!place) {
       place = std::make_shared<string_ref_p>(move(value));
