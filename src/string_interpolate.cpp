@@ -5,7 +5,7 @@
 
 NAMESPACE(lini::node)
 
-using spot = string_interpolate_ref::replace_spot;
+using spot = string_interpolate::replace_spot;
 
 struct replacement_iterator {
   vector<spot>::const_iterator it;
@@ -33,7 +33,7 @@ struct list {
   }
 };
 
-string string_interpolate_ref::get() const {
+string string_interpolate::get() const {
   return interpolate(base, list<position_iterator>{spots}, list<replacement_iterator>{spots});
 }
 

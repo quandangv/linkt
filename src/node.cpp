@@ -7,56 +7,56 @@
 
 NAMESPACE(lini::node)
 
-string local_ref::get() const {
-  if (ref && *ref) {
-    return (*ref)->get();
+string ref::get() const {
+  if (src && *src) {
+    return (*src)->get();
   }
   return use_fallback("Referenced key doesn't exist");
 }
 
-bool local_ref::readonly() const {
-  if (*ref) {
-    if (auto settable_ref = dynamic_cast<settable*>(ref->get()); settable_ref) {
-      return settable_ref->readonly();
+bool ref::readonly() const {
+  if (*src) {
+    if (auto target = dynamic_cast<settable*>(src->get()); target) {
+      return target->readonly();
     }
   } else if (fallback) {
-    if (auto settable_ref = dynamic_cast<settable*>(fallback.get()); settable_ref) {
-      return settable_ref->readonly();
+    if (auto target = dynamic_cast<settable*>(fallback.get()); target) {
+      return target->readonly();
     }
   }
   return false;
 }
 
-void local_ref::set(const string& val) {
-  if (*ref) {
-    if (auto settable_ref = dynamic_cast<settable*>(ref->get()); settable_ref) {
-      settable_ref->set(val);
+void ref::set(const string& val) {
+  if (*src) {
+    if (auto target = dynamic_cast<settable*>(src->get()); target) {
+      target->set(val);
     }
   } else if (fallback) {
-    if (auto settable_ref = dynamic_cast<settable*>(fallback.get()); settable_ref) {
-      settable_ref->set(val);
+    if (auto target = dynamic_cast<settable*>(fallback.get()); target) {
+      target->set(val);
     }
   }
 }
 
-string fallback_ref::use_fallback(const string& msg) const {
+string defaultable::use_fallback(const string& msg) const {
   if (fallback)
     return fallback->get();
   throw error("Reference failed: " + msg + ". And no fallback was found");
 }
 
-string env_ref::get() const {
+string env::get() const {
   auto result = getenv(value->get().data());
   if (result == nullptr)
     return use_fallback("Environment variable not found: " + value->get());
   return string(result);
 }
 
-void env_ref::set(const string& newval) {
+void env::set(const string& newval) {
   setenv(value->get().data(), newval.data(), true);
 }
 
-string file_ref::get() const {
+string file::get() const {
   std::ifstream ifs(value->get().data());
   if (ifs.fail())
     return use_fallback("Can't read file: " + value->get());
@@ -67,7 +67,7 @@ string file_ref::get() const {
   return move(result);
 }
 
-void file_ref::set(const string& content) {
+void file::set(const string& content) {
   std::ofstream ofs(value->get().data(), std::ios_base::trunc);
   if (ofs.fail())
     throw error("Can't write to file: " + value->get());
@@ -75,7 +75,7 @@ void file_ref::set(const string& content) {
   ofs.close();
 }
 
-string color_ref::get() const {
+string color::get() const {
   try {
     auto result = processor.operate(value->get());
     if (result.empty() && fallback)
@@ -86,7 +86,7 @@ string color_ref::get() const {
   }
 }
 
-string cmd_ref::get() const {
+string cmd::get() const {
   string result;
   try {
     auto file = popen(value->get().data(), "r");
@@ -101,7 +101,7 @@ string cmd_ref::get() const {
   return result;
 }
 
-string map_ref::get() const {
+string map::get() const {
   auto str = value ? value->get() : use_fallback("Value key doesn't exist");
   size_t remaining;
   auto num =  std::stof(str, &remaining);

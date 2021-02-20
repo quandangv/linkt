@@ -34,7 +34,7 @@ set(SOURCES
   ${SRC_DIR}/container.cpp
   ${SRC_DIR}/node.cpp
   ${SRC_DIR}/languages.cpp
-  ${SRC_DIR}/string_interpolate_ref.cpp
+  ${SRC_DIR}/string_interpolate.cpp
   ${TSTRING_SOURCES}
 )
 

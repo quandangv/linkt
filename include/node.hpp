@@ -31,66 +31,66 @@ namespace lini::node {
     set(const string&) {}
   };
 
-  struct const_ref : public base, settable {
+  struct plain : public base, settable {
     string val;
 
-    explicit const_ref(string&& val) : val(val) {}
+    explicit plain(string&& val) : val(val) {}
     string get() const { return val; }
     bool readonly() const { return false; }
     void set(const string& value) { val = value; }
   };
 
-  struct fallback_ref : public base {
+  struct defaultable : public base {
     base_p fallback;
 
-    fallback_ref() {}
-    explicit fallback_ref(base_p&& fallback) : fallback(move(fallback)) {}
+    defaultable() {}
+    explicit defaultable(base_p&& fallback) : fallback(move(fallback)) {}
     string use_fallback(const string& error_message) const;
   };
 
-  struct local_ref : public fallback_ref, settable {
-    base_pp ref;
+  struct ref : public defaultable, settable {
+    base_pp src;
 
-    local_ref(const base_pp& ref, base_p&& fallback)
-        : ref(ref), fallback_ref(move(fallback)) {}
+    ref(const base_pp& src, base_p&& fallback)
+        : src(src), defaultable(move(fallback)) {}
     string get() const;
     bool readonly() const;
     void set(const string& value);
   };
 
-  struct meta_ref : public fallback_ref {
+  struct meta : public defaultable {
     base_p value;
   };
 
-  struct color_ref : public meta_ref {
+  struct color : public meta {
     cspace::processor processor;
 
     string get() const;
   };
 
-  struct env_ref : public meta_ref, settable {
+  struct env : public meta, settable {
     string get() const;
     bool readonly() const { return false; }
     void set(const string& value);
   };
 
-  struct cmd_ref : public meta_ref {
+  struct cmd : public meta {
     string get() const;
   };
 
-  struct file_ref : public meta_ref, settable {
+  struct file : public meta, settable {
     string get() const;
     bool readonly() const { return false; }
     void set(const string& value);
     struct error : error_base { using error_base::error_base; };
   };
 
-  struct map_ref : public meta_ref {
+  struct map : public meta {
     float from_min, from_range, to_min, to_range;
     string get() const;
   };
 
-  struct string_interpolate_ref : public base {
+  struct string_interpolate : public base {
     struct replace_spot {
       int position;
       std::string name;

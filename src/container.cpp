@@ -41,8 +41,8 @@ base& container::get_child_ref(const tstring& path) const {
 
 bool container::set(const tstring& path, const string& value) {
   if (auto ptr = get_child_ptr(path); ptr) {
-    if (auto settable_ref = dynamic_cast<settable*>(ptr->get()); settable_ref && !settable_ref->readonly()) {
-      settable_ref->set(value);
+    if (auto target = dynamic_cast<settable*>(ptr->get()); target && !target->readonly()) {
+      target->set(value);
       return true;
     }
   }
@@ -66,7 +66,7 @@ base_p addable::make_local_ref(const tstring& ts, base_p&& fallback) {
   auto ptr = get_child_ptr(ts);
   if (!ptr)
     ptr = add(ts, base_p{});
-  return std::make_unique<local_ref>(ptr, move(fallback));
+  return std::make_unique<ref>(ptr, move(fallback));
 }
 
 base_p parse_ref(string& raw, tstring& str, local_ref_maker ref_maker) {
@@ -76,7 +76,7 @@ base_p parse_ref(string& raw, tstring& str, local_ref_maker ref_maker) {
 
   std::array<tstring, 5> tokens;
   auto token_count = fill_tokens(str, tokens);
-  auto make_meta_ref = [&]<typename T>(std::unique_ptr<T>&& ptr) {
+  auto make_meta = [&]<typename T>(std::unique_ptr<T>&& ptr) {
     ptr->fallback = move(fallback);
     ptr->value = parse_string(raw, trim_quotes(tokens[token_count - 1]), ref_maker);
     return move(ptr);
@@ -87,21 +87,21 @@ base_p parse_ref(string& raw, tstring& str, local_ref_maker ref_maker) {
     return ref_maker(tokens[0], move(fallback));
   } else if (tokens[0] == "file"_ts) {
     tokens[token_count - 1].merge(tokens[1]);
-    return make_meta_ref(std::make_unique<file_ref>());
+    return make_meta(std::make_unique<file>());
     
   } else if (tokens[0] == "cmd"_ts) {
     tokens[token_count - 1].merge(tokens[1]);
-    return make_meta_ref(std::make_unique<cmd_ref>());
+    return make_meta(std::make_unique<cmd>());
 
   } else if (tokens[0] == "env"_ts) {
     if (token_count != 2)
       throw addable::error("parse_ref: Expected 2 components");
-    return make_meta_ref(std::make_unique<env_ref>());
+    return make_meta(std::make_unique<env>());
 
   } else if (tokens[0] == "map"_ts) {
     if (token_count != 4)
       throw addable::error("parse_ref.map: Expected 3 components");
-    auto newval = std::make_unique<map_ref>();
+    auto newval = std::make_unique<map>();
     if (auto min = cut_front(tokens[1], ':'); !min.untouched())
       newval->from_min = convert<float, strtof>(min);
     newval->from_range = convert<float, strtof>(tokens[1]);
@@ -109,16 +109,16 @@ base_p parse_ref(string& raw, tstring& str, local_ref_maker ref_maker) {
     if (auto min = cut_front(tokens[2], ':'); !min.untouched())
       newval->to_min = convert<float, strtof>(min);
     newval->to_range = convert<float, strtof>(tokens[2]);
-    return make_meta_ref(move(newval));
+    return make_meta(move(newval));
 
   } else if (tokens[0] == "color"_ts) {
-    auto newval = std::make_unique<color_ref>();
+    auto newval = std::make_unique<color>();
     if (token_count > 2) {
       if (token_count > 3)
         newval->processor.inter = cspace::stospace(tokens[1]);
       newval->processor.add_modification(tokens[token_count - 2]);
     }
-    return make_meta_ref(move(newval));
+    return make_meta(move(newval));
 
   } else
     throw addable::error("Unsupported reference type: " + tokens[0]);
@@ -128,7 +128,7 @@ base_p parse_string(string& raw, tstring& str, local_ref_maker ref_maker) {
   size_t start, end;
   if (!find_enclosed(str, raw, "${", "{", "}", start, end)) {
     // There is no token inside the string, it's a normal string
-    return std::make_unique<const_ref>(str);
+    return std::make_unique<plain>(str);
   } else if (start == 0 && end == str.size()) {
     // There is a single token inside, interpolation is unecessary
     str.erase_front(2);
@@ -137,12 +137,12 @@ base_p parse_string(string& raw, tstring& str, local_ref_maker ref_maker) {
   }
   // String interpolation
   std::stringstream ss;
-  auto newval = std::make_unique<string_interpolate_ref>();
+  auto newval = std::make_unique<string_interpolate>();
   do {
     // Write the part we have moved past to the base string
     ss << substr(str, 0, start);
 
-    // Make string_ref from the token
+    // Make node from the token
     auto token = str.interval(start + 2, end - 1);
     auto value = parse_ref(raw, token, ref_maker);
     if (value) {
