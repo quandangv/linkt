@@ -8,7 +8,7 @@
 
 NAMESPACE(lini::node)
 
-string_ref_p2 wrapper::get_child_ptr(tstring path) const {
+base_pp wrapper::get_child_ptr(tstring path) const {
   if (auto immediate_path = cut_front(trim(path), '.'); !immediate_path.untouched()) {
     if (auto iterator = map.find(immediate_path); iterator != map.end() && iterator->second)
       if (auto child = dynamic_cast<container*>(iterator->second->get()); child)
@@ -18,7 +18,7 @@ string_ref_p2 wrapper::get_child_ptr(tstring path) const {
   return {};
 }
 
-string_ref_p2 wrapper::add(tstring path, string_ref_p&& value) {
+base_pp wrapper::add(tstring path, base_p&& value) {
   // Check path for invalid characters
   trim(path);
   for(char c : path)
@@ -29,7 +29,7 @@ string_ref_p2 wrapper::add(tstring path, string_ref_p&& value) {
     // This isn't the final part of the path
     auto& ptr = map[immediate_path];
     if (!ptr) {
-      ptr = std::make_shared<string_ref_p>(std::make_unique<wrapper>());
+      ptr = std::make_shared<base_p>(std::make_unique<wrapper>());
     }
     auto& child_ptr = *ptr;
     if (!child_ptr) {
@@ -42,14 +42,14 @@ string_ref_p2 wrapper::add(tstring path, string_ref_p&& value) {
     } else {
       auto node = new wrapper();
       node->value = move(child_ptr);
-      child_ptr = string_ref_p(node);
+      child_ptr = base_p(node);
       return node->add(path, move(value));
     }
   } else {
     // This is the final part of the path
     auto& place = map[path];
     if (!place) {
-      place = std::make_shared<string_ref_p>(move(value));
+      place = std::make_shared<base_p>(move(value));
     } else if (*place) {
       if (auto node = dynamic_cast<wrapper*>(place->get()); node) {
         node->value = move(value);

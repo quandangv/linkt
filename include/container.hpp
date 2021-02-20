@@ -8,7 +8,7 @@ namespace lini::node {
   struct container {
     struct error : error_base { using error_base::error_base; };
 
-    virtual string_ref_p2
+    virtual base_pp
     get_child_ptr(tstring path) const = 0;
 
     virtual void
@@ -31,24 +31,24 @@ namespace lini::node {
   };
 
   struct addable : public container {
-    virtual string_ref_p2
-    add(tstring path, string_ref_p&& value) = 0;
+    virtual base_pp
+    add(tstring path, base_p&& value) = 0;
 
-    string_ref_p2
+    base_pp
     add(tstring path, string& raw, tstring value);
 
-    string_ref_p2
+    base_pp
     add(tstring path, string raw);
 
-    string_ref_p
-    make_local_ref(const tstring&, string_ref_p&&);
+    base_p
+    make_local_ref(const tstring&, base_p&&);
   };
 
-  using local_ref_maker = std::function<string_ref_p(tstring&, string_ref_p&&)>;
+  using local_ref_maker = std::function<base_p(tstring&, base_p&&)>;
 
-  string_ref_p
+  base_p
   parse_string(string& raw, tstring& str, local_ref_maker ref_maker);
 
-  string_ref_p
+  base_p
   parse_ref(string& raw, tstring& str, local_ref_maker ref_maker);
 }

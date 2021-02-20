@@ -49,28 +49,28 @@ bool container::set(const tstring& path, const string& value) {
   return false;
 }
 
-string_ref_p2 addable::add(tstring path, string& raw, tstring value) {
-  auto node = parse_string(raw, value, [&](tstring& ts, string_ref_p&& fallback) { return make_local_ref(ts, move(fallback)); });
+base_pp addable::add(tstring path, string& raw, tstring value) {
+  auto node = parse_string(raw, value, [&](tstring& ts, base_p&& fallback) { return make_local_ref(ts, move(fallback)); });
   if (node)
     return add(path, move(node));
   return {};
 }
 
-string_ref_p2 addable::add(tstring path, string raw) {
+base_pp addable::add(tstring path, string raw) {
   tstring value(raw);
   return add(path, raw, value);
 }
 
-string_ref_p addable::make_local_ref(const tstring& ts, string_ref_p&& fallback) {
+base_p addable::make_local_ref(const tstring& ts, base_p&& fallback) {
   LG_DBUG("Local ref: " << ts);
   auto ptr = get_child_ptr(ts);
   if (!ptr)
-    ptr = add(ts, string_ref_p{});
+    ptr = add(ts, base_p{});
   return std::make_unique<local_ref>(ptr, move(fallback));
 }
 
-string_ref_p parse_ref(string& raw, tstring& str, local_ref_maker ref_maker) {
-  string_ref_p fallback;
+base_p parse_ref(string& raw, tstring& str, local_ref_maker ref_maker) {
+  base_p fallback;
   if (auto fb_str = cut_back(str, '?'); !fb_str.untouched())
     fallback = parse_string(raw, trim_quotes(fb_str), ref_maker);
 
@@ -124,7 +124,7 @@ string_ref_p parse_ref(string& raw, tstring& str, local_ref_maker ref_maker) {
     throw addable::error("Unsupported reference type: " + tokens[0]);
 }
 
-string_ref_p parse_string(string& raw, tstring& str, local_ref_maker ref_maker) {
+base_p parse_string(string& raw, tstring& str, local_ref_maker ref_maker) {
   size_t start, end;
   if (!find_enclosed(str, raw, "${", "{", "}", start, end)) {
     // There is no token inside the string, it's a normal string

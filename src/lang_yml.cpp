@@ -11,11 +11,11 @@ NAMESPACE(lini)
 constexpr const char comment_chars[] = ";#";
 
 struct indentpair {
-  node::string_ref_p* node;
+  node::base_p* node;
   int indent;
   node::wrapper* wrp;
   indentpair(int indent, node::wrapper* wrp) : wrp(wrp), indent(indent), node(nullptr) {}
-  indentpair(int indent, node::string_ref_p* new_node) : indent(indent), node(new_node) {
+  indentpair(int indent, node::base_p* new_node) : indent(indent), node(new_node) {
     wrp = dynamic_cast<node::wrapper*>(node->get());
     if (wrp)
       node = &wrp->value;
@@ -25,14 +25,14 @@ struct indentpair {
       wrp = new node::wrapper();
       if (*node)
         wrp->value = move(*node);
-      *node = node::string_ref_p(wrp);
+      *node = node::base_p(wrp);
       node = &wrp->value;
     }
     return *wrp;
   }
 };
 
-node::string_ref_p throw_ref_maker(const tstring&, node::string_ref_p&&) {
+node::base_p throw_ref_maker(const tstring&, node::base_p&&) {
   throw std::invalid_argument("Can't make reference to children");
 }
 
@@ -55,11 +55,11 @@ void parse_yml(std::istream& is, node::wrapper& root, errorlist& err) {
         trim_quotes(line);
         try {
           auto& parent = nodes.back().wrap();
-          node::local_ref_maker make_parent_ref = [&](tstring& ts, node::string_ref_p&& fallback) {
+          node::local_ref_maker make_parent_ref = [&](tstring& ts, node::base_p&& fallback) {
             return parent.make_local_ref(ts, move(fallback));
           };
-          auto& node = nodes.emplace_back(indent, parent.add(key, node::string_ref_p{}).get());
-          node::local_ref_maker make_local_ref = [&](tstring& ts, node::string_ref_p&& fallback) {
+          auto& node = nodes.emplace_back(indent, parent.add(key, node::base_p{}).get());
+          node::local_ref_maker make_local_ref = [&](tstring& ts, node::base_p&& fallback) {
             return node.wrap().make_local_ref(ts, move(fallback));
           };
           if (type == ' ') {

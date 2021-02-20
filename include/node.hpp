@@ -11,8 +11,8 @@
 namespace lini::node {
   struct base;
   using std::string;
-  using string_ref_p = std::unique_ptr<base>;
-  using string_ref_p2 = std::shared_ptr<string_ref_p>;
+  using base_p = std::unique_ptr<base>;
+  using base_pp = std::shared_ptr<base_p>;
 
   struct base {
     struct error : error_base { using error_base::error_base; };
@@ -41,17 +41,17 @@ namespace lini::node {
   };
 
   struct fallback_ref : public base {
-    string_ref_p fallback;
+    base_p fallback;
 
     fallback_ref() {}
-    explicit fallback_ref(string_ref_p&& fallback) : fallback(move(fallback)) {}
+    explicit fallback_ref(base_p&& fallback) : fallback(move(fallback)) {}
     string use_fallback(const string& error_message) const;
   };
 
   struct local_ref : public fallback_ref, settable {
-    string_ref_p2 ref;
+    base_pp ref;
 
-    local_ref(const string_ref_p2& ref, string_ref_p&& fallback)
+    local_ref(const base_pp& ref, base_p&& fallback)
         : ref(ref), fallback_ref(move(fallback)) {}
     string get() const;
     bool readonly() const;
@@ -59,7 +59,7 @@ namespace lini::node {
   };
 
   struct meta_ref : public fallback_ref {
-    string_ref_p value;
+    base_p value;
   };
 
   struct color_ref : public meta_ref {
@@ -94,7 +94,7 @@ namespace lini::node {
     struct replace_spot {
       int position;
       std::string name;
-      string_ref_p replacement;
+      base_p replacement;
     };
     string base;
     std::vector<replace_spot> spots;
