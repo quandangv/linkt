@@ -1,7 +1,7 @@
 #include "languages.hpp"
 #include "common.hpp"
 
-GLOBAL_NAMESPACE
+NAMESPACE(lini)
 
 void errorlist::report_error(int linecount, const string& msg) {
   emplace_back("line " +std::to_string(linecount), msg);
@@ -26,4 +26,4 @@ void write_key(std::ostream& os, const string& prefix, string&& value) {
     os << prefix << value << endl;
 }
 
-GLOBAL_NAMESPACE_END
+NAMESPACE_END

@@ -5,7 +5,7 @@
 #include <cstdlib>
 #include <array>
 
-GLOBAL_NAMESPACE
+NAMESPACE(lini)
 
 string local_ref::get() const {
   if (ref && *ref) {
@@ -110,4 +110,4 @@ string map_ref::get() const {
   return std::to_string(to_min + to_range/from_range*(num - from_min));
 }
 
-GLOBAL_NAMESPACE_END
+NAMESPACE_END

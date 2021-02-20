@@ -6,7 +6,7 @@
 #include <cstring>
 #include <iostream>
 
-GLOBAL_NAMESPACE
+NAMESPACE(lini)
 
 constexpr const char excluded_chars[] = "\t \"'=;#[](){}:$\\%";
 constexpr const char comment_chars[] = ";#";
@@ -51,4 +51,4 @@ void write_ini(std::ostream& os, const container& root, const string& prefix) {
   }
 }
 
-GLOBAL_NAMESPACE_END
+NAMESPACE_END

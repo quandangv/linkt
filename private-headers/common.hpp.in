@@ -9,8 +9,8 @@ using std::vector, std::endl, std::string, std::move;
 
 constexpr auto DEBUG_SCOPES{"@DEBUG_SCOPES@"sv};
 
-#define GLOBAL_NAMESPACE namespace lini {
-#define GLOBAL_NAMESPACE_END }
+#define NAMESPACE(name) namespace name {
+#define NAMESPACE_END }
 
 #cmakedefine LG_ERR(msg) std::cerr << FORMAT_RED_BOLD(ERROR:) " " << msg << std::endl;
 #ifndef LG_ERR

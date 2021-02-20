@@ -6,7 +6,7 @@
 #include <cstring>
 #include <iostream>
 
-GLOBAL_NAMESPACE
+NAMESPACE(lini)
 
 constexpr const char comment_chars[] = ";#";
 
@@ -92,4 +92,4 @@ void write_yml(std::ostream& os, const container& root, int indent) {
   });
 }
 
-GLOBAL_NAMESPACE_END
+NAMESPACE_END

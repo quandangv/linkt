@@ -3,7 +3,7 @@
 #include "common.hpp"
 #include "string_interpolate.hpp"
 
-GLOBAL_NAMESPACE
+NAMESPACE(lini)
 
 using spot = string_interpolate_ref::replace_spot;
 
@@ -37,4 +37,4 @@ string string_interpolate_ref::get() const {
   return interpolate(base, list<position_iterator>{spots}, list<replacement_iterator>{spots});
 }
 
-GLOBAL_NAMESPACE_END
+NAMESPACE_END

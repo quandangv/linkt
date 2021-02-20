@@ -4,7 +4,7 @@
 
 #include <array>
 
-GLOBAL_NAMESPACE
+NAMESPACE(lini)
 
 bool container::has_child(const tstring& path) const {
   auto ptr = get_child_ptr(path);
@@ -156,4 +156,4 @@ string_ref_p parse_string(string& raw, tstring& str, local_ref_maker ref_maker) 
   return move(newval);
 }
 
-GLOBAL_NAMESPACE_END
+NAMESPACE_END

@@ -6,7 +6,7 @@
 #include <sstream>
 #include <iostream>
 
-GLOBAL_NAMESPACE
+NAMESPACE(lini)
 
 string_ref_p2 wrapper::get_child_ptr(tstring path) const {
   if (auto immediate_path = cut_front(trim(path), '.'); !immediate_path.untouched()) {
@@ -73,4 +73,4 @@ string wrapper::get() const {
   return value ? value->get() : "";
 }
 
-GLOBAL_NAMESPACE_END
+NAMESPACE_END
