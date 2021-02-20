@@ -11,32 +11,32 @@ NAMESPACE(lini)
 constexpr const char comment_chars[] = ";#";
 
 struct indentpair {
-  string_ref_p* node;
+  node::string_ref_p* node;
   int indent;
-  wrapper* wrp;
-  indentpair(int indent, wrapper* wrp) : wrp(wrp), indent(indent), node(nullptr) {}
-  indentpair(int indent, string_ref_p* new_node) : indent(indent), node(new_node) {
-    wrp = dynamic_cast<wrapper*>(node->get());
+  node::wrapper* wrp;
+  indentpair(int indent, node::wrapper* wrp) : wrp(wrp), indent(indent), node(nullptr) {}
+  indentpair(int indent, node::string_ref_p* new_node) : indent(indent), node(new_node) {
+    wrp = dynamic_cast<node::wrapper*>(node->get());
     if (wrp)
       node = &wrp->value;
   }
-  wrapper& wrap() {
+  node::wrapper& wrap() {
     if (!wrp) {
-      wrp = new wrapper();
+      wrp = new node::wrapper();
       if (*node)
         wrp->value = move(*node);
-      *node = string_ref_p(wrp);
+      *node = node::string_ref_p(wrp);
       node = &wrp->value;
     }
     return *wrp;
   }
 };
 
-string_ref_p throw_ref_maker(const tstring&, string_ref_p&&) {
+node::string_ref_p throw_ref_maker(const tstring&, node::string_ref_p&&) {
   throw std::invalid_argument("Can't make reference to children");
 }
 
-void parse_yml(std::istream& is, wrapper& root, errorlist& err) {
+void parse_yml(std::istream& is, node::wrapper& root, errorlist& err) {
   vector<indentpair> nodes{indentpair(-1, &root)};
   string raw;
 
@@ -55,19 +55,19 @@ void parse_yml(std::istream& is, wrapper& root, errorlist& err) {
         trim_quotes(line);
         try {
           auto& parent = nodes.back().wrap();
-          local_ref_maker make_parent_ref = [&](tstring& ts, string_ref_p&& fallback) {
+          node::local_ref_maker make_parent_ref = [&](tstring& ts, node::string_ref_p&& fallback) {
             return parent.make_local_ref(ts, move(fallback));
           };
-          auto& node = nodes.emplace_back(indent, parent.add(key, string_ref_p{}).get());
-          local_ref_maker make_local_ref = [&](tstring& ts, string_ref_p&& fallback) {
+          auto& node = nodes.emplace_back(indent, parent.add(key, node::string_ref_p{}).get());
+          node::local_ref_maker make_local_ref = [&](tstring& ts, node::string_ref_p&& fallback) {
             return node.wrap().make_local_ref(ts, move(fallback));
           };
           if (type == ' ') {
-            *node.node = parse_string(raw, line, make_local_ref);
+            *node.node = node::parse_string(raw, line, make_local_ref);
           } else if (type == '$') {
-            *node.node = parse_ref(raw, line, make_local_ref);
+            *node.node = node::parse_ref(raw, line, make_local_ref);
           } else if (type == '^') {
-            *node.node = parse_ref(raw, line, make_parent_ref);
+            *node.node = node::parse_ref(raw, line, make_parent_ref);
           } else {
             err.report_error(linecount, "Invalid character: " + type);
             continue;
@@ -80,13 +80,13 @@ void parse_yml(std::istream& is, wrapper& root, errorlist& err) {
   }
 }
 
-void write_yml(std::ostream& os, const container& root, int indent) {
-  root.iterate_children([&](const string& name, const base& child) {
+void write_yml(std::ostream& os, const node::container& root, int indent) {
+  root.iterate_children([&](const string& name, const node::base& child) {
     // Indent the line
     std::fill_n(std::ostream_iterator<char>(os), indent, ' ');
     write_key(os, name + ": ", child.get());
     
-    auto ctn = dynamic_cast<const container*>(&child);
+    auto ctn = dynamic_cast<const node::container*>(&child);
     if(ctn)
       write_yml(os, *ctn, indent + 2);
   });

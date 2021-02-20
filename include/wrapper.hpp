@@ -9,7 +9,7 @@
 #include <string>
 #include <optional>
 
-namespace lini {
+namespace lini::node {
   using std::string;
 
   struct wrapper : public base, public addable {

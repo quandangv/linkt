@@ -4,7 +4,7 @@
 
 #include <functional>
 
-namespace lini {
+namespace lini::node {
   struct container {
     struct error : error_base { using error_base::error_base; };
 

@@ -5,7 +5,7 @@
 #include <cstdlib>
 #include <array>
 
-NAMESPACE(lini)
+NAMESPACE(lini::node)
 
 string local_ref::get() const {
   if (ref && *ref) {

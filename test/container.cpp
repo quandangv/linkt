@@ -84,12 +84,12 @@ TEST_P(container_test, general) {
   setenv("test_env", "test_env", true);
   unsetenv("nexist");
 
-  wrapper doc;
+  node::wrapper doc;
   auto testset = GetParam();
   // Add keys and check errors
   for(auto test : testset) {
     if (test.fail)
-      EXPECT_THROW(doc.add(test.path, move(test.value)), container::error)
+      EXPECT_THROW(doc.add(test.path, move(test.value)), node::container::error)
           << "Key: " << test.path << endl << "Expected error";
     else {
       EXPECT_NO_THROW(doc.add(test.path, move(test.value)))

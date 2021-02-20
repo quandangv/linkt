@@ -3,7 +3,7 @@
 #include "common.hpp"
 #include "string_interpolate.hpp"
 
-NAMESPACE(lini)
+NAMESPACE(lini::node)
 
 using spot = string_interpolate_ref::replace_spot;
 

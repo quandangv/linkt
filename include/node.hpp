@@ -8,7 +8,7 @@
 #include <memory>
 #include <cspace/processor.hpp>
 
-namespace lini {
+namespace lini::node {
   struct base;
   using std::string;
   using string_ref_p = std::unique_ptr<base>;

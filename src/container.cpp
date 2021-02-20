@@ -4,7 +4,7 @@
 
 #include <array>
 
-NAMESPACE(lini)
+NAMESPACE(lini::node)
 
 bool container::has_child(const tstring& path) const {
   auto ptr = get_child_ptr(path);

@@ -6,7 +6,7 @@
 #include <sstream>
 #include <iostream>
 
-NAMESPACE(lini)
+NAMESPACE(lini::node)
 
 string_ref_p2 wrapper::get_child_ptr(tstring path) const {
   if (auto immediate_path = cut_front(trim(path), '.'); !immediate_path.untouched()) {
