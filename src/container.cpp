@@ -1,6 +1,5 @@
 #include "container.hpp"
 #include "common.hpp"
-#include "document.hpp"
 #include "token_iterator.hpp"
 
 #include <array>

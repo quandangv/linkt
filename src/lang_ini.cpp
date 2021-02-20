@@ -12,7 +12,7 @@ constexpr const char excluded_chars[] = "\t \"'=;#[](){}:$\\%";
 constexpr const char comment_chars[] = ";#";
 
 
-void parse_ini(std::istream& is, document& doc, errorlist& err) {
+void parse_ini(std::istream& is, wrapper& root, errorlist& err) {
   string prefix;
   string raw;
   // Iterate through lines
@@ -25,7 +25,7 @@ void parse_ini(std::istream& is, document& doc, errorlist& err) {
         prefix = line + ".";
       } else if (tstring key; err.extract_key(line, linecount, '=', key)) {
         try {
-          doc.add(prefix + key, raw, trim_quotes(line));
+          root.add(prefix + key, raw, trim_quotes(line));
         } catch (const std::exception& e) {
           err.report_error(linecount, e.what());
         }
@@ -34,9 +34,9 @@ void parse_ini(std::istream& is, document& doc, errorlist& err) {
   }
 }
 
-void write_ini(std::ostream& os, const container& doc, const string& prefix) {
+void write_ini(std::ostream& os, const container& root, const string& prefix) {
   vector<std::pair<string, const container*>> containers;
-  doc.iterate_children([&](const string& name, const string_ref& child) {
+  root.iterate_children([&](const string& name, const string_ref& child) {
     auto ctn = dynamic_cast<const container*>(&child);
     if(ctn) {
       containers.push_back(std::make_pair(name, ctn));

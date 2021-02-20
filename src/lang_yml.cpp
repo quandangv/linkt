@@ -13,22 +13,22 @@ constexpr const char comment_chars[] = ";#";
 struct indentpair {
   string_ref_p* node;
   int indent;
-  document* wrapper;
-  indentpair(int indent, document* wrapper) : wrapper(wrapper), indent(indent), node(nullptr) {}
+  wrapper* wrp;
+  indentpair(int indent, wrapper* wrp) : wrp(wrp), indent(indent), node(nullptr) {}
   indentpair(int indent, string_ref_p* new_node) : indent(indent), node(new_node) {
-    wrapper = dynamic_cast<document*>(node->get());
-    if (wrapper)
-      node = &wrapper->value;
+    wrp = dynamic_cast<wrapper*>(node->get());
+    if (wrp)
+      node = &wrp->value;
   }
-  document& wrap() {
-    if (!wrapper) {
-      wrapper = new document();
+  wrapper& wrap() {
+    if (!wrp) {
+      wrp = new wrapper();
       if (*node)
-        wrapper->value = move(*node);
-      *node = string_ref_p(wrapper);
-      node = &wrapper->value;
+        wrp->value = move(*node);
+      *node = string_ref_p(wrp);
+      node = &wrp->value;
     }
-    return *wrapper;
+    return *wrp;
   }
 };
 
@@ -36,8 +36,8 @@ string_ref_p throw_ref_maker(const tstring&, string_ref_p&&) {
   throw std::invalid_argument("Can't make reference to children");
 }
 
-void parse_yml(std::istream& is, document& doc, errorlist& err) {
-  vector<indentpair> nodes{indentpair(-1, &doc)};
+void parse_yml(std::istream& is, wrapper& root, errorlist& err) {
+  vector<indentpair> nodes{indentpair(-1, &root)};
   string raw;
 
   // Iterate through lines
@@ -80,8 +80,8 @@ void parse_yml(std::istream& is, document& doc, errorlist& err) {
   }
 }
 
-void write_yml(std::ostream& os, const container& doc, int indent) {
-  doc.iterate_children([&](const string& name, const string_ref& child) {
+void write_yml(std::ostream& os, const container& root, int indent) {
+  root.iterate_children([&](const string& name, const string_ref& child) {
     // Indent the line
     std::fill_n(std::ostream_iterator<char>(os), indent, ' ');
     write_key(os, name + ": ", child.get());

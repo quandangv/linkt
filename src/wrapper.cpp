@@ -1,4 +1,4 @@
-#include "document.hpp"
+#include "wrapper.hpp"
 #include "common.hpp"
 #include "tstring.hpp"
 #include "token_iterator.hpp"
@@ -8,7 +8,7 @@
 
 GLOBAL_NAMESPACE
 
-string_ref_p2 document::get_child_ptr(tstring path) const {
+string_ref_p2 wrapper::get_child_ptr(tstring path) const {
   if (auto immediate_path = cut_front(trim(path), '.'); !immediate_path.untouched()) {
     if (auto iterator = map.find(immediate_path); iterator != map.end() && iterator->second)
       if (auto child = dynamic_cast<container*>(iterator->second->get()); child)
@@ -18,7 +18,7 @@ string_ref_p2 document::get_child_ptr(tstring path) const {
   return {};
 }
 
-string_ref_p2 document::add(tstring path, string_ref_p&& value) {
+string_ref_p2 wrapper::add(tstring path, string_ref_p&& value) {
   // Check path for invalid characters
   trim(path);
   for(char c : path)
@@ -29,21 +29,21 @@ string_ref_p2 document::add(tstring path, string_ref_p&& value) {
     // This isn't the final part of the path
     auto& ptr = map[immediate_path];
     if (!ptr) {
-      ptr = std::make_shared<string_ref_p>(std::make_unique<document>());
+      ptr = std::make_shared<string_ref_p>(std::make_unique<wrapper>());
     }
     auto& child_ptr = *ptr;
     if (!child_ptr) {
-      auto tmp = std::make_unique<document>();
+      auto tmp = std::make_unique<wrapper>();
       auto res = tmp->add(path, move(value));
       child_ptr = move(tmp);
       return res;
     } else if (auto child = dynamic_cast<addable*>(child_ptr.get()); child) {
       return child->add(path, move(value));
     } else {
-      auto doc = new document();
-      doc->value = move(child_ptr);
-      child_ptr = string_ref_p(doc);
-      return doc->add(path, move(value));
+      auto node = new wrapper();
+      node->value = move(child_ptr);
+      child_ptr = string_ref_p(node);
+      return node->add(path, move(value));
     }
   } else {
     // This is the final part of the path
@@ -51,8 +51,8 @@ string_ref_p2 document::add(tstring path, string_ref_p&& value) {
     if (!place) {
       place = std::make_shared<string_ref_p>(move(value));
     } else if (*place) {
-      if (auto doc = dynamic_cast<document*>(place->get()); doc) {
-        doc->value = move(value);
+      if (auto node = dynamic_cast<wrapper*>(place->get()); node) {
+        node->value = move(value);
       } else {
         throw error("Duplicate key: " + static_cast<string>(path));
       }
@@ -62,14 +62,14 @@ string_ref_p2 document::add(tstring path, string_ref_p&& value) {
   }
 }
 
-void document::iterate_children(std::function<void(const string&, const string_ref&)> processor) const {
+void wrapper::iterate_children(std::function<void(const string&, const string_ref&)> processor) const {
   for(auto pair : map) {
     if (pair.second && *pair.second)
     processor(pair.first, **pair.second);
   }
 }
 
-string document::get() const {
+string wrapper::get() const {
   return value ? value->get() : "";
 }
 

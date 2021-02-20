@@ -9,7 +9,6 @@
 #include <cspace/processor.hpp>
 
 namespace lini {
-  struct document;
   struct string_ref;
   using std::string;
   using string_ref_p = std::unique_ptr<string_ref>;

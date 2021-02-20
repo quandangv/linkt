@@ -1,6 +1,5 @@
 #include "string_ref.hpp"
 #include "common.hpp"
-#include "document.hpp"
 
 #include <fstream>
 #include <cstdlib>

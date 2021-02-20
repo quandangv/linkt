@@ -18,7 +18,7 @@ unset(DEBUG_SCOPES CACHE)
 
 # public headers
 set(PUBLIC_HEADERS
-  ${PUBLIC_HEADERS_DIR}/document.hpp
+  ${PUBLIC_HEADERS_DIR}/wrapper.hpp
   ${PUBLIC_HEADERS_DIR}/error.hpp
   ${PUBLIC_HEADERS_DIR}/languages.hpp
   ${PUBLIC_HEADERS_DIR}/string_ref.hpp
@@ -28,7 +28,7 @@ set(PUBLIC_HEADERS
 
 # source files
 set(SOURCES
-  ${SRC_DIR}/document.cpp
+  ${SRC_DIR}/wrapper.cpp
   ${SRC_DIR}/lang_ini.cpp
   ${SRC_DIR}/lang_yml.cpp
   ${SRC_DIR}/container.cpp

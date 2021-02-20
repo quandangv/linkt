@@ -79,7 +79,7 @@ struct file_test : public TestWithParam<file_test_param> {
     std::ifstream ifs{testset.path + ".txt"};
     ASSERT_FALSE(ifs.fail());
 
-    document doc;
+    wrapper doc;
     errorlist err;
     if (testset.language == "ini")
       parse_ini(ifs, doc, err);
@@ -113,7 +113,7 @@ struct file_test : public TestWithParam<file_test_param> {
       EXPECT_NE(pos, err.end()) << "Expected parsing error at: " << e;
     }
 
-    // Check document export
+    // Check wrapper export
     std::ofstream ofs{testset.path + "_export.txt"};
     if (testset.language == "ini")
       write_ini(ofs, doc);
@@ -136,7 +136,7 @@ TEST_P(file_test, general) {
   test();
 }
 
-document doc;
+wrapper doc;
 void set_key(const string& key, const string& newval) {
   EXPECT_TRUE(doc.set(key, newval));
   ASSERT_EQ(newval, doc.get_child(key)) << "Unexpected value after assignment";
@@ -152,7 +152,7 @@ TEST(assign_test, load_doc) {
 }
 
 TEST(assign_test, doc) {
-  // Test document functionalities
+  // Test wrapper functionalities
   EXPECT_FALSE(doc.get_child("nexist"_ts));
   EXPECT_FALSE(doc.has_child("nexist"_ts));
   EXPECT_EQ(doc.get_child("nexist"_ts, "fallback"), "fallback");

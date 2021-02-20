@@ -1,4 +1,4 @@
-#include "document.hpp"
+#include "wrapper.hpp"
 #include "test.h"
 
 #include <fstream>
@@ -84,7 +84,7 @@ TEST_P(container_test, general) {
   setenv("test_env", "test_env", true);
   unsetenv("nexist");
 
-  document doc;
+  wrapper doc;
   auto testset = GetParam();
   // Add keys and check errors
   for(auto test : testset) {
@@ -96,7 +96,7 @@ TEST_P(container_test, general) {
           << "Key: " << test.path << endl << "Unexpected error";
     }
   }
-  // Optimize document and check content of keys
+  // Optimize wrapper and check content of keys
   for(auto test : testset) {
     // Skip key if it is expected to fail in the previous step
     if (test.fail) continue;
