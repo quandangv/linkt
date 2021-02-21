@@ -103,11 +103,11 @@ base_p parse(string& raw, tstring& str, ref_maker rmaker) {
     auto newval = std::make_unique<map>();
     if (auto min = cut_front(tokens[1], ':'); !min.untouched())
       newval->from_min = convert<float, strtof>(min);
-    newval->from_range = convert<float, strtof>(tokens[1]);
+    newval->from_range = convert<float, strtof>(tokens[1]) - newval->from_min;
 
     if (auto min = cut_front(tokens[2], ':'); !min.untouched())
       newval->to_min = convert<float, strtof>(min);
-    newval->to_range = convert<float, strtof>(tokens[2]);
+    newval->to_range = convert<float, strtof>(tokens[2]) - newval->to_min;
     return make_meta(move(newval));
 
   } else if (tokens[0] == "color"_ts) {
