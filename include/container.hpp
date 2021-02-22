@@ -12,7 +12,10 @@ namespace lini::node {
     get_child_ptr(tstring path) const = 0;
 
     virtual void
-    iterate_children(std::function<void(const string&, const base&)> processor) const = 0;
+    iterate_children(std::function<void(const string&, const base_p&)> processor) const = 0;
+
+    virtual void
+    iterate_children(std::function<void(const string&, const base&)> processor) const;
 
     bool
     has_child(const tstring& path) const;

@@ -62,11 +62,10 @@ base_pp wrapper::add(tstring path, base_p&& value) {
   }
 }
 
-void wrapper::iterate_children(std::function<void(const string&, const base&)> processor) const {
-  for(auto pair : map) {
-    if (pair.second && *pair.second)
-    processor(pair.first, **pair.second);
-  }
+void wrapper::iterate_children(std::function<void(const string&, const base_p&)> processor) const {
+  for(auto pair : map)
+    if (pair.second)
+      processor(pair.first, *pair.second);
 }
 
 string wrapper::get() const {

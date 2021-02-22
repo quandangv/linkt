@@ -37,4 +37,13 @@ string string_interpolate::get() const {
   return interpolate(base, list<position_iterator>{spots}, list<replacement_iterator>{spots});
 }
 
+base_p string_interpolate::clone(clone_handler handler) const {
+  auto result = std::make_unique<string_interpolate>();
+  result->base = base;
+  result->spots.reserve(spots.size());
+  for(auto& spot : spots)
+    result->spots.emplace_back(spot.position, spot.name, node::clone(*spot.replacement, handler));
+  return move(result);
+}
+
 NAMESPACE_END

@@ -1,10 +1,11 @@
 #include "node.hpp"
-#include "container.hpp"
+#include "wrapper.hpp"
 #include "common.hpp"
 
 #include <fstream>
 #include <cstdlib>
 #include <array>
+#include <map>
 
 NAMESPACE(lini::node)
 
@@ -15,10 +16,48 @@ string address_ref::get() const {
 
 bool address_ref::set(const string& val) {
   auto src = ancestor.get_child_ptr(path);
-  settable* target = dynamic_cast<settable*>(*src ? src->get() : fallback ? fallback.get() : nullptr);
+  auto target = dynamic_cast<settable*>(src && *src ? src->get() : fallback ? fallback.get() : nullptr);
   if (target)
     return target->set(val);
   return false;
+}
+
+base_p clone(const base_p& src) {
+  return src ? clone(*src) : base_p{};
+}
+
+base_p clone(const base& base_src, clone_handler handler) {
+  if (auto src = dynamic_cast<const clonable*>(&base_src); src)
+    return src->clone(handler);
+  return handler(base_src);
+}
+
+base_p clone(const base_p& src, clone_handler handler) {
+  return src ? clone(*src, handler) : base_p{};
+}
+
+base_p clone(const base& base_src) {
+  std::map<const addable*, addable*> ancestors;
+  clone_handler handler = [&](const base& base_src)->base_p {
+    if (auto src = dynamic_cast<const addable*>(&base_src); src) {
+      auto result = std::make_unique<wrapper>();
+      ancestors.emplace(src, result.get());
+      src->iterate_children([&](const string& name, const base_p& child) {
+        result->add(name, clone(child, handler));
+      });
+      return move(result);
+    }
+    
+    if (auto src = dynamic_cast<const address_ref*>(&base_src); src) {
+      auto ancestor = ancestors.find(&src->ancestor);
+      return std::make_unique<address_ref>(
+        ancestor != ancestors.end() ? *ancestor->second : src->ancestor,
+        string(src->path),
+        clone(src->fallback, handler));
+    }
+    throw base::error("Node of type '" + string(typeid(base_src).name()) + "' can't be cloned");
+  };
+  return clone(base_src, handler);
 }
 
 string ref::get() const {
@@ -38,7 +77,32 @@ bool ref::set(const string& val) {
 string defaultable::use_fallback(const string& msg) const {
   if (fallback)
     return fallback->get();
-  throw error("Reference failed: " + msg + ". And no fallback was found");
+  throw base::error("Reference failed: " + msg + ". And no fallback was found");
+}
+
+base_p meta::copy(std::unique_ptr<meta>&& dest, clone_handler handler) const {
+  if (value)
+    dest->value = clone(*value, handler);
+  if (fallback)
+    dest->fallback = clone(*fallback, handler);
+  return move(dest);
+}
+
+string color::get() const {
+  try {
+    auto result = processor.operate(value->get());
+    if (result.empty() && fallback)
+      return fallback->get();
+    return result;
+  } catch(const std::exception& e) {
+    return use_fallback("Color processing failed, due to: " + string(e.what()));
+  }
+}
+
+base_p color::clone(clone_handler handler) const {
+  auto result = std::make_unique<color>();
+  result->processor = processor;
+  return meta::copy(move(result), handler);
 }
 
 string env::get() const {
@@ -51,6 +115,10 @@ string env::get() const {
 bool env::set(const string& newval) {
   setenv(value->get().data(), newval.data(), true);
   return true;
+}
+
+base_p env::clone(clone_handler handler) const {
+  return meta::copy(std::make_unique<env>(), handler);
 }
 
 string file::get() const {
@@ -73,15 +141,8 @@ bool file::set(const string& content) {
   return true;
 }
 
-string color::get() const {
-  try {
-    auto result = processor.operate(value->get());
-    if (result.empty() && fallback)
-      return fallback->get();
-    return result;
-  } catch(const std::exception& e) {
-    return use_fallback("Color processing failed, due to: " + string(e.what()));
-  }
+base_p file::clone(clone_handler handler) const {
+  return meta::copy(std::make_unique<file>(), handler);
 }
 
 string cmd::get() const {
@@ -99,6 +160,10 @@ string cmd::get() const {
   return result;
 }
 
+base_p cmd::clone(clone_handler handler) const {
+  return meta::copy(std::make_unique<cmd>(), handler);
+}
+
 string map::get() const {
   auto str = value ? value->get() : use_fallback("Value key doesn't exist");
   size_t remaining;
@@ -106,6 +171,15 @@ string map::get() const {
   if (remaining != str.size())
     throw std::invalid_argument("value is not a number");
   return std::to_string(to_min + to_range/from_range*(num - from_min));
+}
+
+base_p map::clone(clone_handler handler) const {
+  auto result = std::make_unique<map>();
+  result->from_min = from_min;
+  result->from_range = from_range;
+  result->to_min = to_min;
+  result->to_range = to_range;
+  return meta::copy(move(result), handler);
 }
 
 NAMESPACE_END

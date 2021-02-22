@@ -79,6 +79,27 @@ vector<parse_test> parse_tests = {
 class container_test : public ::testing::Test, public ::testing::WithParamInterface<parse_test> {};
 INSTANTIATE_TEST_SUITE_P(parse, container_test, ::testing::ValuesIn(parse_tests));
 
+void test_wrapper(const node::wrapper& doc, parse_test testset) {
+  // Optimize wrapper and check content of keys
+  for(auto test : testset) {
+    // Skip key if it is expected to fail in the previous step
+    if (test.fail) continue;
+    try {
+      // Check the content of the key
+      auto result = doc.get_child(test.path);
+      ASSERT_TRUE(result)
+          << "Key: " << test.path << endl << "Can't retrieve key";
+      ASSERT_EQ(*result, test.parsed)
+          << "Key: " << test.path << endl << "Value of parsed key doesn't match expectation";
+    } catch (const std::exception& e) {
+      EXPECT_TRUE(test.exception)
+          << "Key: " << test.path << endl
+          << "Unexpected exception thrown" << endl
+          << "Exception: " << e.what();
+    }
+  }
+}
+
 TEST_P(container_test, general) {
   // Prepare the environment variables
   setenv("test_env", "test_env", true);
@@ -96,22 +117,7 @@ TEST_P(container_test, general) {
           << "Key: " << test.path << endl << "Unexpected error";
     }
   }
-  // Optimize wrapper and check content of keys
-  for(auto test : testset) {
-    // Skip key if it is expected to fail in the previous step
-    if (test.fail) continue;
-    try {
-      // Check the content of the key
-      auto result = doc.get_child(test.path);
-      ASSERT_TRUE(result)
-          << "Key: " << test.path << endl << "Can't retrieve key";
-      ASSERT_EQ(*result, test.parsed)
-          << "Key: " << test.path << endl << "Value of parsed key doesn't match expectation";
-    } catch (const std::exception& e) {
-      EXPECT_TRUE(test.exception)
-          << "Key: " << test.path << endl
-          << "Exception: " << e.what() << endl
-          << "Exception thrown, but the test is not expected to fail";
-    }
-  }
+  test_wrapper(doc, testset);
+  auto cloned_doc = clone(doc);
+  test_wrapper(dynamic_cast<node::wrapper&>(*cloned_doc), testset);
 }

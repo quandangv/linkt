@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 using namespace lini;
+using std::cout;
 
 struct file_test_param {
   struct expectation { string path, value; };

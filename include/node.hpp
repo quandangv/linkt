@@ -6,11 +6,12 @@
 #include <string>
 #include <optional>
 #include <memory>
+#include <functional>
 #include <cspace/processor.hpp>
 
 namespace lini::node {
   struct base;
-  struct container;
+  struct addable;
   using std::string;
   using base_p = std::unique_ptr<base>;
   using base_pp = std::shared_ptr<base_p>;
@@ -29,15 +30,26 @@ namespace lini::node {
     set(const string&) { return false; }
   };
 
-  struct plain : public base, settable {
+  using clone_handler = std::function<base_p(const base&)>;
+  struct clonable {
+    virtual base_p
+    clone(clone_handler handler) const = 0;
+  };
+  base_p clone(const base& source);
+  base_p clone(const base_p& source);
+  base_p clone(const base_p& source, clone_handler handler);
+  base_p clone(const base& source, clone_handler handler);
+
+  struct plain : public base, settable, clonable {
     string val;
 
     explicit plain(string&& val) : val(val) {}
     string get() const { return val; }
     bool set(const string& value) { val = value; return true; }
+    base_p clone(clone_handler handler) const { return std::make_unique<plain>(string(val)); }
   };
 
-  struct defaultable : public base {
+  struct defaultable {
     base_p fallback;
 
     defaultable() {}
@@ -45,17 +57,17 @@ namespace lini::node {
     string use_fallback(const string& error_message) const;
   };
 
-  struct address_ref : public defaultable, settable {
-    container& ancestor;
+  struct address_ref : public base, defaultable, settable {
+    addable& ancestor;
     string path;
 
-    address_ref(container& ancestor, string&& path, base_p&& fallback)
+    address_ref(addable& ancestor, string&& path, base_p&& fallback)
         : ancestor(ancestor), path(move(path)), defaultable(move(fallback)) {}
     string get() const;
     bool set(const string& value);
   };
 
-  struct ref : public defaultable, settable {
+  struct ref : public base, defaultable, settable {
     base_pp src;
 
     ref(const base_pp& src, base_p&& fallback)
@@ -64,37 +76,45 @@ namespace lini::node {
     bool set(const string& value);
   };
 
-  struct meta : public defaultable {
+  struct meta : public base, defaultable {
     base_p value;
+    
+    base_p copy(std::unique_ptr<meta>&& dest, clone_handler handler) const;
   };
 
-  struct color : public meta {
+  struct color : public meta, clonable {
     cspace::processor processor;
 
     string get() const;
+    base_p clone(clone_handler handler) const;
   };
 
-  struct env : public meta, settable {
+  struct env : public meta, settable, clonable {
     string get() const;
     bool set(const string& value);
+    base_p clone(clone_handler handler) const;
   };
 
-  struct cmd : public meta {
+  struct cmd : public meta, clonable {
     string get() const;
+    base_p clone(clone_handler handler) const;
   };
 
-  struct file : public meta, settable {
-    string get() const;
-    bool set(const string& value);
+  struct file : public meta, settable, clonable {
     struct error : error_base { using error_base::error_base; };
-  };
-
-  struct map : public meta {
-    float from_min, from_range, to_min, to_range;
     string get() const;
+    bool set(const string& value);
+    base_p clone(clone_handler handler) const;
   };
 
-  struct string_interpolate : public base {
+  struct map : public meta, clonable {
+    float from_min, from_range, to_min, to_range;
+
+    string get() const;
+    base_p clone(clone_handler handler) const;
+  };
+
+  struct string_interpolate : public base, clonable {
     struct replace_spot {
       int position;
       std::string name;
@@ -104,5 +124,6 @@ namespace lini::node {
     std::vector<replace_spot> spots;
 
     string get() const;
+    base_p clone(clone_handler handler) const;
   };
 }

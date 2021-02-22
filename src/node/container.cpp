@@ -11,6 +11,13 @@ bool container::has_child(const tstring& path) const {
   return ptr && *ptr;
 }
 
+void container::iterate_children(std::function<void(const string&, const base&)> processor) const {
+  iterate_children([&](const string& name, const base_p& child) {
+    if (child)
+      processor(name, *child);
+  });
+}
+
 std::optional<string> container::get_child(const tstring& path) const {
   if (auto ptr = get_child_ptr(path); ptr) {
     if (auto& value = *ptr; value) {
@@ -47,7 +54,7 @@ bool container::set(const tstring& path, const string& value) {
 }
 
 base_pp addable::add(tstring path, string& raw, tstring value) {
-  auto node = parse_string(raw, value, [&](tstring& ts, base_p&& fallback) { return make_ref(ts, move(fallback)); });
+  auto node = parse_string(raw, value, [&](tstring& ts, base_p&& fallback) { return make_address_ref(ts, move(fallback)); });
   if (node)
     return add(path, move(node));
   return {};
