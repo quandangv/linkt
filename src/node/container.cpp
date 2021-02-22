@@ -40,12 +40,9 @@ base& container::get_child_ref(const tstring& path) const {
 }
 
 bool container::set(const tstring& path, const string& value) {
-  if (auto ptr = get_child_ptr(path); ptr) {
-    if (auto target = dynamic_cast<settable*>(ptr->get()); target && !target->readonly()) {
-      target->set(value);
-      return true;
-    }
-  }
+  if (auto ptr = get_child_ptr(path); ptr)
+    if (auto target = dynamic_cast<settable*>(ptr->get()); target)
+      return target->set(value);
   return false;
 }
 

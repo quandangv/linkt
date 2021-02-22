@@ -14,29 +14,11 @@ string ref::get() const {
   return use_fallback("Referenced key doesn't exist");
 }
 
-bool ref::readonly() const {
-  if (*src) {
-    if (auto target = dynamic_cast<settable*>(src->get()); target) {
-      return target->readonly();
-    }
-  } else if (fallback) {
-    if (auto target = dynamic_cast<settable*>(fallback.get()); target) {
-      return target->readonly();
-    }
-  }
+bool ref::set(const string& val) {
+  settable* target = dynamic_cast<settable*>(*src ? src->get() : fallback ? fallback.get() : nullptr);
+  if (target)
+    return target->set(val);
   return false;
-}
-
-void ref::set(const string& val) {
-  if (*src) {
-    if (auto target = dynamic_cast<settable*>(src->get()); target) {
-      target->set(val);
-    }
-  } else if (fallback) {
-    if (auto target = dynamic_cast<settable*>(fallback.get()); target) {
-      target->set(val);
-    }
-  }
 }
 
 string defaultable::use_fallback(const string& msg) const {
@@ -52,8 +34,9 @@ string env::get() const {
   return string(result);
 }
 
-void env::set(const string& newval) {
+bool env::set(const string& newval) {
   setenv(value->get().data(), newval.data(), true);
+  return true;
 }
 
 string file::get() const {
@@ -67,12 +50,13 @@ string file::get() const {
   return move(result);
 }
 
-void file::set(const string& content) {
+bool file::set(const string& content) {
   std::ofstream ofs(value->get().data(), std::ios_base::trunc);
   if (ofs.fail())
-    throw error("Can't write to file: " + value->get());
+    return false;
   ofs << content;
   ofs.close();
+  return true;
 }
 
 string color::get() const {

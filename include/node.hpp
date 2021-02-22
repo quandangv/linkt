@@ -25,10 +25,7 @@ namespace lini::node {
 
   struct settable {
     virtual bool
-    readonly() const { return true; }
-
-    virtual void
-    set(const string&) {}
+    set(const string&) { return false; }
   };
 
   struct plain : public base, settable {
@@ -36,8 +33,7 @@ namespace lini::node {
 
     explicit plain(string&& val) : val(val) {}
     string get() const { return val; }
-    bool readonly() const { return false; }
-    void set(const string& value) { val = value; }
+    bool set(const string& value) { val = value; return true; }
   };
 
   struct defaultable : public base {
@@ -54,8 +50,7 @@ namespace lini::node {
     ref(const base_pp& src, base_p&& fallback)
         : src(src), defaultable(move(fallback)) {}
     string get() const;
-    bool readonly() const;
-    void set(const string& value);
+    bool set(const string& value);
   };
 
   struct meta : public defaultable {
@@ -70,8 +65,7 @@ namespace lini::node {
 
   struct env : public meta, settable {
     string get() const;
-    bool readonly() const { return false; }
-    void set(const string& value);
+    bool set(const string& value);
   };
 
   struct cmd : public meta {
@@ -80,8 +74,7 @@ namespace lini::node {
 
   struct file : public meta, settable {
     string get() const;
-    bool readonly() const { return false; }
-    void set(const string& value);
+    bool set(const string& value);
     struct error : error_base { using error_base::error_base; };
   };
 
