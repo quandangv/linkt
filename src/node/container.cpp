@@ -65,6 +65,10 @@ base_p addable::make_ref(const tstring& ts, base_p&& fallback) {
   return std::make_unique<ref>(ptr, move(fallback));
 }
 
+base_p addable::make_address_ref(const tstring& ts, base_p&& fallback) {
+  return std::make_unique<address_ref>(*this, ts, move(fallback));
+}
+
 base_p parse(string& raw, tstring& str, ref_maker rmaker) {
   base_p fallback;
   if (auto fb_str = cut_back(str, '?'); !fb_str.untouched())

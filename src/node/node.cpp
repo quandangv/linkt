@@ -1,4 +1,5 @@
 #include "node.hpp"
+#include "container.hpp"
 #include "common.hpp"
 
 #include <fstream>
@@ -6,6 +7,19 @@
 #include <array>
 
 NAMESPACE(lini::node)
+
+string address_ref::get() const {
+  auto result = ancestor.get_child(path);
+  return result ? *result : use_fallback("Referenced key doesn't exist");
+}
+
+bool address_ref::set(const string& val) {
+  auto src = ancestor.get_child_ptr(path);
+  settable* target = dynamic_cast<settable*>(*src ? src->get() : fallback ? fallback.get() : nullptr);
+  if (target)
+    return target->set(val);
+  return false;
+}
 
 string ref::get() const {
   if (src && *src) {

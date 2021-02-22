@@ -42,6 +42,9 @@ namespace lini::node {
 
     base_p
     make_ref(const tstring&, base_p&&);
+
+    base_p
+    make_address_ref(const tstring&, base_p&&);
   };
 
   using ref_maker = std::function<base_p(tstring&, base_p&&)>;
