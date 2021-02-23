@@ -79,24 +79,29 @@ vector<parse_test> parse_tests = {
 class container_test : public ::testing::Test, public ::testing::WithParamInterface<parse_test> {};
 INSTANTIATE_TEST_SUITE_P(parse, container_test, ::testing::ValuesIn(parse_tests));
 
-void test_wrapper(const node::wrapper& doc, parse_test testset) {
+void test_key(const node::wrapper& doc, parse_test_single test) {
+  // Skip key if it is expected to fail in the add step
+  if (test.fail) return;
+  try {
+    // Check the content of the key
+    auto result = doc.get_child(test.path);
+    ASSERT_TRUE(result)
+        << "Key: " << test.path << endl << "Can't retrieve key";
+    ASSERT_EQ(*result, test.parsed)
+        << "Key: " << test.path << endl << "Value of parsed key doesn't match expectation";
+  } catch (const std::exception& e) {
+    ASSERT_TRUE(test.exception)
+        << "Key: " << test.path << endl
+        << "Unexpected exception thrown" << endl
+        << "Exception: " << e.what();
+  }
+}
+
+void test_wrapper(const node::base* base_doc, parse_test testset) {
+  auto& doc = dynamic_cast<const node::wrapper&>(*base_doc);
   // Optimize wrapper and check content of keys
   for(auto test : testset) {
-    // Skip key if it is expected to fail in the previous step
-    if (test.fail) continue;
-    try {
-      // Check the content of the key
-      auto result = doc.get_child(test.path);
-      ASSERT_TRUE(result)
-          << "Key: " << test.path << endl << "Can't retrieve key";
-      ASSERT_EQ(*result, test.parsed)
-          << "Key: " << test.path << endl << "Value of parsed key doesn't match expectation";
-    } catch (const std::exception& e) {
-      EXPECT_TRUE(test.exception)
-          << "Key: " << test.path << endl
-          << "Unexpected exception thrown" << endl
-          << "Exception: " << e.what();
-    }
+    test_key(doc, test);
   }
 }
 
@@ -105,19 +110,19 @@ TEST_P(container_test, general) {
   setenv("test_env", "test_env", true);
   unsetenv("nexist");
 
-  node::wrapper doc;
+  node::base_p base_doc = std::make_unique<node::wrapper>();
   auto testset = GetParam();
   // Add keys and check errors
   for(auto test : testset) {
+    auto& doc = dynamic_cast<node::wrapper&>(*base_doc);
     if (test.fail)
       EXPECT_THROW(doc.add(test.path, move(test.value)), node::container::error)
           << "Key: " << test.path << endl << "Expected error";
-    else {
+    else
       EXPECT_NO_THROW(doc.add(test.path, move(test.value)))
           << "Key: " << test.path << endl << "Unexpected error";
-    }
   }
-  test_wrapper(doc, testset);
-  auto cloned_doc = clone(doc);
-  test_wrapper(dynamic_cast<node::wrapper&>(*cloned_doc), testset);
+  test_wrapper(base_doc.get(), testset);
+  base_doc = clone(base_doc);
+  test_wrapper(base_doc.get(), testset);
 }

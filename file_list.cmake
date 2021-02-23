@@ -39,7 +39,7 @@ set(SOURCES
 )
 
 set(INTERNAL_TESTS)
-set(EXTERNAL_TESTS container languages)
+set(EXTERNAL_TESTS node languages)
 set(COPIED_FILES
   key_file.txt
   assign_test.txt
