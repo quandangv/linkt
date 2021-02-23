@@ -7,18 +7,16 @@ NAMESPACE(lini::node)
 
 using spot = string_interpolate::replace_spot;
 
-struct replacement_iterator {
+template<typename T>
+struct base_it {
   vector<spot>::const_iterator it;
-  explicit replacement_iterator(const std::vector<spot>::const_iterator& it) : it(it) {}
-  replacement_iterator& operator++() { ++it; return *this; }
-  bool operator==(const replacement_iterator& other) const { return other.it == it; }
+  T& operator++() { ++it; return *(T*)this; }
+  bool operator==(const T& other) const { return other.it == it; }
+};
+struct replacement_it : public base_it<replacement_it> {
   string operator*() { return (*it).replacement->get(); }
 };
-struct position_iterator {
-  vector<spot>::const_iterator it;
-  explicit position_iterator(const std::vector<spot>::const_iterator& it) : it(it) {}
-  position_iterator& operator++() { ++it; return *this; }
-  bool operator==(const position_iterator& other) const { return other.it == it; }
+struct position_it : public base_it<position_it> {
   size_t operator*() { return it->position; }
 };
 template<typename IteratorType>
@@ -26,15 +24,15 @@ struct list {
   const vector<spot>& list;
 
   IteratorType begin() const {
-    return IteratorType(list.begin());
+    return IteratorType{list.begin()};
   }
   IteratorType end() const {
-    return IteratorType(list.end());
+    return IteratorType{list.end()};
   }
 };
 
 string string_interpolate::get() const {
-  return interpolate(base, list<position_iterator>{spots}, list<replacement_iterator>{spots});
+  return interpolate(base, list<position_it>{spots}, list<replacement_it>{spots});
 }
 
 base_p string_interpolate::clone(clone_handler handler) const {
