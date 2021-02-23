@@ -4,9 +4,6 @@
 #include <fstream>
 #include <unistd.h>
 
-using namespace lini;
-using std::cout;
-
 struct file_test_param {
   struct expectation { string path, value; };
 
@@ -15,9 +12,52 @@ struct file_test_param {
   vector<string> err;
 };
 
-vector<file_test_param> parse_tests = {
-  {
-    "ini_test", "ini",
+void test_language(file_test_param testset) {
+  std::ifstream ifs{testset.path + ".txt"};
+  ASSERT_FALSE(ifs.fail());
+
+  node::wrapper doc;
+  errorlist err;
+  if (testset.language == "ini")
+    parse_ini(ifs, doc, err);
+  else if (testset.language == "yml")
+    parse_yml(ifs, doc, err);
+
+  // Check for unexpected errors
+  for(auto& e : err) {
+    EXPECT_NE(find(testset.err.begin(), testset.err.end(), e.first), testset.err.end())
+      << "Excess parsing error, at: " << e.first << endl << "Message: " << e.second;
+  }
+  // Check the keys
+  for(auto& pair : testset.expectations)
+    check_key(doc, pair.path, pair.value, false);
+
+  // Check for expected errors
+  for(auto& e : testset.err) {
+    auto pos = find_if(err.begin(), err.end(), [&](auto it) { return it.first == e; });
+    EXPECT_NE(pos, err.end()) << "Expected parsing error at: " << e;
+  }
+
+  // Check wrapper export
+  std::ofstream ofs{testset.path + "_export.txt"};
+
+  if (testset.language == "ini")
+    write_ini(ofs, doc);
+  else if (testset.language == "yml")
+    write_yml(ofs, doc);
+
+  auto command = "diff -Z '" + testset.path + "_output.txt' '" + testset.path + "_export.txt' 2>&1";
+  auto file = popen(command.data(), "r");
+  ASSERT_TRUE(file);
+  std::array<char, 2> buf;
+  fgets(buf.data(), 2, file);
+  EXPECT_TRUE(feof(file))
+      << "Output of command not empty: " << command;
+  pclose(file);
+}
+
+TEST(Language, Plain_ini) {
+  test_language({"ini_test", "ini",
     {
       {"key-rogue", "rogue"},
       {"test.key-a", "a"},
@@ -35,17 +75,12 @@ vector<file_test_param> parse_tests = {
       {"test2.ref-nexist", "${test.key-nexist ? \" f a i l ' }"},
       {"test2.key-a", "'    a\""},
     },
-    {
-      "line 2",
-      "line 7",
-      "line 9",
-      "line 13",
-      "line 19",
-      "line 21",
-    }
-  },
-  {
-    "lemonbar_test", "ini",
+    { "line 2", "line 7", "line 9", "line 13", "line 19", "line 21", }
+  });
+}
+
+TEST(Language, Functional_ini) {
+  test_language({"lemonbar_test", "ini",
     {
       {"msg", "hello"},
       {"simple", " 69 96 0 "},
@@ -60,9 +95,11 @@ vector<file_test_param> parse_tests = {
       {"stat.bat", "0"},
     },
     {}
-  },
-  {
-    "yml_test", "yml",
+  });
+}
+
+TEST(Language, Yml) {
+  test_language({"yml_test", "yml",
     {
       {"bar.bat.B.L.value", "60"},
       {"bar.bat.B", "#FF54CB"},
@@ -71,88 +108,26 @@ vector<file_test_param> parse_tests = {
       {"bar", "%{F#fff}%{B#FF54CB} BAT 60% "},
     },
     {}
-  },
-};
-
-struct file_test : public TestWithParam<file_test_param> {
-  void test() {
-    auto testset = GetParam();
-    std::ifstream ifs{testset.path + ".txt"};
-    ASSERT_FALSE(ifs.fail());
-
-    node::wrapper doc;
-    errorlist err;
-    if (testset.language == "ini")
-      parse_ini(ifs, doc, err);
-    else if (testset.language == "yml")
-      parse_yml(ifs, doc, err);
-
-    // Check for unexpected errors
-    for(auto& e : err) {
-      EXPECT_NE(find(testset.err.begin(), testset.err.end(), e.first), testset.err.end())
-        << "Excess parsing error, at: " << e.first << endl
-        << "Message: " << e.second;
-    }
-    // Check the keys
-    vector<string> found;
-    for(auto& pair : testset.expectations) {
-      try {
-        auto result = doc.get_child(pair.path);
-        EXPECT_TRUE(result)
-            << "Key doesn't exist: " << pair.path << endl;
-        EXPECT_EQ(*result, pair.value)
-            << "Key have wrong value: " << pair.path << endl;
-      } catch (const std::exception& e) {
-        ADD_FAILURE() << "Key: " << pair.path << endl
-            << "Exception while checking: " << e.what();
-      }
-      found.emplace_back(pair.path);
-    }
-    // Check for expected errors
-    for(auto& e : testset.err) {
-      auto pos = find_if(err.begin(), err.end(), [&](auto it) { return it.first == e; });
-      EXPECT_NE(pos, err.end()) << "Expected parsing error at: " << e;
-    }
-
-    // Check wrapper export
-    std::ofstream ofs{testset.path + "_export.txt"};
-    if (testset.language == "ini")
-      write_ini(ofs, doc);
-    else if (testset.language == "yml")
-      write_yml(ofs, doc);
-    auto command = "diff -Z '" + testset.path + "_output.txt' '" + testset.path + "_export.txt' 2>&1";
-    auto file = popen(command.data(), "r");
-    ASSERT_TRUE(file);
-    std::array<char, 2> buf;
-    fgets(buf.data(), 2, file);
-    EXPECT_TRUE(feof(file))
-        << "Output of command not empty: " << command;
-    pclose(file);
-  }
-};
-
-INSTANTIATE_TEST_SUITE_P(parse, file_test, ValuesIn(parse_tests));
-
-TEST_P(file_test, general) {
-  test();
+  });
 }
 
 node::wrapper doc;
 void set_key(const string& key, const string& newval) {
+  auto last_count = get_current_test_part_count();
   EXPECT_TRUE(doc.set(key, newval));
   ASSERT_EQ(newval, doc.get_child(key)) << "Unexpected value after assignment";
+  if (last_count != get_current_test_part_count())
+    cerr << "Key: " << key << endl;
 }
 
-TEST(assign_test, load_doc) {
+TEST(Assign, Load) {
   std::ifstream ifs{"assign_test.txt"};
   ASSERT_FALSE(ifs.fail());
   errorlist err;
   parse_ini(ifs, doc, err);
   ASSERT_TRUE(err.empty());
   ifs.close();
-}
 
-TEST(assign_test, doc) {
   // Test wrapper functionalities
   EXPECT_FALSE(doc.get_child("nexist"_ts));
   EXPECT_FALSE(doc.has_child("nexist"_ts));
@@ -164,32 +139,30 @@ TEST(assign_test, doc) {
   EXPECT_THROW(doc.get_child("ref-fail"_ts), node::container::error);
 }
 
-TEST(assign_test, local_ref) {
+TEST(Assign, Ref) {
   // Test local_ref assignments
-  EXPECT_NO_FATAL_FAILURE(set_key("key-a", "a"));
-  EXPECT_NO_FATAL_FAILURE(set_key("ref-a", "foo"));
-  EXPECT_NO_FATAL_FAILURE(set_key("ref-ref-a", "bar"));
-  EXPECT_NO_FATAL_FAILURE(EXPECT_EQ("bar", *doc.get_child("key-a"_ts)));
+  set_key("key-a", "a");
+  set_key("ref-a", "foo");
+  set_key("ref-ref-a", "bar");
+  EXPECT_EQ("bar", *doc.get_child("key-a"_ts));
 
   // Test fallback assignments
-  EXPECT_NO_FATAL_FAILURE(set_key("ref-default-a", "foobar"));
-  EXPECT_NO_FATAL_FAILURE(EXPECT_EQ("foobar", *doc.get_child("key-a"_ts)));
+  set_key("ref-default-a", "foobar");
+  EXPECT_EQ("foobar", *doc.get_child("key-a"_ts));
 }
 
-TEST(assign_test, file_env_ref) {
+TEST(Assign, File_Env) {
   // Test file_ref assignments
-  EXPECT_NO_FATAL_FAILURE(set_key("ref-nexist", "barfoo"));
-  EXPECT_NO_FATAL_FAILURE(set_key("env-nexist", "barbar"));
-  EXPECT_NO_FATAL_FAILURE(set_key("file-parse", "foo"));
+  set_key("ref-nexist", "barfoo");
+  set_key("env-nexist", "barbar");
+  set_key("file-parse", "foo");
   std::ifstream ifs("key_file.txt");
   string content;
   getline(ifs, content);
   ifs.close();
-  EXPECT_NO_FATAL_FAILURE(EXPECT_EQ("foo", content));
+  EXPECT_EQ("foo", content);
 
   // Test env_ref assignments
-  EXPECT_NO_FATAL_FAILURE(set_key("env", "foo"));
-
-  // Revert file contents back to its original
-  EXPECT_NO_FATAL_FAILURE(set_key("file-parse", "content"));
+  set_key("env", "foo");
+  set_key("file-parse", "content");
 }
