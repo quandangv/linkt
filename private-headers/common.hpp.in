@@ -34,6 +34,5 @@ constexpr auto DEBUG_SCOPES{"@DEBUG_SCOPES@"sv};
 
 #cmakedefine PLATFORM_LINUX
 
-#include "error.hpp"
 #include "format.hpp"
 

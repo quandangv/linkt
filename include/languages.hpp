@@ -2,7 +2,7 @@
 
 #include <istream>
 
-#include "wrapper.hpp"
+#include "node/wrapper.hpp"
 
 namespace lini {
   struct errorlist : std::vector<std::pair<std::string, std::string>> {
