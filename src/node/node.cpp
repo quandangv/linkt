@@ -1,11 +1,10 @@
 #include "node.hpp"
-#include "wrapper.hpp"
+#include "container.hpp"
 #include "common.hpp"
 
 #include <fstream>
 #include <cstdlib>
 #include <array>
-#include <map>
 
 NAMESPACE(lini::node)
 
@@ -22,44 +21,6 @@ bool address_ref::set(const string& val) {
   return false;
 }
 
-base_p clone(const base_p& src) {
-  return src ? clone(*src) : base_p{};
-}
-
-base_p clone(const base& base_src, clone_handler handler) {
-  if (auto src = dynamic_cast<const clonable*>(&base_src); src)
-    return src->clone(handler);
-  return handler(base_src);
-}
-
-base_p clone(const base_p& src, clone_handler handler) {
-  return src ? clone(*src, handler) : base_p{};
-}
-
-base_p clone(const base& base_src) {
-  std::map<const addable*, addable*> ancestors;
-  clone_handler handler = [&](const base& base_src)->base_p {
-    if (auto src = dynamic_cast<const addable*>(&base_src); src) {
-      auto result = std::make_unique<wrapper>();
-      ancestors.emplace(src, result.get());
-      src->iterate_children([&](const string& name, const base_p& child) {
-        result->add(name, clone(child, handler));
-      });
-      return move(result);
-    }
-    
-    if (auto src = dynamic_cast<const address_ref*>(&base_src); src) {
-      auto ancestor = ancestors.find(&src->ancestor);
-      return std::make_unique<address_ref>(
-        ancestor != ancestors.end() ? *ancestor->second : src->ancestor,
-        string(src->path),
-        clone(src->fallback, handler));
-    }
-    throw base::error("Node of type '" + string(typeid(base_src).name()) + "' can't be cloned");
-  };
-  return clone(base_src, handler);
-}
-
 string ref::get() const {
   if (src && *src) {
     return (*src)->get();
@@ -72,20 +33,6 @@ bool ref::set(const string& val) {
   if (target)
     return target->set(val);
   return false;
-}
-
-string defaultable::use_fallback(const string& msg) const {
-  if (fallback)
-    return fallback->get();
-  throw base::error("Reference failed: " + msg + ". And no fallback was found");
-}
-
-base_p meta::copy(std::unique_ptr<meta>&& dest, clone_handler handler) const {
-  if (value)
-    dest->value = clone(*value, handler);
-  if (fallback)
-    dest->fallback = clone(*fallback, handler);
-  return move(dest);
 }
 
 string color::get() const {
