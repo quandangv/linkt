@@ -1,11 +1,17 @@
-bar: '%{F${F}}${bat} '
+bar: '%{F${F}}${base} '
   F: #fff
       dumb: lol
-  bat: %{B${B}} ${label} ${stat}${unit}
+    empty:
+  base: %{B${B}} ${label} ${stat}${unit}
     B.L.value:^ stat
     B:$ color cielch(${L}, 1, ${H})
       H: 0
       L:$ map 100 0.5:1 ${value}
+    label: BAT
+    stat: 60
+    unit: %
+  bat:
+    B.H: 0
     label: BAT
     stat: 60
     unit: %

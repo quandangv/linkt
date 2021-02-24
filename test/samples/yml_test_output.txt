@@ -1,11 +1,17 @@
 bar: "%{F#fff}%{B#FF54CB} BAT 60% "
   F: #fff
     dumb: lol
-  bat: %{B#FF54CB} BAT 60%
+  base: %{B#FF54CB} BAT 60%
     B: #FF54CB
       H: 0
       L: 0.800000
         value: 60
+    label: BAT
+    stat: 60
+    unit: %
+  bat:
+    B:
+      H: 0
     label: BAT
     stat: 60
     unit: %

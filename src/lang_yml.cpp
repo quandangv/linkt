@@ -50,15 +50,15 @@ void parse_yml(std::istream& is, node::wrapper& root, errorlist& err) {
       while (nodes.back().indent >= indent)
         nodes.pop_back();
       if (tstring key; err.extract_key(line, linecount, ':', key)) {
-        auto type = line.front();
-        line.erase_front();
-        trim_quotes(line);
         try {
           auto& parent = nodes.back().wrap();
-          node::ref_maker make_parent_ref = [&](tstring& ts, node::base_p&& fallback) {
-            return parent.make_ref(ts, move(fallback));
-          };
           auto& node = nodes.emplace_back(indent, parent.add(key, node::base_p{}).get());
+
+          if (line.empty())
+            continue;
+          auto type = line.front();
+          line.erase_front();
+          trim_quotes(line);
           node::ref_maker make_ref = [&](tstring& ts, node::base_p&& fallback) {
             return node.wrap().make_ref(ts, move(fallback));
           };
@@ -67,13 +67,15 @@ void parse_yml(std::istream& is, node::wrapper& root, errorlist& err) {
           } else if (type == '$') {
             *node.node = node::parse(raw, line, make_ref);
           } else if (type == '^') {
-            *node.node = node::parse(raw, line, make_parent_ref);
+            *node.node = node::parse(raw, line, [&](tstring& ts, node::base_p&& fallback) {
+              return parent.make_ref(ts, move(fallback));
+            });
           } else {
-            err.report_error(linecount, "Invalid character: " + type);
+            err.report_error(linecount, key, "Invalid character: " + type);
             continue;
           }
         } catch (const std::exception& e) {
-          err.report_error(linecount, e.what());
+          err.report_error(linecount, key, e.what());
         }
       }
     }

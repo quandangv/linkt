@@ -25,7 +25,7 @@ void test_language(file_test_param testset) {
   // Check for unexpected errors
   for(auto& e : err) {
     EXPECT_NE(find(testset.err.begin(), testset.err.end(), e.first), testset.err.end())
-      << "Excess parsing error, at: " << e.first << endl << "Message: " << e.second;
+      << "Unexpected parsing error, at: " << e.first << endl << "Message: " << e.second;
   }
   // Check the keys
   for(auto& pair : testset.expectations)
@@ -100,9 +100,9 @@ TEST(Language, Functional_ini) {
 TEST(Language, Yml) {
   test_language({"yml_test", "yml",
     {
-      {"bar.bat.B.L.value", "60"},
-      {"bar.bat.B", "#FF54CB"},
-      {"bar.bat", "%{B#FF54CB} BAT 60%"},
+      {"bar.base.B.L.value", "60"},
+      {"bar.base.B", "#FF54CB"},
+      {"bar.base", "%{B#FF54CB} BAT 60%"},
       {"bar.F", "#fff"},
       {"bar", "%{F#fff}%{B#FF54CB} BAT 60% "},
     },

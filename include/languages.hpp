@@ -7,6 +7,7 @@
 namespace lini {
   struct errorlist : std::vector<std::pair<std::string, std::string>> {
     void report_error(int line, const std::string& msg);
+    void report_error(int line, const std::string& key, const std::string& msg);
     bool extract_key(tstring& line, int linecount, char separator, tstring& key);
   };
   void parse_ini(std::istream&, node::wrapper&, errorlist&);
