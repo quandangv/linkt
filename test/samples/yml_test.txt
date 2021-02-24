@@ -16,3 +16,4 @@ bar: '%{F${F}}${bat} '
     label:= BAT
     stat:= 60
     unit:= %
+    B:= invalid assignment

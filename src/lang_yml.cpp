@@ -87,13 +87,13 @@ void parse_yml(std::istream& is, node::wrapper& root, errorlist& err) {
   }
 }
 
-void write_yml(std::ostream& os, const node::container& root, int indent) {
+void write_yml(std::ostream& os, const node::wrapper& root, int indent) {
   root.iterate_children([&](const string& name, const node::base& child) {
     // Indent the line
     std::fill_n(std::ostream_iterator<char>(os), indent, ' ');
     write_key(os, name + ": ", child.get());
     
-    auto ctn = dynamic_cast<const node::container*>(&child);
+    auto ctn = dynamic_cast<const node::wrapper*>(&child);
     if(ctn)
       write_yml(os, *ctn, indent + 2);
   });

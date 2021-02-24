@@ -10,25 +10,24 @@ using parse_test = vector<parse_test_single>;
 
 void test_nodes(parse_test testset) {
   auto fail_count = get_current_test_part_count();
-  node::base_p base_doc = std::make_unique<node::wrapper>();
+  auto doc = new node::wrapper();
+  auto base_doc = node::base_p(doc);
 
   // Add keys
   for(auto test : testset) {
-    auto& doc = dynamic_cast<node::wrapper&>(*base_doc);
     auto last_count = get_current_test_part_count();
     if (test.fail)
-      EXPECT_ANY_THROW(doc.add(test.path, move(test.value))) << "Expected error";
+      EXPECT_ANY_THROW(doc->add(test.path, move(test.value))) << "Expected error";
     else
-      EXPECT_NO_THROW(doc.add(test.path, move(test.value))) << "Unexpected error";
+      EXPECT_NO_THROW(doc->add(test.path, move(test.value))) << "Unexpected error";
     if (last_count != get_current_test_part_count())
       cerr << "Key: " << test.path << endl;
   }
   auto test_doc = [&] {
-    auto& doc = dynamic_cast<const node::wrapper&>(*base_doc);
     for(auto test : testset) {
       // Skip key if it is expected to fail in the previous step
       if (test.fail) continue;
-      check_key(doc, test.path, test.parsed, test.exception);
+      check_key(*doc, test.path, test.parsed, test.exception);
     }
   };
   test_doc();
@@ -36,6 +35,12 @@ void test_nodes(parse_test testset) {
   if (fail_count != get_current_test_part_count())
     GTEST_SKIP() << "Skipping clone test";
   base_doc = clone(base_doc);
+  doc = dynamic_cast<node::wrapper*>(base_doc.get());
+  test_doc();
+
+  if (fail_count != get_current_test_part_count())
+    GTEST_SKIP() << "Skipping optimize test";
+  doc->optimize();
   test_doc();
 }
 

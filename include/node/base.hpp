@@ -31,10 +31,6 @@ namespace lini::node {
     virtual base_p
     clone(clone_handler handler) const = 0;
   };
-  base_p clone(const base& source);
-  base_p clone(const base_p& source);
-  base_p clone(const base_p& source, clone_handler handler);
-  base_p clone(const base& source, clone_handler handler);
 
   struct plain : public base, settable, clonable {
     string val;
@@ -53,8 +49,17 @@ namespace lini::node {
     string use_fallback(const string& error_message) const;
   };
 
-  struct ref : public base {
-    virtual base_p get_source() const = 0;
+  struct wrapper;
+  struct address_ref : public base, defaultable, settable {
+    wrapper& ancestor;
+    string path;
+
+    address_ref(wrapper& ancestor, string&& path, const base_p& fallback)
+        : ancestor(ancestor), path(move(path)), defaultable(fallback) {}
+    string get() const;
+    bool set(const string& value);
+    base_p get_source() const;
+    void invalidate() { path = ""; }
   };
 
   struct meta : public base, defaultable {
@@ -63,11 +68,22 @@ namespace lini::node {
     base_p copy(std::shared_ptr<meta>&& dest, clone_handler handler) const;
   };
 
-  using ref_maker = std::function<std::shared_ptr<ref>(tstring& path, const base_p& fallback)>;
+  base_p clone(const base& source);
+  base_p clone(const base_p& source);
+  base_p clone(const base_p& source, clone_handler handler);
+  base_p clone(const base& source, clone_handler handler);
+
+  struct parse_error : error_base { using error_base::error_base; };
+  struct optimize_error : error_base { using error_base::error_base; };
+  using ref_maker = std::function<std::shared_ptr<address_ref>(tstring& path, const base_p& fallback)>;
 
   base_p
   parse_string(string& raw, tstring& str, ref_maker ref_maker);
 
   base_p
   parse(string& raw, tstring& str, ref_maker ref_maker);
+
+
+  base_p optimize(base& node);
+  void optimize(base_p& node);
 }

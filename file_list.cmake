@@ -21,7 +21,6 @@ set(NODE_HEADERS
   ${PUBLIC_HEADERS_DIR}/node/base.hpp
   ${PUBLIC_HEADERS_DIR}/node/node.hpp
   ${PUBLIC_HEADERS_DIR}/node/wrapper.hpp
-  ${PUBLIC_HEADERS_DIR}/node/container.hpp
   ${PUBLIC_HEADERS_DIR}/node/error.hpp
   ${STRINGS_PUBLIC_HEADERS_DIR}/tstring.hpp
 )
@@ -34,7 +33,6 @@ set(NODE_SOURCES
   ${SRC_DIR}/node/base.cpp
   ${SRC_DIR}/node/node.cpp
   ${SRC_DIR}/node/wrapper.cpp
-  ${SRC_DIR}/node/container.cpp
   ${SRC_DIR}/node/string_interpolate.cpp
   ${TSTRING_SOURCES}
 )

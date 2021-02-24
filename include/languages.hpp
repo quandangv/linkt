@@ -11,9 +11,9 @@ namespace lini {
     bool extract_key(tstring& line, int linecount, char separator, tstring& key);
   };
   void parse_ini(std::istream&, node::wrapper&, errorlist&);
-  void write_ini(std::ostream&, const node::container&, const string& prefix = "");
+  void write_ini(std::ostream&, const node::wrapper&, const string& prefix = "");
   void parse_yml(std::istream&, node::wrapper&, errorlist&);
-  void write_yml(std::ostream&, const node::container&, int indent = 0);
+  void write_yml(std::ostream&, const node::wrapper&, int indent = 0);
 
   void write_key(std::ostream&, const std::string& prefix, std::string&& value);
 }

@@ -1,4 +1,5 @@
 #include "base.hpp"
+#include "node.hpp"
 #include "common.hpp"
 #include "wrapper.hpp"
 #include "token_iterator.hpp"
@@ -21,7 +22,7 @@ base_p clone(const base_p& src, clone_handler handler) {
 }
 
 base_p clone(const base& base_src) {
-  std::map<const addable*, addable*> ancestors;
+  std::map<const wrapper*, wrapper*> ancestors;
   clone_handler handler = [&](const base& base_src)->base_p {
     if (auto src = dynamic_cast<const wrapper*>(&base_src); src) {
       auto result = std::make_shared<wrapper>();
@@ -52,6 +53,24 @@ string defaultable::use_fallback(const string& msg) const {
   return (fallback ?: throw base::error("Failure: " + msg + ". And no fallback was found"))->get();
 }
 
+base_p address_ref::get_source() const {
+  return ancestor.get_child_ptr(path);
+}
+
+string address_ref::get() const {
+  auto result = get_source();
+  return result ? result->get() : use_fallback("Referenced path doesn't exist: " + path);
+}
+
+bool address_ref::set(const string& val) {
+  auto src = ancestor.get_child_ptr(path);
+  auto target = dynamic_cast<settable*>(src ? src.get() : fallback ? fallback.get() : nullptr);
+  if (target)
+    return target->set(val);
+  return false;
+}
+
+
 base_p meta::copy(std::shared_ptr<meta>&& dest, clone_handler handler) const {
   if (value)
     dest->value = clone(*value, handler);
@@ -73,7 +92,7 @@ base_p parse(string& raw, tstring& str, ref_maker rmaker) {
     return ptr;
   };
   if (token_count == 0)
-    throw addable::error("parse: Empty reference conent");
+    throw parse_error("parse: Empty reference conent");
   if (token_count == 1) {
     return rmaker(tokens[0], fallback);
 
@@ -87,12 +106,12 @@ base_p parse(string& raw, tstring& str, ref_maker rmaker) {
 
   } else if (tokens[0] == "env"_ts) {
     if (token_count != 2)
-      throw addable::error("parse: Expected 2 components");
+      throw parse_error("parse: Expected 2 components");
     return make_meta(std::make_shared<env>());
 
   } else if (tokens[0] == "map"_ts) {
     if (token_count != 4)
-      throw addable::error("parse.map: Expected 3 components");
+      throw parse_error("parse.map: Expected 3 components");
     auto newval = std::make_shared<map>();
     if (auto min = cut_front(tokens[1], ':'); !min.untouched())
       newval->from_min = convert<float, strtof>(min);
@@ -115,12 +134,12 @@ base_p parse(string& raw, tstring& str, ref_maker rmaker) {
   } else if (tokens[0] == "clone"_ts) {
     LG_DBUG("parse: clone")
     if (token_count != 2)
-      throw addable::error("parse: Expected 2 components");
+      throw parse_error("parse: Expected 2 components");
     auto ref = rmaker(tokens[1], fallback);
-    return clone(*(ref->get_source().get() ?: throw addable::error("parse: Referenced key not found")));
+    return clone(*(ref->get_source().get() ?: throw parse_error("parse: Referenced key not found")));
 
   } else
-    throw addable::error("Unsupported reference type: " + tokens[0]);
+    throw parse_error("Unsupported reference type: " + tokens[0]);
 }
 
 base_p parse_string(string& raw, tstring& str, ref_maker rmaker) {
@@ -153,6 +172,21 @@ base_p parse_string(string& raw, tstring& str, ref_maker rmaker) {
   ss << str;
   newval->base = ss.str();
   return move(newval);
+}
+
+base_p optimize(base& base_node) {
+  if (auto node = dynamic_cast<address_ref*>(&base_node); node) {
+    auto result = node->get_source();
+    node->invalidate();
+    return result ?: throw optimize_error("Empty reference");
+  }
+  return {};
+}
+
+void optimize(base_p& node) {
+  auto result = optimize(*node);
+  if (result)
+    node = result;
 }
 
 NAMESPACE_END

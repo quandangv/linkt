@@ -5,28 +5,6 @@
 #include <cspace/processor.hpp>
 
 namespace lini::node {
-  struct addable;
-  struct address_ref : public ref, defaultable, settable {
-    addable& ancestor;
-    string path;
-
-    address_ref(addable& ancestor, string&& path, const base_p& fallback)
-        : ancestor(ancestor), path(move(path)), defaultable(fallback) {}
-    string get() const;
-    bool set(const string& value);
-    base_p get_source() const;
-  };
-
-  struct hard_ref : public ref, defaultable, settable {
-    base_p src;
-
-    hard_ref(const base_p& src, const base_p& fallback)
-        : src(src), defaultable(fallback) {}
-    string get() const;
-    bool set(const string& value);
-    base_p get_source() const { return src; }
-  };
-
   struct color : public meta, clonable {
     cspace::processor processor;
 

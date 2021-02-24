@@ -15,35 +15,51 @@ void test_language(file_test_param testset) {
   std::ifstream ifs{testset.path + ".txt"};
   ASSERT_FALSE(ifs.fail());
 
-  node::wrapper doc;
+  auto doc = new node::wrapper();
+  auto base_doc = node::base_p(doc);
+  auto fail_count = get_current_test_part_count();
+
   errorlist err;
   if (testset.language == "ini")
-    parse_ini(ifs, doc, err);
+    parse_ini(ifs, *doc, err);
   else if (testset.language == "yml")
-    parse_yml(ifs, doc, err);
+    parse_yml(ifs, *doc, err);
 
   // Check for unexpected errors
   for(auto& e : err) {
     EXPECT_NE(find(testset.err.begin(), testset.err.end(), e.first), testset.err.end())
       << "Unexpected parsing error, at: " << e.first << endl << "Message: " << e.second;
   }
-  // Check the keys
-  for(auto& pair : testset.expectations)
-    check_key(doc, pair.path, pair.value, false);
-
   // Check for expected errors
   for(auto& e : testset.err) {
     auto pos = find_if(err.begin(), err.end(), [&](auto it) { return it.first == e; });
     EXPECT_NE(pos, err.end()) << "Expected parsing error at: " << e;
   }
 
+  // Check the keys
+  auto test_doc = [&] {
+    for(auto& pair : testset.expectations)
+        check_key(*doc, pair.path, pair.value, false);
+  };
+  test_doc();
+  if (fail_count != get_current_test_part_count())
+    GTEST_SKIP() << "Skipping clone test";
+  base_doc = clone(base_doc);
+  doc = dynamic_cast<node::wrapper*>(base_doc.get());
+  test_doc();
+
+  if (fail_count != get_current_test_part_count())
+    GTEST_SKIP() << "Skipping optimize test";
+  doc->optimize();
+  test_doc();
+
   // Check wrapper export
   std::ofstream ofs{testset.path + "_export.txt"};
 
   if (testset.language == "ini")
-    write_ini(ofs, doc);
+    write_ini(ofs, *doc);
   else if (testset.language == "yml")
-    write_yml(ofs, doc);
+    write_yml(ofs, *doc);
 
   auto command = "diff -Z '" + testset.path + "_output.txt' '" + testset.path + "_export.txt' 2>&1";
   auto file = popen(command.data(), "r");
@@ -111,7 +127,7 @@ TEST(Language, Yml) {
       {"bar.F", "#fff"},
       {"bar", "%{F#fff}%{B#FF54CB} BAT 60% "},
     },
-    {}
+    { "line 19, key B" }
   });
 }
 

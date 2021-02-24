@@ -34,18 +34,18 @@ void parse_ini(std::istream& is, node::wrapper& root, errorlist& err) {
   }
 }
 
-void write_ini(std::ostream& os, const node::container& root, const string& prefix) {
-  vector<std::pair<string, const node::container*>> containers;
+void write_ini(std::ostream& os, const node::wrapper& root, const string& prefix) {
+  vector<std::pair<string, const node::wrapper*>> wrappers;
   root.iterate_children([&](const string& name, const node::base& child) {
-    auto ctn = dynamic_cast<const node::container*>(&child);
+    auto ctn = dynamic_cast<const node::wrapper*>(&child);
     if(ctn) {
-      containers.push_back(std::make_pair(name, ctn));
+      wrappers.push_back(std::make_pair(name, ctn));
       if (auto value = child.get(); !value.empty())
         write_key(os, name + " = ", move(value));
     } else
       write_key(os, name + " = ", child.get());
   });
-  for(auto pair : containers) {
+  for(auto pair : wrappers) {
     os << endl << '[' << prefix << pair.first << ']' << endl;
     write_ini(os, *pair.second);
   }
