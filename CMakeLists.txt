@@ -9,11 +9,11 @@ include(cmake/variables)
 include(file_list)
 
 include(cmake/targets)
-add_shared_lib("node" "${NODE_SOURCES}" "${INCLUDE_DIRS};include/node" "${NODE_HEADERS}" "lini/node")
+add_shared_lib("lini_node" "${NODE_SOURCES}" "${INCLUDE_DIRS};include/node" "${NODE_HEADERS}" "lini/node")
 add_shared_lib("lini" "${LINI_SOURCES}" "${INCLUDE_DIRS};include" "${LINI_HEADERS}" "lini")
 find_library(cspace cspace REQUIRED)
-target_link_libraries(node ${cspace})
-target_link_libraries(lini node)
+target_link_libraries(lini_node ${cspace})
+target_link_libraries(lini lini_node)
 
 configure_file(${PRIVATE_HEADERS_DIR}/common.hpp.in  ${GENERATED_HEADERS_DIR}/common.hpp)
 
