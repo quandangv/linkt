@@ -6,7 +6,7 @@
 
 namespace lini::node {
   struct addable;
-  struct address_ref : public base, defaultable, settable {
+  struct address_ref : public ref, defaultable, settable {
     addable& ancestor;
     string path;
 
@@ -14,15 +14,17 @@ namespace lini::node {
         : ancestor(ancestor), path(move(path)), defaultable(fallback) {}
     string get() const;
     bool set(const string& value);
+    base_p get_source() const;
   };
 
-  struct ref : public base, defaultable, settable {
+  struct hard_ref : public ref, defaultable, settable {
     base_p src;
 
-    ref(const base_p& src, const base_p& fallback)
+    hard_ref(const base_p& src, const base_p& fallback)
         : src(src), defaultable(fallback) {}
     string get() const;
     bool set(const string& value);
+    base_p get_source() const { return src; }
   };
 
   struct color : public meta, clonable {

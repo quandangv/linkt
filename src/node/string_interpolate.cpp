@@ -36,6 +36,7 @@ string string_interpolate::get() const {
 }
 
 base_p string_interpolate::clone(clone_handler handler) const {
+  LG_DBUG("Clone string interpolate")
   auto result = std::make_unique<string_interpolate>();
   result->base = base;
   result->spots.reserve(spots.size());

@@ -53,13 +53,17 @@ namespace lini::node {
     string use_fallback(const string& error_message) const;
   };
 
+  struct ref : public base {
+    virtual base_p get_source() const = 0;
+  };
+
   struct meta : public base, defaultable {
     base_p value;
     
-    base_p copy(std::unique_ptr<meta>&& dest, clone_handler handler) const;
+    base_p copy(std::shared_ptr<meta>&& dest, clone_handler handler) const;
   };
 
-  using ref_maker = std::function<base_p(tstring& path, const base_p& fallback)>;
+  using ref_maker = std::function<std::shared_ptr<ref>(tstring& path, const base_p& fallback)>;
 
   base_p
   parse_string(string& raw, tstring& str, ref_maker ref_maker);

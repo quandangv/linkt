@@ -17,7 +17,7 @@ void test_nodes(parse_test testset) {
     auto& doc = dynamic_cast<node::wrapper&>(*base_doc);
     auto last_count = get_current_test_part_count();
     if (test.fail)
-      EXPECT_THROW(doc.add(test.path, move(test.value)), node::container::error) << "Expected error";
+      EXPECT_ANY_THROW(doc.add(test.path, move(test.value))) << "Expected error";
     else
       EXPECT_NO_THROW(doc.add(test.path, move(test.value))) << "Unexpected error";
     if (last_count != get_current_test_part_count())
@@ -121,4 +121,13 @@ TEST(Node, Other) {
   test_nodes({{".env", "${env nexist? \" f a i l \" }", " f a i l "}});
   test_nodes({{".map", "${map 5:10 0:2 7.5}", "1.000000"}});
   test_nodes({{".map", "${map 5:10 2 7.5}", "1.000000"}});
+  test_nodes({
+    {".clone_source", "${color #123456 }", "#123456"},
+    {".clone_source.lv1", "", ""},
+    {".clone_source.lv1.lv2", "", ""},
+    {".clone", "${clone .clone_source }", "#123456"},
+    {".clone.lv1", "", ""},
+    {".clone.lv1.lv2", "", "", true},
+    {".clone-fail", "${clone .nexist }", "", true},
+  });
 }

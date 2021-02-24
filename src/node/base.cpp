@@ -23,18 +23,23 @@ base_p clone(const base_p& src, clone_handler handler) {
 base_p clone(const base& base_src) {
   std::map<const addable*, addable*> ancestors;
   clone_handler handler = [&](const base& base_src)->base_p {
-    if (auto src = dynamic_cast<const addable*>(&base_src); src) {
+    if (auto src = dynamic_cast<const wrapper*>(&base_src); src) {
       auto result = std::make_shared<wrapper>();
+      LG_DBUG("Add ancestor");
       ancestors.emplace(src, result.get());
+      result->value = clone(src->value, handler);
       src->iterate_children([&](const string& name, const base_p& child) {
+        LG_DBUG("clone: path: " << name);
         result->add(name, clone(child, handler));
+        LG_DBUG("clone: done, path: " << name << ", status: " << bool(result->get_child_ptr(name)));
       });
-      return move(result);
+      return result;
     }
     if (auto src = dynamic_cast<const address_ref*>(&base_src); src) {
       auto ancestor = ancestors.find(&src->ancestor);
+      LG_DBUG("clone: ref: " << src->path);
       return std::make_shared<address_ref>(
-        ancestor != ancestors.end() ? *ancestor->second : src->ancestor,
+        ancestor != ancestors.end() ? *ancestor->second : throw base::error("Can't find ancestor, path: "),
         string(src->path),
         clone(src->fallback, handler));
     }
@@ -47,7 +52,7 @@ string defaultable::use_fallback(const string& msg) const {
   return (fallback ?: throw base::error("Failure: " + msg + ". And no fallback was found"))->get();
 }
 
-base_p meta::copy(std::unique_ptr<meta>&& dest, clone_handler handler) const {
+base_p meta::copy(std::shared_ptr<meta>&& dest, clone_handler handler) const {
   if (value)
     dest->value = clone(*value, handler);
   if (fallback)
@@ -70,7 +75,7 @@ base_p parse(string& raw, tstring& str, ref_maker rmaker) {
   if (token_count == 0)
     throw addable::error("parse: Empty reference conent");
   if (token_count == 1) {
-    return rmaker(tokens[0], move(fallback));
+    return rmaker(tokens[0], fallback);
 
   } else if (tokens[0] == "file"_ts) {
     tokens[token_count - 1].merge(tokens[1]);
@@ -106,6 +111,13 @@ base_p parse(string& raw, tstring& str, ref_maker rmaker) {
       newval->processor.add_modification(tokens[token_count - 2]);
     }
     return make_meta(newval);
+
+  } else if (tokens[0] == "clone"_ts) {
+    LG_DBUG("parse: clone")
+    if (token_count != 2)
+      throw addable::error("parse: Expected 2 components");
+    auto ref = rmaker(tokens[1], fallback);
+    return clone(*(ref->get_source().get() ?: throw addable::error("parse: Referenced key not found")));
 
   } else
     throw addable::error("Unsupported reference type: " + tokens[0]);

@@ -100,9 +100,14 @@ TEST(Language, Functional_ini) {
 TEST(Language, Yml) {
   test_language({"yml_test", "yml",
     {
-      {"bar.base.B.L.value", "60"},
-      {"bar.base.B", "#FF54CB"},
-      {"bar.base", "%{B#FF54CB} BAT 60%"},
+      {"bar.base.B.dumb", "hello"},
+      {"bar.bat.B.L.value", "60"},
+      {"bar.bat.B.L", "0.800000"},
+      {"bar.bat.stat", "60"},
+      {"bar.bat.unit", "%"},
+      {"bar.bat.B.dumb", "hello"},
+      {"bar.bat.B", "#FF54CB"},
+      {"bar.bat", "%{B#FF54CB} BAT 60%"},
       {"bar.F", "#fff"},
       {"bar", "%{F#fff}%{B#FF54CB} BAT 60% "},
     },

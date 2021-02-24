@@ -13,6 +13,10 @@ string address_ref::get() const {
   return result ? *result : use_fallback("Referenced path doesn't exist: " + path);
 }
 
+base_p address_ref::get_source() const {
+  return ancestor.get_child_ptr(path);
+}
+
 bool address_ref::set(const string& val) {
   auto src = ancestor.get_child_ptr(path);
   auto target = dynamic_cast<settable*>(src ? src.get() : fallback ? fallback.get() : nullptr);
@@ -21,13 +25,13 @@ bool address_ref::set(const string& val) {
   return false;
 }
 
-string ref::get() const {
+string hard_ref::get() const {
   if (src)
     return src->get();
   return use_fallback("Referenced key doesn't exist");
 }
 
-bool ref::set(const string& val) {
+bool hard_ref::set(const string& val) {
   settable* target = dynamic_cast<settable*>(src ? src.get() : fallback ? fallback.get() : nullptr);
   if (target)
     return target->set(val);
@@ -46,9 +50,10 @@ string color::get() const {
 }
 
 base_p color::clone(clone_handler handler) const {
-  auto result = std::make_unique<color>();
+  LG_DBUG("Clone color")
+  auto result = std::make_shared<color>();
   result->processor = processor;
-  return meta::copy(move(result), handler);
+  return meta::copy(result, handler);
 }
 
 string env::get() const {
@@ -64,7 +69,7 @@ bool env::set(const string& newval) {
 }
 
 base_p env::clone(clone_handler handler) const {
-  return meta::copy(std::make_unique<env>(), handler);
+  return meta::copy(std::make_shared<env>(), handler);
 }
 
 string file::get() const {
@@ -88,7 +93,7 @@ bool file::set(const string& content) {
 }
 
 base_p file::clone(clone_handler handler) const {
-  return meta::copy(std::make_unique<file>(), handler);
+  return meta::copy(std::make_shared<file>(), handler);
 }
 
 string cmd::get() const {
@@ -107,7 +112,7 @@ string cmd::get() const {
 }
 
 base_p cmd::clone(clone_handler handler) const {
-  return meta::copy(std::make_unique<cmd>(), handler);
+  return meta::copy(std::make_shared<cmd>(), handler);
 }
 
 string map::get() const {
@@ -120,7 +125,7 @@ string map::get() const {
 }
 
 base_p map::clone(clone_handler handler) const {
-  auto result = std::make_unique<map>();
+  auto result = std::make_shared<map>();
   result->from_min = from_min;
   result->from_range = from_range;
   result->to_min = to_min;

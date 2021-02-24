@@ -39,11 +39,7 @@ base_p addable::add(tstring path, string raw) {
   return add(path, raw, tstring(raw));
 }
 
-base_p addable::make_ref(const tstring& ts, const base_p& fallback) {
-  return std::make_unique<ref>(get_child_ptr(ts) ?: add(ts, base_p{}), move(fallback));
-}
-
-base_p addable::make_address_ref(const tstring& ts, const base_p& fallback) {
+std::shared_ptr<ref> addable::make_address_ref(const tstring& ts, const base_p& fallback) {
   return std::make_unique<address_ref>(*this, ts, move(fallback));
 }
 

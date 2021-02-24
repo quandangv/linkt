@@ -41,10 +41,7 @@ namespace lini::node {
     base_p
     add(tstring path, string raw);
 
-    base_p
-    make_ref(const tstring&, const base_p&);
-
-    base_p
+    std::shared_ptr<ref>
     make_address_ref(const tstring&, const base_p&);
   };
 }

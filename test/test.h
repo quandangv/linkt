@@ -29,5 +29,5 @@ void check_key(const node::wrapper& w, string path, string expected, bool except
     EXPECT_TRUE(exception) << "Unexpected exception thrown: " << e.what();
   }
   if (last_count != get_current_test_part_count())
-    cerr << "Key: " << path << endl;
+    cerr << "Key: " << path << endl << endl;
 }

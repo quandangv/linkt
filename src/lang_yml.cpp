@@ -21,8 +21,11 @@ struct indentpair {
       node = &wrp->value;
   }
   node::wrapper& wrap() {
-    if (!wrp)
-      node = &(wrp = &node::wrapper::wrap(*node))->value;
+    if (!wrp) {
+      wrp = dynamic_cast<node::wrapper*>(node->get());
+      if (!wrp)
+        node = &(wrp = &node::wrapper::wrap(*node))->value;
+    }
     return *wrp;
   }
 };
@@ -47,16 +50,24 @@ void parse_yml(std::istream& is, node::wrapper& root, errorlist& err) {
       if (tstring key; err.extract_key(line, linecount, ':', key)) {
         try {
           auto& parent = nodes.back().wrap();
-          auto& node = nodes.emplace_back(indent, &parent.add(key, node::base_p{}));
-
           if (line.empty())
             continue;
+
           auto type = line.front();
           line.erase_front();
           trim_quotes(line);
+          if (type == '=') {
+            parent.set(key, line) ? void() : err.report_error(linecount, key, "Can't set value of key");
+            LG_DBUG("Set result: " << *parent.get_child(key));
+            continue;
+          }
+
+          auto& node = nodes.emplace_back(indent, &parent.add(key, node::base_p{}));
           node::ref_maker make_ref = [&](tstring& ts, const node::base_p& fallback) {
             return node.wrap().make_address_ref(ts, fallback);
           };
+          if (*node.node)
+            err.report_error(linecount, key, "Key already have value");
           if (type == ' ') {
             *node.node = node::parse_string(raw, line, make_ref);
           } else if (type == '$') {
