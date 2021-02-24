@@ -25,7 +25,7 @@ base_p clone(const base& base_src) {
   std::map<const addable*, addable*> ancestors;
   clone_handler handler = [&](const base& base_src)->base_p {
     if (auto src = dynamic_cast<const addable*>(&base_src); src) {
-      auto result = std::make_unique<wrapper>();
+      auto result = std::make_shared<wrapper>();
       ancestors.emplace(src, result.get());
       src->iterate_children([&](const string& name, const base_p& child) {
         result->add(name, clone(child, handler));
@@ -35,7 +35,7 @@ base_p clone(const base& base_src) {
     
     if (auto src = dynamic_cast<const address_ref*>(&base_src); src) {
       auto ancestor = ancestors.find(&src->ancestor);
-      return std::make_unique<address_ref>(
+      return std::make_shared<address_ref>(
         ancestor != ancestors.end() ? *ancestor->second : src->ancestor,
         string(src->path),
         clone(src->fallback, handler));
@@ -66,7 +66,7 @@ base_p parse(string& raw, tstring& str, ref_maker rmaker) {
 
   std::array<tstring, 5> tokens;
   auto token_count = fill_tokens(str, tokens);
-  auto make_meta = [&]<typename T>(std::unique_ptr<T>&& ptr) {
+  auto make_meta = [&]<typename T>(std::shared_ptr<T>&& ptr) {
     ptr->fallback = move(fallback);
     ptr->value = parse_string(raw, trim_quotes(tokens[token_count - 1]), rmaker);
     return move(ptr);
@@ -78,21 +78,21 @@ base_p parse(string& raw, tstring& str, ref_maker rmaker) {
 
   } else if (tokens[0] == "file"_ts) {
     tokens[token_count - 1].merge(tokens[1]);
-    return make_meta(std::make_unique<file>());
+    return make_meta(std::make_shared<file>());
     
   } else if (tokens[0] == "cmd"_ts) {
     tokens[token_count - 1].merge(tokens[1]);
-    return make_meta(std::make_unique<cmd>());
+    return make_meta(std::make_shared<cmd>());
 
   } else if (tokens[0] == "env"_ts) {
     if (token_count != 2)
       throw addable::error("parse: Expected 2 components");
-    return make_meta(std::make_unique<env>());
+    return make_meta(std::make_shared<env>());
 
   } else if (tokens[0] == "map"_ts) {
     if (token_count != 4)
       throw addable::error("parse.map: Expected 3 components");
-    auto newval = std::make_unique<map>();
+    auto newval = std::make_shared<map>();
     if (auto min = cut_front(tokens[1], ':'); !min.untouched())
       newval->from_min = convert<float, strtof>(min);
     newval->from_range = convert<float, strtof>(tokens[1]) - newval->from_min;
@@ -103,7 +103,7 @@ base_p parse(string& raw, tstring& str, ref_maker rmaker) {
     return make_meta(move(newval));
 
   } else if (tokens[0] == "color"_ts) {
-    auto newval = std::make_unique<color>();
+    auto newval = std::make_shared<color>();
     if (token_count > 2) {
       if (token_count > 3)
         newval->processor.inter = cspace::stospace(tokens[1]);
@@ -119,7 +119,7 @@ base_p parse_string(string& raw, tstring& str, ref_maker rmaker) {
   size_t start, end;
   if (!find_enclosed(str, raw, "${", "{", "}", start, end)) {
     // There is no node inside the string, it's a normal string
-    return std::make_unique<plain>(str);
+    return std::make_shared<plain>(str);
   } else if (start == 0 && end == str.size()) {
     // There is a single node inside, interpolation is unecessary
     str.erase_front(2);
@@ -128,7 +128,7 @@ base_p parse_string(string& raw, tstring& str, ref_maker rmaker) {
   }
   // String interpolation
   std::stringstream ss;
-  auto newval = std::make_unique<string_interpolate>();
+  auto newval = std::make_shared<string_interpolate>();
   do {
     // Write the part we have moved past to the base string
     ss << substr(str, 0, start);

@@ -14,16 +14,16 @@ namespace lini::node {
 
   struct wrapper : public base, addable {
     struct error : error_base { using error_base::error_base; };
-    using map_type = std::map<string, base_pp>;
+    using map_type = std::map<string, base_p>;
     using addable::add;
 
     map_type map;
     base_p value;
 
-    base_pp
-    add(tstring path, base_p&& value);
+    base_p&
+    add(tstring path, const base_p& value);
 
-    base_pp
+    base_p
     get_child_ptr(tstring path) const;
 
     void

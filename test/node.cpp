@@ -84,11 +84,11 @@ TEST(Node, File) {
     {".file", "${file key_file.${.ext} ? fail}", "content"},
     {".file-fail", "${file nexist.${.ext} ? Can't find ${.ext} file}", "Can't find txt file"},
   });
-  test_nodes({{".file", "${file key_file.txt }", "content"}});
-  test_nodes({{".file", "${file key_file.txt?fail}", "content"}});
-  test_nodes({{".file", "${file nexist.txt ? ${file key_file.txt}}", "content"}});
-  test_nodes({{".file", "${file nexist.txt ? \" f a i l ' }", "\" f a i l '"}});
-  test_nodes({{".file", "${file nexist.txt}", "${file nexist.txt}", false, true}});
+  test_nodes({{".file1", "${file key_file.txt }", "content"}});
+  test_nodes({{".file2", "${file key_file.txt?fail}", "content"}});
+  test_nodes({{".file3", "${file nexist.txt ? ${file key_file.txt}}", "content"}});
+  test_nodes({{".file4", "${file nexist.txt ? \" f a i l ' }", "\" f a i l '"}});
+  test_nodes({{".file5", "${file nexist.txt}", "${file nexist.txt}", false, true}});
 }
 
 TEST(Node, Cmd) {

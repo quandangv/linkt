@@ -10,26 +10,25 @@ NAMESPACE(lini::node)
 
 string address_ref::get() const {
   auto result = ancestor.get_child(path);
-  return result ? *result : use_fallback("Referenced key doesn't exist");
+  return result ? *result : use_fallback("Referenced path doesn't exist: " + path);
 }
 
 bool address_ref::set(const string& val) {
   auto src = ancestor.get_child_ptr(path);
-  auto target = dynamic_cast<settable*>(src && *src ? src->get() : fallback ? fallback.get() : nullptr);
+  auto target = dynamic_cast<settable*>(src ? src.get() : fallback ? fallback.get() : nullptr);
   if (target)
     return target->set(val);
   return false;
 }
 
 string ref::get() const {
-  if (src && *src) {
-    return (*src)->get();
-  }
+  if (src)
+    return src->get();
   return use_fallback("Referenced key doesn't exist");
 }
 
 bool ref::set(const string& val) {
-  settable* target = dynamic_cast<settable*>(*src ? src->get() : fallback ? fallback.get() : nullptr);
+  settable* target = dynamic_cast<settable*>(src ? src.get() : fallback ? fallback.get() : nullptr);
   if (target)
     return target->set(val);
   return false;

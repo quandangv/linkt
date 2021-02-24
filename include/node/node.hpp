@@ -10,17 +10,17 @@ namespace lini::node {
     addable& ancestor;
     string path;
 
-    address_ref(addable& ancestor, string&& path, base_p&& fallback)
-        : ancestor(ancestor), path(move(path)), defaultable(move(fallback)) {}
+    address_ref(addable& ancestor, string&& path, const base_p& fallback)
+        : ancestor(ancestor), path(move(path)), defaultable(fallback) {}
     string get() const;
     bool set(const string& value);
   };
 
   struct ref : public base, defaultable, settable {
-    base_pp src;
+    base_p src;
 
-    ref(const base_pp& src, base_p&& fallback)
-        : src(src), defaultable(move(fallback)) {}
+    ref(const base_p& src, const base_p& fallback)
+        : src(src), defaultable(fallback) {}
     string get() const;
     bool set(const string& value);
   };

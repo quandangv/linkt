@@ -10,8 +10,7 @@
 namespace lini::node {
   struct base;
   using std::string;
-  using base_p = std::unique_ptr<base>;
-  using base_pp = std::shared_ptr<base_p>;
+  using base_p = std::shared_ptr<base>;
 
   struct base {
     struct error : error_base { using error_base::error_base; };
@@ -50,7 +49,7 @@ namespace lini::node {
     base_p fallback;
 
     defaultable() {}
-    explicit defaultable(base_p&& fallback) : fallback(move(fallback)) {}
+    explicit defaultable(const base_p& fallback) : fallback(fallback) {}
     string use_fallback(const string& error_message) const;
   };
 
@@ -60,7 +59,7 @@ namespace lini::node {
     base_p copy(std::unique_ptr<meta>&& dest, clone_handler handler) const;
   };
 
-  using ref_maker = std::function<base_p(tstring& path, base_p&& fallback)>;
+  using ref_maker = std::function<base_p(tstring& path, const base_p& fallback)>;
 
   base_p
   parse_string(string& raw, tstring& str, ref_maker ref_maker);

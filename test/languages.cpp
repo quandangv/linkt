@@ -129,7 +129,6 @@ TEST(Assign, Load) {
 
   // Test wrapper functionalities
   EXPECT_FALSE(doc.get_child("nexist"_ts));
-  EXPECT_FALSE(doc.has_child("nexist"_ts));
   EXPECT_EQ(doc.get_child("nexist"_ts, "fallback"), "fallback");
   EXPECT_THROW(doc.get_child_ref("nexist"_ts), node::base::error);
   EXPECT_EQ(doc.get_child("key-a"_ts, "fallback"), "a");
