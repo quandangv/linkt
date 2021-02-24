@@ -14,39 +14,35 @@ namespace lini::node {
 
   struct base {
     struct error : error_base { using error_base::error_base; };
-
-    virtual string
-    get() const = 0;
-
     virtual ~base() {}
+
+    virtual string get  () const = 0;
   };
 
   struct settable {
-    virtual bool
-    set(const string&) { return false; }
+    virtual bool set  (const string&) { return false; }
   };
 
   using clone_handler = std::function<base_p(const base&)>;
   struct clonable {
-    virtual base_p
-    clone(clone_handler handler) const = 0;
+    virtual base_p clone  (clone_handler handler) const = 0;
   };
 
   struct plain : public base, settable, clonable {
     string val;
 
-    explicit plain(string&& val) : val(val) {}
-    string get() const { return val; }
-    bool set(const string& value) { val = value; return true; }
-    base_p clone(clone_handler handler) const { return std::make_unique<plain>(string(val)); }
+    explicit plain  (string&& val) : val(val) {}
+    string get  () const { return val; }
+    bool set  (const string& value) { val = value; return true; }
+    base_p clone  (clone_handler handler) const { return std::make_unique<plain>(string(val)); }
   };
 
   struct defaultable {
     base_p fallback;
 
-    defaultable() {}
-    explicit defaultable(const base_p& fallback) : fallback(fallback) {}
-    string use_fallback(const string& error_message) const;
+    defaultable  () {}
+    explicit defaultable  (const base_p& fallback) : fallback(fallback) {}
+    string use_fallback  (const string& error_message) const;
   };
 
   struct wrapper;
@@ -54,12 +50,12 @@ namespace lini::node {
     wrapper& ancestor;
     string path;
 
-    address_ref(wrapper& ancestor, string&& path, const base_p& fallback)
+    address_ref  (wrapper& ancestor, string&& path, const base_p& fallback)
         : ancestor(ancestor), path(move(path)), defaultable(fallback) {}
-    string get() const;
-    bool set(const string& value);
-    base_p get_source() const;
-    void invalidate() { path = ""; }
+    string get  () const;
+    bool set  (const string& value);
+    base_p get_source  () const;
+    void invalidate  () { path = ""; }
   };
 
   struct meta : public base, defaultable {
@@ -68,22 +64,18 @@ namespace lini::node {
     base_p copy(std::shared_ptr<meta>&& dest, clone_handler handler) const;
   };
 
-  base_p clone(const base& source);
-  base_p clone(const base_p& source);
-  base_p clone(const base_p& source, clone_handler handler);
-  base_p clone(const base& source, clone_handler handler);
+  base_p clone  (const base& source);
+  base_p clone  (const base_p& source);
+  base_p clone  (const base_p& source, clone_handler handler);
+  base_p clone  (const base& source, clone_handler handler);
 
-  struct parse_error : error_base { using error_base::error_base; };
-  struct optimize_error : error_base { using error_base::error_base; };
   using ref_maker = std::function<std::shared_ptr<address_ref>(tstring& path, const base_p& fallback)>;
 
-  base_p
-  parse_string(string& raw, tstring& str, ref_maker ref_maker);
+  struct parse_error : error_base { using error_base::error_base; };
+  base_p parse_string  (string& raw, tstring& str, ref_maker ref_maker);
+  base_p parse  (string& raw, tstring& str, ref_maker ref_maker);
 
-  base_p
-  parse(string& raw, tstring& str, ref_maker ref_maker);
-
-
-  base_p optimize(base& node);
-  void optimize(base_p& node);
+  struct optimize_error : error_base { using error_base::error_base; };
+  base_p optimize  (base& node);
+  void optimize  (base_p& node);
 }
