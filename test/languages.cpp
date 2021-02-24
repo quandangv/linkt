@@ -134,7 +134,7 @@ TEST(Assign, Load) {
   EXPECT_EQ(doc.get_child("key-a"_ts, "fallback"), "a");
   EXPECT_EQ(doc.get_child_ref("key-a"_ts).get(), "a");
   EXPECT_EQ(doc.get(), "");
-  EXPECT_THROW(doc.get_child("ref-fail"_ts), node::container::error);
+  EXPECT_ANY_THROW(doc.get_child("ref-fail"_ts));
 }
 
 TEST(Assign, Ref) {

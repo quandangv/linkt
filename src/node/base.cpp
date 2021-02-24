@@ -12,9 +12,8 @@ base_p clone(const base_p& src) {
 }
 
 base_p clone(const base& base_src, clone_handler handler) {
-  if (auto src = dynamic_cast<const clonable*>(&base_src); src)
-    return src->clone(handler);
-  return handler(base_src);
+  auto src = dynamic_cast<const clonable*>(&base_src);
+  return src ? src->clone(handler) : handler(base_src);
 }
 
 base_p clone(const base_p& src, clone_handler handler) {
@@ -32,7 +31,6 @@ base_p clone(const base& base_src) {
       });
       return move(result);
     }
-    
     if (auto src = dynamic_cast<const address_ref*>(&base_src); src) {
       auto ancestor = ancestors.find(&src->ancestor);
       return std::make_shared<address_ref>(
@@ -46,9 +44,7 @@ base_p clone(const base& base_src) {
 }
 
 string defaultable::use_fallback(const string& msg) const {
-  if (fallback)
-    return fallback->get();
-  throw base::error("Reference failed: " + msg + ". And no fallback was found");
+  return (fallback ?: throw base::error("Failure: " + msg + ". And no fallback was found"))->get();
 }
 
 base_p meta::copy(std::unique_ptr<meta>&& dest, clone_handler handler) const {
@@ -66,10 +62,10 @@ base_p parse(string& raw, tstring& str, ref_maker rmaker) {
 
   std::array<tstring, 5> tokens;
   auto token_count = fill_tokens(str, tokens);
-  auto make_meta = [&]<typename T>(std::shared_ptr<T>&& ptr) {
+  auto make_meta = [&]<typename T>(const std::shared_ptr<T>& ptr) {
     ptr->fallback = move(fallback);
     ptr->value = parse_string(raw, trim_quotes(tokens[token_count - 1]), rmaker);
-    return move(ptr);
+    return ptr;
   };
   if (token_count == 0)
     throw addable::error("parse: Empty reference conent");
@@ -100,7 +96,7 @@ base_p parse(string& raw, tstring& str, ref_maker rmaker) {
     if (auto min = cut_front(tokens[2], ':'); !min.untouched())
       newval->to_min = convert<float, strtof>(min);
     newval->to_range = convert<float, strtof>(tokens[2]) - newval->to_min;
-    return make_meta(move(newval));
+    return make_meta(newval);
 
   } else if (tokens[0] == "color"_ts) {
     auto newval = std::make_shared<color>();
@@ -109,7 +105,7 @@ base_p parse(string& raw, tstring& str, ref_maker rmaker) {
         newval->processor.inter = cspace::stospace(tokens[1]);
       newval->processor.add_modification(tokens[token_count - 2]);
     }
-    return make_meta(move(newval));
+    return make_meta(newval);
 
   } else
     throw addable::error("Unsupported reference type: " + tokens[0]);

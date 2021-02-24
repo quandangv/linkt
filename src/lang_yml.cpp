@@ -21,13 +21,8 @@ struct indentpair {
       node = &wrp->value;
   }
   node::wrapper& wrap() {
-    if (!wrp) {
-      wrp = new node::wrapper();
-      if (*node)
-        wrp->value = move(*node);
-      *node = node::base_p(wrp);
-      node = &wrp->value;
-    }
+    if (!wrp)
+      node = &(wrp = &node::wrapper::wrap(*node))->value;
     return *wrp;
   }
 };

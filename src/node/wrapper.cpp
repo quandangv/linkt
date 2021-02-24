@@ -18,6 +18,10 @@ base_p wrapper::get_child_ptr(tstring path) const {
   return {};
 }
 
+wrapper& wrapper::wrap(base_p& place) {
+  return *assign(place, std::make_shared<wrapper>(place));
+}
+
 base_p& wrapper::add(tstring path, const base_p& value) {
   // Check path for invalid characters
   trim(path);
@@ -28,29 +32,11 @@ base_p& wrapper::add(tstring path, const base_p& value) {
   if (auto immediate_path = cut_front(path, '.'); !immediate_path.untouched()) {
     // This isn't the final part of the path
     auto& ptr = map[immediate_path];
-    if (!ptr) {
-      ptr = std::make_shared<wrapper>();
-    }
-    if (auto child = dynamic_cast<addable*>(ptr.get()); child) {
-      return child->add(path, value);
-    } else {
-      auto node = new wrapper();
-      node->value = ptr;
-      ptr = base_p(node);
-      return node->add(path, value);
-    }
+    return (!ptr ? assign(ptr, std::make_shared<wrapper>()) : dynamic_cast<addable*>(ptr.get()) ?: &wrap(ptr))->add(path, value);
   } else {
     // This is the final part of the path
     auto& place = map[path];
-    if (!place) {
-      place = value;
-    } else {
-      if (auto node = dynamic_cast<wrapper*>(place.get()); node) {
-        node->value = value;
-      } else {
-        throw error("Duplicate key: " + static_cast<string>(path));
-      }
-    }
+    (!place ? place : (dynamic_cast<wrapper*>(place.get()) ?: throw error("Duplicate key: " + path))->value) = value;
     return place;
   }
 }

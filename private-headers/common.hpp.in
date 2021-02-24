@@ -34,5 +34,11 @@ constexpr auto DEBUG_SCOPES{"@DEBUG_SCOPES@"sv};
 
 #cmakedefine PLATFORM_LINUX
 
+template<typename Left, typename Right>
+Right* assign(Left& left, const std::shared_ptr<Right>& right) {
+  left = right;
+  return right.get();
+}
+
 #include "format.hpp"
 

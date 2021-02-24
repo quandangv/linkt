@@ -20,6 +20,12 @@ namespace lini::node {
     map_type map;
     base_p value;
 
+    wrapper(const base_p& value) : value(value) {}
+    wrapper() {}
+
+    static wrapper&
+    wrap(base_p& node);
+
     base_p&
     add(tstring path, const base_p& value);
 
