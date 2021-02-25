@@ -9,7 +9,6 @@ struct parse_test_single {
 using parse_test = vector<parse_test_single>;
 
 void test_nodes(parse_test testset) {
-  auto fail_count = get_current_test_part_count();
   auto doc = new node::wrapper();
   auto base_doc = node::base_p(doc);
 
@@ -30,18 +29,7 @@ void test_nodes(parse_test testset) {
       check_key(*doc, test.path, test.parsed, test.exception);
     }
   };
-  test_doc();
-
-  if (fail_count != get_current_test_part_count())
-    GTEST_SKIP() << "Skipping clone test";
-  base_doc = clone(base_doc);
-  doc = dynamic_cast<node::wrapper*>(base_doc.get());
-  test_doc();
-
-  if (fail_count != get_current_test_part_count())
-    GTEST_SKIP() << "Skipping optimize test";
-  doc->optimize();
-  test_doc();
+  triple_node_test(base_doc, test_doc);
 }
 
 TEST(Node, Simple) {

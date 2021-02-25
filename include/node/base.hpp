@@ -64,8 +64,8 @@ namespace lini::node {
     base_p copy(std::shared_ptr<meta>&& dest, clone_handler handler) const;
   };
 
-  base_p clone  (const base& source);
-  base_p clone  (const base_p& source);
+  base_p clone  (const base& source, bool optimize = false);
+  base_p clone  (const base_p& source, bool optimize = false);
   base_p clone  (const base_p& source, clone_handler handler);
   base_p clone  (const base& source, clone_handler handler);
 
@@ -74,8 +74,4 @@ namespace lini::node {
   struct parse_error : error_base { using error_base::error_base; };
   base_p parse_string  (string& raw, tstring& str, ref_maker ref_maker);
   base_p parse  (string& raw, tstring& str, ref_maker ref_maker);
-
-  struct optimize_error : error_base { using error_base::error_base; };
-  base_p optimize  (base& node);
-  void optimize  (base_p& node);
 }

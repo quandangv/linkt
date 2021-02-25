@@ -17,7 +17,6 @@ void test_language(file_test_param testset) {
 
   auto doc = new node::wrapper();
   auto base_doc = node::base_p(doc);
-  auto fail_count = get_current_test_part_count();
 
   errorlist err;
   if (testset.language == "ini")
@@ -41,17 +40,7 @@ void test_language(file_test_param testset) {
     for(auto& pair : testset.expectations)
         check_key(*doc, pair.path, pair.value, false);
   };
-  test_doc();
-  if (fail_count != get_current_test_part_count())
-    GTEST_SKIP() << "Skipping clone test";
-  base_doc = clone(base_doc);
-  doc = dynamic_cast<node::wrapper*>(base_doc.get());
-  test_doc();
-
-  if (fail_count != get_current_test_part_count())
-    GTEST_SKIP() << "Skipping optimize test";
-  doc->optimize();
-  test_doc();
+  triple_node_test(base_doc, test_doc);
 
   // Check wrapper export
   std::ofstream ofs{testset.path + "_export.txt"};

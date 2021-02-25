@@ -8,10 +8,6 @@
 
 NAMESPACE(lini::node)
 
-base_p clone(const base_p& src) {
-  return src ? clone(*src) : base_p{};
-}
-
 base_p clone(const base& base_src, clone_handler handler) {
   auto src = dynamic_cast<const clonable*>(&base_src);
   return src ? src->clone(handler) : handler(base_src);
@@ -21,26 +17,40 @@ base_p clone(const base_p& src, clone_handler handler) {
   return src ? clone(*src, handler) : base_p{};
 }
 
-base_p clone(const base& base_src) {
+base_p clone(const base_p& src, bool optimize) {
+  return src ? clone(*src, optimize) : base_p{};
+}
+
+base_p clone(const base& base_src, bool optimize) {
   std::map<const wrapper*, wrapper*> ancestors;
   clone_handler handler = [&](const base& base_src)->base_p {
     if (auto src = dynamic_cast<const wrapper*>(&base_src); src) {
       auto result = std::make_shared<wrapper>();
-      LG_DBUG("Add ancestor");
       ancestors.emplace(src, result.get());
       result->value = clone(src->value, handler);
       src->iterate_children([&](const string& name, const base_p& child) {
-        LG_DBUG("clone: path: " << name);
-        result->add(name, clone(child, handler));
-        LG_DBUG("clone: done, path: " << name << ", status: " << bool(result->get_child_ptr(name)));
+        LG_DBUG("Clone: start: " << name);
+        if (auto existing = result->get_child_ptr(name); !existing)
+          result->add(name, clone(child, handler));
+        LG_DBUG("Clone: end: " << name);
       });
       return result;
     }
     if (auto src = dynamic_cast<const address_ref*>(&base_src); src) {
-      auto ancestor = ancestors.find(&src->ancestor);
-      LG_DBUG("clone: ref: " << src->path);
+      LG_DBUG("Address ref: " << src->path)
+      auto ancestor_it = ancestors.find(&src->ancestor);
+      if (optimize && ancestor_it != ancestors.end()) {
+        LG_DBUG("optimize address ref: " << src->path)
+        auto ancestor = ancestor_it->second;
+        auto result = ancestor->get_child_ptr(src->path);
+        if (!result) {
+          result = clone(src->get_source(), handler);
+          ancestor->add(src->path, result ?: throw base::error("Empty reference"));
+        }
+        return result;
+      }
       return std::make_shared<address_ref>(
-        ancestor != ancestors.end() ? *ancestor->second : throw base::error("Can't find ancestor, path: "),
+        ancestor_it != ancestors.end() ? *ancestor_it->second : throw base::error("Can't find ancestor, path: "),
         string(src->path),
         clone(src->fallback, handler));
     }
@@ -54,6 +64,8 @@ string defaultable::use_fallback(const string& msg) const {
 }
 
 base_p address_ref::get_source() const {
+  // auto result = ancestor.get_child_ptr(path);
+  // if (auto ref = dynamic_cast<address_ref*>(result.
   return ancestor.get_child_ptr(path);
 }
 
@@ -172,21 +184,6 @@ base_p parse_string(string& raw, tstring& str, ref_maker rmaker) {
   ss << str;
   newval->base = ss.str();
   return move(newval);
-}
-
-base_p optimize(base& base_node) {
-  if (auto node = dynamic_cast<address_ref*>(&base_node); node) {
-    auto result = node->get_source();
-    node->invalidate();
-    return result ?: throw optimize_error("Empty reference");
-  }
-  return {};
-}
-
-void optimize(base_p& node) {
-  auto result = optimize(*node);
-  if (result)
-    node = result;
 }
 
 NAMESPACE_END

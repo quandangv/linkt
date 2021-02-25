@@ -89,10 +89,4 @@ string wrapper::get() const {
   return value ? value->get() : "";
 }
 
-void wrapper::optimize() {
-  node::optimize(value);
-  for(auto pair : map)
-    node::optimize(pair.second);
-}
-
 NAMESPACE_END

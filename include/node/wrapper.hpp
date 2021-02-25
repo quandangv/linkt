@@ -38,7 +38,6 @@ namespace lini::node {
     void iterate_children  (std::function<void(const string&, const base&)> processor) const;
 
     string get  () const;
-    void optimize  ();
     bool set  (const tstring& path, const string& value);
     std::shared_ptr<address_ref> make_address_ref  (const tstring&, const base_p&);
   };
