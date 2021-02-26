@@ -142,7 +142,7 @@ TEST(Assign, Load) {
   EXPECT_EQ(doc.get_child("nexist"_ts, "fallback"), "fallback");
   EXPECT_THROW(doc.get_child_ref("nexist"_ts), node::base::error);
   EXPECT_EQ(doc.get_child("key-a"_ts, "fallback"), "a");
-  EXPECT_EQ(doc.get_child_ref("key-a"_ts).get(), "a");
+  EXPECT_EQ(doc.get_child_ref("key-a"_ts)->get(), "a");
   EXPECT_EQ(doc.get(), "");
   EXPECT_ANY_THROW(doc.get_child("ref-fail"_ts));
 }

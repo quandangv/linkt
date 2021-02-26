@@ -12,6 +12,7 @@
 namespace lini::node {
   using std::string;
 
+  using ancestor_processor = std::function<void(tstring& path, wrapper* ancestor)>;
   struct wrapper : public base {
     struct error : error_base { using error_base::error_base; };
     using map_type = std::map<string, base_p>;
@@ -25,12 +26,13 @@ namespace lini::node {
     static wrapper&
     wrap(base_p& node);
 
+    base_p& add  (tstring path, ancestor_processor* processor = nullptr);
     base_p& add  (tstring path, const base_p& value);
-    base_p add  (tstring path, string& raw, tstring value);
-    base_p add  (tstring path, string raw);
+    base_p& add  (tstring path, string& raw, tstring value);
+    base_p& add  (tstring path, string raw);
 
     base_p get_child_ptr  (tstring path) const;
-    base& get_child_ref  (const tstring& path) const;
+    base_p& get_child_ref  (tstring path);
     string get_child  (const tstring& path, string&& fallback) const;
     std::optional<string> get_child  (const tstring& path) const;
 
