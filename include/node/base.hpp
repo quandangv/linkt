@@ -64,8 +64,19 @@ namespace lini::node {
     base_p copy(std::shared_ptr<meta>&& dest, clone_handler handler) const;
   };
 
-  base_p clone  (const base& source, bool optimize = false);
-  base_p clone  (const base_p& source, bool optimize = false);
+  enum class clone_mode {
+    exact = 0,
+    optimize = 2,
+    no_dependency = 1,
+  };
+  inline clone_mode operator&(clone_mode a, clone_mode b)
+  { return (clone_mode)((int)a & (int)b); }
+
+  inline clone_mode operator|(clone_mode a, clone_mode b)
+  { return (clone_mode)((int)a | (int)b); }
+
+  base_p clone  (const base& source, clone_mode mode = clone_mode::exact);
+  base_p clone  (const base_p& source, clone_mode mode = clone_mode::exact);
   base_p clone  (const base_p& source, clone_handler handler);
   base_p clone  (const base& source, clone_handler handler);
 

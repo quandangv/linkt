@@ -122,10 +122,10 @@ TEST(Language, Yml) {
 
 node::wrapper doc;
 void set_key(const string& key, const string& newval) {
-  auto last_count = get_current_test_part_count();
+  auto last_count = get_test_part_count();
   EXPECT_TRUE(doc.set(key, newval));
   ASSERT_EQ(newval, doc.get_child(key)) << "Unexpected value after assignment";
-  if (last_count != get_current_test_part_count())
+  if (last_count != get_test_part_count())
     cerr << "Key: " << key << endl;
 }
 

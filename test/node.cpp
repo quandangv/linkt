@@ -8,18 +8,18 @@ struct parse_test_single {
 };
 using parse_test = vector<parse_test_single>;
 
-void test_nodes(parse_test testset) {
+void test_nodes(parse_test testset, int repeat = 5000) {
   auto doc = new node::wrapper();
   auto base_doc = node::base_p(doc);
 
   // Add keys
   for(auto test : testset) {
-    auto last_count = get_current_test_part_count();
+    auto last_count = get_test_part_count();
     if (test.fail)
       EXPECT_ANY_THROW(doc->add(test.path, move(test.value))) << "Expected error";
     else
       EXPECT_NO_THROW(doc->add(test.path, move(test.value))) << "Unexpected error";
-    if (last_count != get_current_test_part_count())
+    if (last_count != get_test_part_count())
       cerr << "Key: " << test.path << endl;
   }
   auto test_doc = [&] {
@@ -29,7 +29,7 @@ void test_nodes(parse_test testset) {
       check_key(*doc, test.path, test.parsed, test.exception);
     }
   };
-  triple_node_test(base_doc, test_doc);
+  triple_node_test(base_doc, test_doc, repeat);
 }
 
 TEST(Node, Simple) {
@@ -88,9 +88,9 @@ TEST(Node, Cmd) {
   test_nodes({
     {".msg", "foo bar", "foo bar"},
     {".cmd", "${cmd echo ${.msg}}", "foo bar"},
-  });
-  test_nodes({{".cmd", "${cmd echo hello world}", "hello world"}});
-  test_nodes({{".cmd", "${cmd nexist}", "", false, true}});
+  }, 100);
+  test_nodes({{".cmd", "${cmd echo hello world}", "hello world"}}, 100);
+  test_nodes({{".cmd", "${cmd nexist}", "", false, true}}, 100);
 }
 
 TEST(Node, Color) {

@@ -17,11 +17,11 @@ base_p clone(const base_p& src, clone_handler handler) {
   return src ? clone(*src, handler) : base_p{};
 }
 
-base_p clone(const base_p& src, bool optimize) {
-  return src ? clone(*src, optimize) : base_p{};
+base_p clone(const base_p& src, clone_mode mode) {
+  return src ? clone(*src, mode) : base_p{};
 }
 
-base_p clone(const base& base_src, bool optimize) {
+base_p clone(const base& base_src, clone_mode mode) {
   std::vector<std::pair<const wrapper*, wrapper*>> ancestors;
   clone_handler handler = [&](const base& base_src)->base_p {
     if (auto src = dynamic_cast<const wrapper*>(&base_src); src) {
@@ -40,18 +40,22 @@ base_p clone(const base& base_src, bool optimize) {
     if (auto src = dynamic_cast<const address_ref*>(&base_src); src) {
       LG_DBUG("Address ref: " << src->path)
       auto ancestor_it = find_if(ancestors.rbegin(), ancestors.rend(), [&](auto& pair) { return pair.first == &src->ancestor; });
-      if (optimize && ancestor_it != ancestors.rend()) {
+      if ((int)(mode & clone_mode::no_dependency) && ancestor_it == ancestors.rend())
+        throw base::error("External dependency");
+      auto ancestor = ancestor_it != ancestors.rend() ? ancestor_it->second :
+          !(bool)(mode & clone_mode::no_dependency) ? &src->ancestor :
+          throw base::error("External dependency");
+      if ((int)(mode & clone_mode::optimize)) {
         LG_DBUG("optimize address ref: " << src->path)
-        auto ancestor = ancestor_it->second;
         auto result = ancestor->get_child_ptr(src->path);
         if (!result) {
           // This will recursively dereference chain references.
           auto src_ancestor = ancestor_it->first;
           auto ancestors_mark = ancestors.size();
-          ancestor_processor source_tracer = [&](tstring& path, wrapper* ancestor)->void {
+          ancestor_processor source_tracer = [&](tstring& path, wrapper* inner_ancestor)->void {
             src_ancestor = dynamic_cast<wrapper*>(src_ancestor->get_child_ptr(path).get())
                 ?: throw base::error("Invalid reference");
-            ancestors.emplace_back(src_ancestor, ancestor);
+            ancestors.emplace_back(src_ancestor, inner_ancestor);
           };
           ancestor->add(src->path, &source_tracer) = clone(src->get_source(), handler);
           ancestors.erase(ancestors.begin() + ancestors_mark, ancestors.end());
@@ -59,7 +63,7 @@ base_p clone(const base& base_src, bool optimize) {
         return result;
       }
       return std::make_shared<address_ref>(
-        ancestor_it != ancestors.rend() ? *ancestor_it->second : throw base::error("Can't find ancestor, path: "),
+        *ancestor,
         string(src->path),
         clone(src->fallback, handler));
     }

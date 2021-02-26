@@ -68,10 +68,11 @@ base_p file::clone(clone_handler handler) const {
 string cmd::get() const {
   string result;
   try {
-    auto file = popen(value->get().data(), "r");
+    auto file = popen((value->get() + string(" 2>/dev/null")).data(), "r");
     std::array<char, 128> buf;
     while (fgets(buf.data(), 128, file) != nullptr)
       result += buf.data();
+    pclose(file);
   } catch (const std::exception& e) {
     use_fallback("Encountered error: " + string(e.what()));
   }
