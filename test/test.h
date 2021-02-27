@@ -44,11 +44,11 @@ void check_key(const node::wrapper& w, string path, string expected, bool except
     cerr << "Key: " << path << endl << endl;
 }
 
-void triple_node_test(node::base_p node, std::function<void()> tester, int repeat = 10000) {
+void triple_node_test(node::base_p node, std::function<void(node::base_p)> tester, int repeat = 10000) {
   auto fail_count = get_test_part_count();
   auto time = get_time_milli();
   for (int i = 0; i < repeat; i++) {
-    tester();
+    tester(node);
     if (fail_count != get_test_part_count())
       GTEST_SKIP() << "First test failed. Skipping clone test";
   }
@@ -57,7 +57,7 @@ void triple_node_test(node::base_p node, std::function<void()> tester, int repea
   node = clone(node);
   time = get_time_milli();
   for (int i = 0; i < repeat; i++) {
-    tester();
+    tester(node);
     if (fail_count != get_test_part_count())
       GTEST_SKIP() << "Clone test failed. Skipping optimize test";
   }
@@ -66,7 +66,7 @@ void triple_node_test(node::base_p node, std::function<void()> tester, int repea
   node = clone(node, node::clone_mode::optimize | node::clone_mode::no_dependency);
   time = get_time_milli();
   for (int i = 0; i < repeat; i++) {
-    tester();
+    tester(node);
     if (fail_count != get_test_part_count())
       GTEST_SKIP() << "Optimize test failed.";
   }

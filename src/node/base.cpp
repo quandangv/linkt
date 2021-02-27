@@ -29,14 +29,13 @@ base_p clone(const base& base_src, clone_mode mode) {
       ancestors.emplace_back(src, result.get());
       result->value = clone(src->value, handler, mode);
       src->iterate_children([&](const string& name, const base_p& child) {
-        try {
-          LG_DBUG("Add child: " << name);
-          result->add(name, clone(child, handler, mode));
-        } catch (const std::exception& e) {}
-        LG_DBUG("End child: " << name << " " << result->get_child_ptr(name)->get());
+        LG_DBUG("Add child: " << name);
+        if (auto& place = result->add(name); !place)
+          place = clone(child, handler, mode);
+        LG_DBUG("End child: " << name << " " << result->get_child_ptr(name).get());
       });
       ancestors.pop_back();
-      return result;
+      return result ?: throw base::error("Empty wrapper clone result");
     }
 
     if (auto src = dynamic_cast<const address_ref*>(&base_src); src) {
@@ -47,6 +46,8 @@ base_p clone(const base& base_src, clone_mode mode) {
 
       if ((int)(mode & clone_mode::optimize)) {
         auto result = ancestor->get_child_ptr(src->path);
+        if (auto wrpr = dynamic_cast<wrapper*>(result.get()); wrpr)
+          result = wrpr->value;
         if (!result) {
           // This will recursively dereference chain references.
           auto src_ancestor = ancestor_it->first;
@@ -59,7 +60,7 @@ base_p clone(const base& base_src, clone_mode mode) {
           result = (ancestor->add(src->path, &source_tracer) = clone(src->get_source(), handler, mode)) ?: throw base::error("Clone returns null");
           ancestors.erase(ancestors.begin() + ancestors_mark, ancestors.end());
         }
-        return result;
+        return result ?: throw base::error("Empty address_ref clone result");
       }
 
       return std::make_shared<address_ref>(

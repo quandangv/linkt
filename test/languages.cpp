@@ -36,7 +36,8 @@ void test_language(file_test_param testset) {
   }
 
   // Check the keys
-  auto test_doc = [&] {
+  auto test_doc = [&](node::base_p node) {
+    auto doc = dynamic_cast<node::wrapper*>(node.get());
     for(auto& pair : testset.expectations)
         check_key(*doc, pair.path, pair.value, false);
   };

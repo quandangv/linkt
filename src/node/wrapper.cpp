@@ -67,13 +67,17 @@ base_p& wrapper::add(tstring path, ancestor_processor* processor) {
   } else {
     // This is the final part of the path
     auto& place = map[path];
-    return (!place ? place : (dynamic_cast<wrapper*>(place.get())
-        ?: throw error("Duplicate key: " + path))->value);
+    if (!place)
+      return place;
+    wrapper* wrpr;
+    return (wrpr = dynamic_cast<wrapper*>(place.get()))
+        ? wrpr->value : place;
   }
 }
 
 base_p& wrapper::add(tstring path, const base_p& value) {
-  return add(path) = value;
+  auto& place = add(path);
+  return place ? throw error("Duplicate key") : (place = value);
 }
 
 base_p& wrapper::add(tstring path, string& raw, tstring value) {

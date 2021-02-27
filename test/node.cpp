@@ -8,7 +8,7 @@ struct parse_test_single {
 };
 using parse_test = vector<parse_test_single>;
 
-void test_nodes(parse_test testset, int repeat = 5000) {
+void test_nodes(parse_test testset, int repeat = 1) {
   auto doc = new node::wrapper();
   auto base_doc = node::base_p(doc);
 
@@ -22,11 +22,15 @@ void test_nodes(parse_test testset, int repeat = 5000) {
     if (last_count != get_test_part_count())
       cerr << "Key: " << test.path << endl;
   }
-  auto test_doc = [&] {
+  auto test_doc = [&](node::base_p node) {
+    auto doc = dynamic_cast<node::wrapper*>(node.get());
     for(auto test : testset) {
       // Skip key if it is expected to fail in the previous step
       if (test.fail) continue;
+      auto fail_count = get_test_part_count();
       check_key(*doc, test.path, test.parsed, test.exception);
+      if (fail_count == get_test_part_count())
+        cout << "Success: " << test.path << endl;
     }
   };
   triple_node_test(base_doc, test_doc, repeat);
@@ -42,6 +46,7 @@ TEST(Node, Simple) {
 
 TEST(Node, Ref) {
   test_nodes({
+    {"test2.ref-fake", "{test.key-a}", "{test.key-a}"},
     {"test2.ref-file-default-before", "${file nexist.txt ? ${test.ref-ref-a}}", "a"},
     {"test2.ref-before", "${test2.ref-a}", "a"},
     {"test.key-a", "a", "a"},
@@ -52,7 +57,6 @@ TEST(Node, Ref) {
     {"test2.ref-fallback-a", "${ test.key-a ? fail }", "a"},
     {"test2.ref-nexist", "${test.key-nexist? \" f a i l ' }", "\" f a i l '"},
     {"test2.ref-fail", "${test.key-fail}", "${test.key-fail}", false, true},
-    {"test2.ref-fake", "{test.key-a}", "{test.key-a}"},
     {"test2.interpolation", "This is ${test.key-a} test", "This is a test"},
     {"test2.interpolation-trick", "$ ${test.key-a}", "$ a"},
     {"test2.interpolation-trick-2", "} ${test.key-a}", "} a"},
@@ -88,9 +92,9 @@ TEST(Node, Cmd) {
   test_nodes({
     {".msg", "foo bar", "foo bar"},
     {".cmd", "${cmd echo ${.msg}}", "foo bar"},
-  }, 100);
-  test_nodes({{".cmd", "${cmd echo hello world}", "hello world"}}, 100);
-  test_nodes({{".cmd", "${cmd nexist}", "", false, true}}, 100);
+  }, 1);
+  test_nodes({{".cmd", "${cmd echo hello world}", "hello world"}}, 1);
+  test_nodes({{".cmd", "${cmd nexist}", "", false, true}}, 1);
 }
 
 TEST(Node, Color) {
