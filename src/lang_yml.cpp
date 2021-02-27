@@ -40,7 +40,6 @@ void parse_yml(std::istream& is, node::wrapper& root, errorlist& err) {
 
   // Iterate through lines
   for (int linecount = 1; std::getline(is, raw); linecount++, raw.clear()) {
-    LG_DBUG("parse: line: " << raw);
     tstring line(raw);
     int indent = ltrim(line);
     // skip empty and comment lines

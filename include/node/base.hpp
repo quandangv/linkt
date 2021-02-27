@@ -23,9 +23,14 @@ namespace lini::node {
     virtual bool set  (const string&) { return false; }
   };
 
+  enum class clone_mode {
+    exact = 0,
+    optimize = 2,
+    no_dependency = 1,
+  };
   using clone_handler = std::function<base_p(const base&)>;
   struct clonable {
-    virtual base_p clone  (clone_handler handler) const = 0;
+    virtual base_p clone  (clone_handler handler, clone_mode mode) const = 0;
   };
 
   struct plain : public base, settable, clonable {
@@ -34,7 +39,7 @@ namespace lini::node {
     explicit plain  (string&& val) : val(val) {}
     string get  () const { return val; }
     bool set  (const string& value) { val = value; return true; }
-    base_p clone  (clone_handler handler) const { return std::make_unique<plain>(string(val)); }
+    base_p clone  (clone_handler, clone_mode) const { return std::make_shared<plain>(string(val)); }
   };
 
   struct defaultable {
@@ -61,14 +66,9 @@ namespace lini::node {
   struct meta : public base, defaultable {
     base_p value;
     
-    base_p copy(std::shared_ptr<meta>&& dest, clone_handler handler) const;
+    base_p copy(std::shared_ptr<meta>&& dest, clone_handler handler, clone_mode mode) const;
   };
 
-  enum class clone_mode {
-    exact = 0,
-    optimize = 2,
-    no_dependency = 1,
-  };
   inline clone_mode operator&(clone_mode a, clone_mode b)
   { return (clone_mode)((int)a & (int)b); }
 
@@ -77,8 +77,9 @@ namespace lini::node {
 
   base_p clone  (const base& source, clone_mode mode = clone_mode::exact);
   base_p clone  (const base_p& source, clone_mode mode = clone_mode::exact);
-  base_p clone  (const base_p& source, clone_handler handler);
-  base_p clone  (const base& source, clone_handler handler);
+  base_p clone  (const base_p& source, clone_handler handler, clone_mode mode);
+  base_p clone  (const base& source, clone_handler handler, clone_mode mode);
+  bool is_fixed(base_p node);
 
   using ref_maker = std::function<std::shared_ptr<address_ref>(tstring& path, const base_p& fallback)>;
 

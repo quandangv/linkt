@@ -1,5 +1,6 @@
 #include "node.hpp"
 #include "common.hpp"
+#include "wrapper.hpp"
 #include "string_interpolate.hpp"
 
 NAMESPACE(lini::node)
@@ -34,14 +35,22 @@ string string_interpolate::get() const {
   return interpolate(base, list<position_it>{spots}, list<replacement_it>{spots});
 }
 
-base_p string_interpolate::clone(clone_handler handler) const {
-  LG_DBUG("Clone string interpolate")
+base_p string_interpolate::clone(clone_handler handler, clone_mode mode) const {
   auto result = std::make_unique<string_interpolate>();
   result->base = base;
   result->spots.reserve(spots.size());
-  for(auto& spot : spots)
-    result->spots.emplace_back(spot.position, spot.name, node::clone(*spot.replacement, handler));
-  return move(result);
+  for(auto& spot : spots) {
+    result->spots.emplace_back(spot.position, node::clone(*spot.replacement, handler, mode));
+  }
+  if ((int)(mode & clone_mode::optimize)) {
+    for(auto& spot : result->spots) {
+      if (!is_fixed(spot.replacement)) {
+        return result;
+      }
+    }
+    return std::make_shared<plain>(get());
+  }
+  return result;
 }
 
 NAMESPACE_END

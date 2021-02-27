@@ -1,4 +1,5 @@
 #include "node.hpp"
+#include "wrapper.hpp"
 #include "common.hpp"
 
 #include <fstream>
@@ -18,11 +19,17 @@ string color::get() const {
   }
 }
 
-base_p color::clone(clone_handler handler) const {
-  LG_DBUG("Clone color")
+base_p color::clone(clone_handler handler, clone_mode mode) const {
   auto result = std::make_shared<color>();
+  if (value)
+    result->value = node::clone(*value, handler, mode);
+  if ((int)(mode & clone_mode::optimize) && is_fixed(result->value))
+    return std::make_shared<plain>(get());
+
   result->processor = processor;
-  return meta::copy(result, handler);
+  if (fallback)
+    result->fallback = node::clone(*fallback, handler, mode);
+  return result;
 }
 
 string env::get() const {
@@ -37,8 +44,8 @@ bool env::set(const string& newval) {
   return true;
 }
 
-base_p env::clone(clone_handler handler) const {
-  return meta::copy(std::make_shared<env>(), handler);
+base_p env::clone(clone_handler handler, clone_mode mode) const {
+  return meta::copy(std::make_shared<env>(), handler, mode);
 }
 
 string file::get() const {
@@ -61,8 +68,8 @@ bool file::set(const string& content) {
   return true;
 }
 
-base_p file::clone(clone_handler handler) const {
-  return meta::copy(std::make_shared<file>(), handler);
+base_p file::clone(clone_handler handler, clone_mode mode) const {
+  return meta::copy(std::make_shared<file>(), handler, mode);
 }
 
 string cmd::get() const {
@@ -81,26 +88,33 @@ string cmd::get() const {
   return result;
 }
 
-base_p cmd::clone(clone_handler handler) const {
-  return meta::copy(std::make_shared<cmd>(), handler);
+base_p cmd::clone(clone_handler handler, clone_mode mode) const {
+  return meta::copy(std::make_shared<cmd>(), handler, mode);
 }
 
 string map::get() const {
   auto str = value ? value->get() : use_fallback("Value key doesn't exist");
   size_t remaining;
   auto num =  std::stof(str, &remaining);
-  if (remaining != str.size())
-    throw std::invalid_argument("value is not a number");
-  return std::to_string(to_min + to_range/from_range*(num - from_min));
+  return remaining == str.size() ?
+      std::to_string(to_min + to_range/from_range*(num - from_min)) :
+      use_fallback("value is not a number");
 }
 
-base_p map::clone(clone_handler handler) const {
+base_p map::clone(clone_handler handler, clone_mode mode) const {
   auto result = std::make_shared<map>();
+  if (value)
+    result->value = node::clone(*value, handler, mode);
+  if ((int)(mode & clone_mode::optimize) && is_fixed(result->value))
+      return std::make_shared<plain>(get());
+
   result->from_min = from_min;
   result->from_range = from_range;
   result->to_min = to_min;
   result->to_range = to_range;
-  return meta::copy(move(result), handler);
+  if (fallback)
+    result->fallback = node::clone(*fallback, handler, mode);
+  return result;
 }
 
 NAMESPACE_END

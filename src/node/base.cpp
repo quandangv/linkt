@@ -8,13 +8,13 @@
 
 NAMESPACE(lini::node)
 
-base_p clone(const base& base_src, clone_handler handler) {
+base_p clone(const base& base_src, clone_handler handler, clone_mode mode) {
   auto src = dynamic_cast<const clonable*>(&base_src);
-  return src ? src->clone(handler) : handler(base_src);
+  return src ? src->clone(handler, mode) : handler(base_src);
 }
 
-base_p clone(const base_p& src, clone_handler handler) {
-  return src ? clone(*src, handler) : base_p{};
+base_p clone(const base_p& src, clone_handler handler, clone_mode mode) {
+  return src ? clone(*src, handler, mode) : base_p{};
 }
 
 base_p clone(const base_p& src, clone_mode mode) {
@@ -27,26 +27,25 @@ base_p clone(const base& base_src, clone_mode mode) {
     if (auto src = dynamic_cast<const wrapper*>(&base_src); src) {
       auto result = std::make_shared<wrapper>();
       ancestors.emplace_back(src, result.get());
-      result->value = clone(src->value, handler);
+      result->value = clone(src->value, handler, mode);
       src->iterate_children([&](const string& name, const base_p& child) {
-        LG_DBUG("Clone: start: " << name);
-        if (auto existing = result->get_child_ptr(name); !existing)
-          result->add(name, clone(child, handler));
-        LG_DBUG("Clone: end: " << name);
+        try {
+          LG_DBUG("Add child: " << name);
+          result->add(name, clone(child, handler, mode));
+        } catch (const std::exception& e) {}
+        LG_DBUG("End child: " << name << " " << result->get_child_ptr(name)->get());
       });
       ancestors.pop_back();
       return result;
     }
+
     if (auto src = dynamic_cast<const address_ref*>(&base_src); src) {
-      LG_DBUG("Address ref: " << src->path)
       auto ancestor_it = find_if(ancestors.rbegin(), ancestors.rend(), [&](auto& pair) { return pair.first == &src->ancestor; });
-      if ((int)(mode & clone_mode::no_dependency) && ancestor_it == ancestors.rend())
-        throw base::error("External dependency");
       auto ancestor = ancestor_it != ancestors.rend() ? ancestor_it->second :
           !(bool)(mode & clone_mode::no_dependency) ? &src->ancestor :
           throw base::error("External dependency");
+
       if ((int)(mode & clone_mode::optimize)) {
-        LG_DBUG("optimize address ref: " << src->path)
         auto result = ancestor->get_child_ptr(src->path);
         if (!result) {
           // This will recursively dereference chain references.
@@ -57,19 +56,30 @@ base_p clone(const base& base_src, clone_mode mode) {
                 ?: throw base::error("Invalid reference");
             ancestors.emplace_back(src_ancestor, inner_ancestor);
           };
-          ancestor->add(src->path, &source_tracer) = clone(src->get_source(), handler);
+          result = (ancestor->add(src->path, &source_tracer) = clone(src->get_source(), handler, mode)) ?: throw base::error("Clone returns null");
           ancestors.erase(ancestors.begin() + ancestors_mark, ancestors.end());
         }
         return result;
       }
+
       return std::make_shared<address_ref>(
         *ancestor,
         string(src->path),
-        clone(src->fallback, handler));
+        clone(src->fallback, handler, mode));
     }
     throw base::error("Node of type '" + string(typeid(base_src).name()) + "' can't be cloned");
   };
-  return clone(base_src, handler);
+  return clone(base_src, handler, mode);
+}
+
+bool is_fixed(base_p node) {
+  if (!node)
+    throw base::error("Empty node");
+  if (auto doc = dynamic_cast<wrapper*>(node.get()); doc)
+    node = doc->value;
+  if (auto fixed = dynamic_cast<plain*>(node.get()); fixed)
+    return true;
+  return false;
 }
 
 string defaultable::use_fallback(const string& msg) const {
@@ -96,12 +106,12 @@ bool address_ref::set(const string& val) {
 }
 
 
-base_p meta::copy(std::shared_ptr<meta>&& dest, clone_handler handler) const {
+base_p meta::copy(std::shared_ptr<meta>&& dest, clone_handler handler, clone_mode mode) const {
   if (value)
-    dest->value = clone(*value, handler);
+    dest->value = clone(*value, handler, mode);
   if (fallback)
-    dest->fallback = clone(*fallback, handler);
-  return move(dest);
+    dest->fallback = clone(*fallback, handler, mode);
+  return dest;
 }
 
 base_p parse(string& raw, tstring& str, ref_maker rmaker) {
@@ -157,7 +167,6 @@ base_p parse(string& raw, tstring& str, ref_maker rmaker) {
     return make_meta(newval);
 
   } else if (tokens[0] == "clone"_ts) {
-    LG_DBUG("parse: clone")
     if (token_count != 2)
       throw parse_error("parse: Expected 2 components");
     auto ref = rmaker(tokens[1], fallback);
@@ -190,7 +199,7 @@ base_p parse_string(string& raw, tstring& str, ref_maker rmaker) {
     auto value = parse(raw, token, rmaker);
     if (value) {
       // Mark the position of the token in the base string
-      newval->spots.push_back({int(ss.tellp()), "", move(value)});
+      newval->spots.emplace_back(int(ss.tellp()), value);
     }
     str.erase_front(end);
   } while (find_enclosed(str, raw, "${", "{", "}", start, end));
