@@ -70,7 +70,7 @@ base_p& wrapper::add(tstring path, ancestor_processor* processor) {
     if (!place)
       return place;
     wrapper* wrpr = dynamic_cast<wrapper*>(place.get());
-    return wrpr ? wrpr->value : place;
+    return wrpr ? wrpr->map[""] : place;
   }
 }
 
@@ -101,6 +101,7 @@ void wrapper::iterate_children(std::function<void(const string&, const base_p&)>
 }
 
 string wrapper::get() const {
+  const auto& value = get_child_ptr(""_ts);
   return value ? value->get() : "";
 }
 
@@ -108,14 +109,6 @@ base_p wrapper::clone(clone_context& context) const {
   auto result = std::make_shared<wrapper>();
   context.ancestors.emplace_back(this, result.get());
   LG_DBUG("Value clone");
-  try {
-    if (value)
-      result->value = value->clone(context);
-    LG_DBUG("End Value clone");
-  } catch (const std::exception& e) {
-    context.report_error(e.what());
-    LG_DBUG("End Value clone (catch)");
-  }
   for(auto& pair : map) {
     auto last_path = context.current_path;
     if (context.current_path.empty())

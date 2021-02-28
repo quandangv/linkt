@@ -18,9 +18,8 @@ namespace lini::node {
     using map_type = std::map<string, base_p>;
 
     map_type map;
-    base_p value;
 
-    wrapper(const base_p& value) : value(value) {}
+    wrapper(const base_p& value) : map{{"", value}} {}
     wrapper() {}
 
     static wrapper& wrap  (base_p& node);

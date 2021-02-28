@@ -11,9 +11,7 @@ NAMESPACE(lini::node)
 string color::get() const {
   try {
     auto result = processor.operate(value->get());
-    if (result.empty() && fallback)
-      return fallback->get();
-    return result;
+    return result.empty() && fallback ? fallback->get() : result;
   } catch(const std::exception& e) {
     return use_fallback("Color processing failed, due to: " + string(e.what()));
   }
@@ -23,6 +21,7 @@ base_p color::clone(clone_context& context) const {
   auto result = std::make_shared<color>();
   if (!value)
     context.report_error("Color: value is empty");
+
   result->value = value->clone(context);
   if (context.optimize && is_fixed(result->value))
     return std::make_shared<plain>(get());
@@ -35,9 +34,7 @@ base_p color::clone(clone_context& context) const {
 
 string env::get() const {
   auto result = getenv(value->get().data());
-  if (result == nullptr)
-    return use_fallback("Environment variable not found: " + value->get());
-  return string(result);
+  return string(result ?: use_fallback("Environment variable not found: " + value->get()));
 }
 
 bool env::set(const string& newval) {
@@ -53,6 +50,7 @@ string file::get() const {
   std::ifstream ifs(value->get().data());
   if (ifs.fail())
     return use_fallback("Can't read file: " + value->get());
+
   string result(std::istreambuf_iterator<char>{ifs}, {});
   ifs.close();
   auto last_line = result.find_last_not_of("\r\n");

@@ -51,7 +51,7 @@ bool is_fixed(base_p node) {
   if (!node)
     throw base::error("Empty node");
   if (auto doc = dynamic_cast<wrapper*>(node.get()); doc)
-    node = doc->value;
+    node = doc->get_child_ptr(""_ts);
   if (auto fixed = dynamic_cast<plain*>(node.get()); fixed)
     return true;
   return false;
@@ -86,7 +86,7 @@ base_p address_ref::clone(clone_context& context) const {
   if (context.optimize) {
     auto result = cloned_ancestor->get_child_ptr(path);
     if (auto wrpr = dynamic_cast<wrapper*>(result.get()); wrpr)
-      result = wrpr->value;
+      result = wrpr->get_child_ptr(""_ts);
     if (!result) {
       // This will recursively dereference chain references.
       auto src_ancestor = &ancestor;

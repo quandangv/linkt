@@ -37,6 +37,8 @@ void parse_ini(std::istream& is, node::wrapper& root, errorlist& err) {
 void write_ini(std::ostream& os, const node::wrapper& root, const string& prefix) {
   vector<std::pair<string, const node::wrapper*>> wrappers;
   root.iterate_children([&](const string& name, const node::base& child) {
+    if (name.empty())
+      return;
     auto ctn = dynamic_cast<const node::wrapper*>(&child);
     if(ctn) {
       wrappers.push_back(std::make_pair(name, ctn));

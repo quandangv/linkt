@@ -18,13 +18,13 @@ struct indentpair {
   indentpair(int indent, node::base_p* new_node) : indent(indent), node(new_node) {
     wrp = dynamic_cast<node::wrapper*>(node->get());
     if (wrp)
-      node = &wrp->value;
+      node = &wrp->add(""_ts);
   }
   node::wrapper& wrap() {
     if (!wrp) {
       wrp = dynamic_cast<node::wrapper*>(node->get());
       if (!wrp)
-        node = &(wrp = &node::wrapper::wrap(*node))->value;
+        node = &(wrp = &node::wrapper::wrap(*node))->add(""_ts);
     }
     return *wrp;
   }
@@ -91,6 +91,8 @@ void parse_yml(std::istream& is, node::wrapper& root, errorlist& err) {
 
 void write_yml(std::ostream& os, const node::wrapper& root, int indent) {
   root.iterate_children([&](const string& name, const node::base& child) {
+    if (name.empty())
+      return;
     // Indent the line
     std::fill_n(std::ostream_iterator<char>(os), indent, ' ');
     write_key(os, name + ": ", child.get());
