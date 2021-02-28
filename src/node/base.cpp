@@ -29,11 +29,11 @@ void errorlist::report_error(int linecount, const string& msg) {
 }
 
 void errorlist::report_error(int linecount, const string& key, const string& msg) {
-  emplace_back("line " +std::to_string(linecount) + ", key " + key, msg);
+  emplace_back("line " +std::to_string(linecount) + ", " + key, msg);
 }
 
 void errorlist::report_error(const string& key, const string& msg) {
-  emplace_back("Key " + key, msg);
+  emplace_back(key, msg);
 }
 
 bool errorlist::extract_key(tstring& line, int linecount, char separator, tstring& key) {

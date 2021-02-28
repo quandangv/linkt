@@ -105,29 +105,31 @@ string wrapper::get() const {
   return value ? value->get() : "";
 }
 
-base_p wrapper::clone(clone_context& context) const {
-  auto result = std::make_shared<wrapper>();
-  context.ancestors.emplace_back(this, result.get());
-  LG_DBUG("Value clone");
-  for(auto& pair : map) {
+void fill(const wrapper& src, wrapper& dest, clone_context& context) {
+  context.ancestors.emplace_back(&src, &dest);
+  for(auto& pair : src.map) {
     auto last_path = context.current_path;
-    if (context.current_path.empty())
-      context.current_path = pair.first;
-    else
-      context.current_path += "." + pair.first;
-    LG_DBUG("Key clone");
+    context.current_path += context.ancestors.size() == 1 ? pair.first : ("." + pair.first);
+
     try {
       if (pair.second)
-        if (auto& place = result->add(pair.first); !place)
+        if (auto& place = dest.map[pair.first]; !place)
           place = pair.second->clone(context);
-      LG_DBUG("end Key clone");
+        else if (auto wrp = dynamic_cast<wrapper*>(place.get()); wrp)
+          fill(dynamic_cast<wrapper&>(*pair.second), *wrp, context);
+        else LG_DBUG("Skipped key: " << pair.first);
     } catch (const std::exception& e) {
       context.report_error(e.what());
-      LG_DBUG("end Key clone (catch)");
     }
+    LG_DBUG("current path: " << context.current_path << " test2: " << context.ancestors.front().second->get_child_ptr("test2"_ts).get());
     context.current_path = last_path;
   }
   context.ancestors.pop_back();
+}
+
+base_p wrapper::clone(clone_context& context) const {
+  auto result = std::make_shared<wrapper>();
+  fill(*this, *result, context);
   return result;
 }
 

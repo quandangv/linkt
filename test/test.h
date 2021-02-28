@@ -44,7 +44,7 @@ void check_key(const node::wrapper& w, string path, string expected, bool except
     cerr << "Key: " << path << endl << endl;
 }
 
-void triple_node_test(node::base_p node, std::function<void(node::base_p, errorlist&)> tester, int repeat = 1) {
+void triple_node_test(node::base_p node, std::function<void(node::base_p, errorlist&)> tester, int repeat = 10000) {
   auto fail_count = get_test_part_count();
   auto time = get_time_milli();
   node::clone_context context;
@@ -65,7 +65,6 @@ void triple_node_test(node::base_p node, std::function<void(node::base_p, errorl
   time = get_time_milli();
   if (test())
     GTEST_SKIP() << "Clone test failed. Skipping optimize test";
-  auto clone_time = get_time_milli() - time;
 
   context.optimize = context.no_dependency = true;
   node = node->clone(context);
@@ -73,5 +72,5 @@ void triple_node_test(node::base_p node, std::function<void(node::base_p, errorl
   if (test())
     GTEST_SKIP() << "Optimize test failed.";
   auto optimize_time = get_time_milli() - time;
-  cout << "Test time: normal " << normal_time << ", clone " << clone_time << ", optimize " << optimize_time << endl;
+  cout << "Test time: normal " << std::setw(3) << normal_time << ", optimized " << std::setw(3) << optimize_time << endl;
 }

@@ -120,7 +120,7 @@ TEST(Language, Yml) {
       {"bar.F", "#fff"},
       {"bar", "%{F#fff}%{B#FF54CB} BAT 60% "},
     },
-    { "line 19, key B" }
+    { "line 19, B" }
   });
 }
 

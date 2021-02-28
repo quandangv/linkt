@@ -8,7 +8,7 @@ struct parse_test_single {
 };
 using parse_test = vector<parse_test_single>;
 
-void test_nodes(parse_test testset, int repeat = 1) {
+void test_nodes(parse_test testset, int repeat = 10000) {
   auto doc = new node::wrapper();
   auto base_doc = node::base_p(doc);
 
@@ -24,18 +24,14 @@ void test_nodes(parse_test testset, int repeat = 1) {
   }
   auto test_doc = [&](node::base_p node, errorlist& errs) {
     auto doc = dynamic_cast<node::wrapper*>(node.get());
-    for (auto test : testset)
-      if (test.clone_fail)
-        std::erase_if(errs, [&](auto pair) { return pair.first == "Key " + test.path; });
-    for (auto& err : errs)
-      ADD_FAILURE() << "Error while cloning: " << err.first << ':' << err.second;
     for (auto test : testset) {
       // Skip key if it is expected to fail in the previous step
-      if (test.fail || test.clone_fail) continue;
-      auto fail_count = get_test_part_count();
-      check_key(*doc, test.path, test.parsed, test.exception);
-      //if (fail_count == get_test_part_count())
-      //  cout << "Success: " << test.path << endl;
+      if (test.fail || test.clone_fail) {
+        std::erase_if(errs, [&](auto pair) { return pair.first == test.path; });
+      } else {
+        auto fail_count = get_test_part_count();
+        check_key(*doc, test.path, test.parsed, test.exception);
+      }
     }
   };
   triple_node_test(base_doc, test_doc, repeat);
@@ -55,10 +51,10 @@ TEST(Node, Ref) {
     {"test2.ref-file-default-before", "${file nexist.txt ? ${test3.ref-ref-a}}", "a"},
     {"test2.ref-before", "${test2.ref-a}", "a"},
     {"test.key-a", "a", "a"},
-    {"test2.kkkkkkkkkkkkkkkkkkkkkkkkkkey-b", "{test.key-a}", "{test.key-a}"},
+    {"test2.key-a", "a", "a"},
     {"test2.ref-a", "${test.key-a}", "a"},
     {"test3.ref-ref-a", "${test2.ref-a?failed}", "a"},
-    //{"test.ref-ref-a", "${test2.ref-a?failed}", "a"},
+    {"test.ref-ref-a", "${test2.ref-a?failed}", "a"},
     {"test2.ref-default-a", "${test.key-nexist?${test.key-a}}", "a"},
     {"test2.ref-file-default", "${file nexist.txt ? ${test.key-a}}", "a"},
     {"test2.ref-fallback-a", "${ test.key-a ? fail }", "a"},
@@ -99,9 +95,9 @@ TEST(Node, Cmd) {
   test_nodes({
     {".msg", "foo bar", "foo bar"},
     {".cmd", "${cmd echo ${.msg}}", "foo bar"},
-  }, 1);
-  test_nodes({{".cmd", "${cmd echo hello world}", "hello world"}}, 1);
-  test_nodes({{".cmd", "${cmd nexist}", "", false, true}}, 1);
+  }, 100);
+  test_nodes({{".cmd", "${cmd echo hello world}", "hello world"}}, 100);
+  test_nodes({{".cmd", "${cmd nexist}", "", false, true}}, 100);
 }
 
 TEST(Node, Color) {
