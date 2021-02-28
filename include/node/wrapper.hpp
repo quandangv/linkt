@@ -30,7 +30,7 @@ namespace lini::node {
     base_p& add  (tstring path, string raw);
 
     base_p get_child_ptr  (tstring path) const;
-    base_p& get_child_ref  (tstring path);
+    base_p* get_child_place  (tstring path);
     string get_child  (const tstring& path, string&& fallback) const;
     std::optional<string> get_child  (const tstring& path) const;
 

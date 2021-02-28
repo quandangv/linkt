@@ -66,17 +66,17 @@ TEST(Node, Ref) {
     {"test2.escape", "\\${test.key-a}", "${test.key-a}"},
     {"test2.not-escape", "\\$${test.key-a}", "\\$a"},
   });
-  //  {
-  //    {"", "ref-cyclic-1", "${.ref-cyclic-2}", "${ref-cyclic-1}"},
-  //    {"", "ref-cyclic-2", "${.ref-cyclic-1}", "${ref-cyclic-1}", true},
-  //  },
-  //  {
-  //    {"", "ref-cyclic-1", "${.ref-cyclic-2}", "${ref-cyclic-1}"},
-  //    {"", "ref-cyclic-2", "${.ref-cyclic-3}", "${ref-cyclic-1}"},
-  //    {"", "ref-cyclic-3", "${.ref-cyclic-1}", "${ref-cyclic-1}", true},
-  //    {"", "ref-not-cyclic-1", "${.ref-not-cyclic-2}", ""},
-  //    {"", "ref-not-cyclic-2", "", ""}
-  //  },
+  test_nodes({
+    {"ref-cyclic-1", "${.ref-cyclic-2}", "${ref-cyclic-1}", false, true, true},
+    {"ref-cyclic-2", "${.ref-cyclic-1}", "${ref-cyclic-1}", false, true, true},
+  });
+  test_nodes({
+    {"ref-cyclic-1", "${.ref-cyclic-2}", "${ref-cyclic-1}", false, true, true},
+    {"ref-cyclic-2", "${.ref-cyclic-3}", "${ref-cyclic-1}", false, true, true},
+    {"ref-cyclic-3", "${.ref-cyclic-1}", "${ref-cyclic-1}", false, true, true},
+    {"ref-not-cyclic-1", "${ref-not-cyclic-2}", ""},
+    {"ref-not-cyclic-2", "", ""}
+  });
 }
 TEST(Node, File) {
   test_nodes({

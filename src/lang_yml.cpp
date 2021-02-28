@@ -64,7 +64,7 @@ void parse_yml(std::istream& is, node::wrapper& root, errorlist& err) {
           }
 
           parent.add(key, node::base_p{});
-          auto& node = nodes.emplace_back(indent, &parent.get_child_ref(key));
+          auto& node = nodes.emplace_back(indent, parent.get_child_place(key));
           node::ref_maker make_ref = [&](tstring& ts, const node::base_p& fallback) {
             return node.wrap().make_address_ref(ts, fallback);
           };

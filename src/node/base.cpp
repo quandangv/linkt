@@ -95,15 +95,16 @@ base_p address_ref::clone(clone_context& context) const {
             ?: throw base::error("Invalid reference");
         context.ancestors.emplace_back(src_ancestor, inner_ancestor);
       };
-      auto src = ancestor.get_child_ptr(path);
-      if (!src) {
-        LG_DBUG("Fallback: " << fallback.get());
+      auto place = ancestor.get_child_place(path);
+      if (!place) {
         result = (fallback ?: throw base::error("Clone: Can't find referenced key: " + path))->clone(context);
       } else {
+        auto src = move(*place);
         auto ancestors_mark = context.ancestors.size();
-        auto& place = cloned_ancestor->add(path, &source_tracer);
-        result = place = src->clone(context);
+        auto& cloned_place = cloned_ancestor->add(path, &source_tracer);
+        result = cloned_place = src->clone(context);
         context.ancestors.erase(context.ancestors.begin() + ancestors_mark, context.ancestors.end());
+        *place = src;
       }
     }
     return result ?: throw base::error("Empty address_ref clone result");

@@ -35,14 +35,14 @@ string wrapper::get_child(const tstring& path, string&& fallback) const {
   return result ? *result : move(fallback);
 }
 
-base_p& wrapper::get_child_ref(tstring path) {
+base_p* wrapper::get_child_place(tstring path) {
   if (auto immediate_path = cut_front(trim(path), '.'); !immediate_path.untouched()) {
     if (auto iterator = map.find(immediate_path); iterator != map.end())
       if (auto child = dynamic_cast<wrapper*>(iterator->second.get()); child)
-        return child->get_child_ref(path);
+        return child->get_child_place(path);
   } else if (auto iterator = map.find(path); iterator != map.end())
-    return iterator->second;
-  throw base::error("Key is empty");
+    return &iterator->second;
+  return nullptr;
 }
 
 bool wrapper::set(const tstring& path, const string& value) {
