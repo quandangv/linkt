@@ -23,8 +23,7 @@ namespace lini::node {
     wrapper(const base_p& value) : value(value) {}
     wrapper() {}
 
-    static wrapper&
-    wrap(base_p& node);
+    static wrapper& wrap  (base_p& node);
 
     base_p& add  (tstring path, ancestor_processor* processor = nullptr);
     base_p& add  (tstring path, const base_p& value);
@@ -42,5 +41,6 @@ namespace lini::node {
     string get  () const;
     bool set  (const tstring& path, const string& value);
     std::shared_ptr<address_ref> make_address_ref  (const tstring&, const base_p&);
+    base_p clone  (clone_context& context) const;
   };
 }

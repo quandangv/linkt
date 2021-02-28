@@ -69,9 +69,8 @@ base_p& wrapper::add(tstring path, ancestor_processor* processor) {
     auto& place = map[path];
     if (!place)
       return place;
-    wrapper* wrpr;
-    return (wrpr = dynamic_cast<wrapper*>(place.get()))
-        ? wrpr->value : place;
+    wrapper* wrpr = dynamic_cast<wrapper*>(place.get());
+    return wrpr ? wrpr->value : place;
   }
 }
 
@@ -97,12 +96,46 @@ wrapper& wrapper::wrap(base_p& place) {
 }
 
 void wrapper::iterate_children(std::function<void(const string&, const base_p&)> processor) const {
-  for(auto pair : map)
+  for(auto& pair : map)
     processor(pair.first, pair.second);
 }
 
 string wrapper::get() const {
   return value ? value->get() : "";
+}
+
+base_p wrapper::clone(clone_context& context) const {
+  auto result = std::make_shared<wrapper>();
+  context.ancestors.emplace_back(this, result.get());
+  LG_DBUG("Value clone");
+  try {
+    if (value)
+      result->value = value->clone(context);
+    LG_DBUG("End Value clone");
+  } catch (const std::exception& e) {
+    context.report_error(e.what());
+    LG_DBUG("End Value clone (catch)");
+  }
+  for(auto& pair : map) {
+    auto last_path = context.current_path;
+    if (context.current_path.empty())
+      context.current_path = pair.first;
+    else
+      context.current_path += "." + pair.first;
+    LG_DBUG("Key clone");
+    try {
+      if (pair.second)
+        if (auto& place = result->add(pair.first); !place)
+          place = pair.second->clone(context);
+      LG_DBUG("end Key clone");
+    } catch (const std::exception& e) {
+      context.report_error(e.what());
+      LG_DBUG("end Key clone (catch)");
+    }
+    context.current_path = last_path;
+  }
+  context.ancestors.pop_back();
+  return result;
 }
 
 NAMESPACE_END

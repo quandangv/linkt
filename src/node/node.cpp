@@ -19,16 +19,17 @@ string color::get() const {
   }
 }
 
-base_p color::clone(clone_handler handler, clone_mode mode) const {
+base_p color::clone(clone_context& context) const {
   auto result = std::make_shared<color>();
-  if (value)
-    result->value = node::clone(*value, handler, mode);
-  if ((int)(mode & clone_mode::optimize) && is_fixed(result->value))
+  if (!value)
+    context.report_error("Color: value is empty");
+  result->value = value->clone(context);
+  if (context.optimize && is_fixed(result->value))
     return std::make_shared<plain>(get());
 
   result->processor = processor;
   if (fallback)
-    result->fallback = node::clone(*fallback, handler, mode);
+    result->fallback = fallback->clone(context);
   return result;
 }
 
@@ -44,8 +45,8 @@ bool env::set(const string& newval) {
   return true;
 }
 
-base_p env::clone(clone_handler handler, clone_mode mode) const {
-  return meta::copy(std::make_shared<env>(), handler, mode);
+base_p env::clone(clone_context& context) const {
+  return meta::copy(std::make_shared<env>(), context);
 }
 
 string file::get() const {
@@ -68,8 +69,8 @@ bool file::set(const string& content) {
   return true;
 }
 
-base_p file::clone(clone_handler handler, clone_mode mode) const {
-  return meta::copy(std::make_shared<file>(), handler, mode);
+base_p file::clone(clone_context& context) const {
+  return meta::copy(std::make_shared<file>(), context);
 }
 
 string cmd::get() const {
@@ -88,8 +89,8 @@ string cmd::get() const {
   return result;
 }
 
-base_p cmd::clone(clone_handler handler, clone_mode mode) const {
-  return meta::copy(std::make_shared<cmd>(), handler, mode);
+base_p cmd::clone(clone_context& context) const {
+  return meta::copy(std::make_shared<cmd>(), context);
 }
 
 string map::get() const {
@@ -101,11 +102,11 @@ string map::get() const {
       use_fallback("value is not a number");
 }
 
-base_p map::clone(clone_handler handler, clone_mode mode) const {
+base_p map::clone(clone_context& context) const {
   auto result = std::make_shared<map>();
   if (value)
-    result->value = node::clone(*value, handler, mode);
-  if ((int)(mode & clone_mode::optimize) && is_fixed(result->value))
+    result->value = value->clone(context);
+  if (context.optimize && is_fixed(result->value))
       return std::make_shared<plain>(get());
 
   result->from_min = from_min;
@@ -113,7 +114,7 @@ base_p map::clone(clone_handler handler, clone_mode mode) const {
   result->to_min = to_min;
   result->to_range = to_range;
   if (fallback)
-    result->fallback = node::clone(*fallback, handler, mode);
+    result->fallback = fallback->clone(context);
   return result;
 }
 

@@ -4,7 +4,7 @@
 
 struct parse_test_single {
   string path, value, parsed;
-  bool fail, exception;
+  bool fail, exception, clone_fail;
 };
 using parse_test = vector<parse_test_single>;
 
@@ -22,15 +22,20 @@ void test_nodes(parse_test testset, int repeat = 1) {
     if (last_count != get_test_part_count())
       cerr << "Key: " << test.path << endl;
   }
-  auto test_doc = [&](node::base_p node) {
+  auto test_doc = [&](node::base_p node, errorlist& errs) {
     auto doc = dynamic_cast<node::wrapper*>(node.get());
-    for(auto test : testset) {
+    for (auto test : testset)
+      if (test.clone_fail)
+        std::erase_if(errs, [&](auto pair) { return pair.first == "Key " + test.path; });
+    for (auto& err : errs)
+      ADD_FAILURE() << "Error while cloning: " << err.first << ':' << err.second;
+    for (auto test : testset) {
       // Skip key if it is expected to fail in the previous step
-      if (test.fail) continue;
+      if (test.fail || test.clone_fail) continue;
       auto fail_count = get_test_part_count();
       check_key(*doc, test.path, test.parsed, test.exception);
-      if (fail_count == get_test_part_count())
-        cout << "Success: " << test.path << endl;
+      //if (fail_count == get_test_part_count())
+      //  cout << "Success: " << test.path << endl;
     }
   };
   triple_node_test(base_doc, test_doc, repeat);
@@ -47,16 +52,18 @@ TEST(Node, Simple) {
 TEST(Node, Ref) {
   test_nodes({
     {"test2.ref-fake", "{test.key-a}", "{test.key-a}"},
-    {"test2.ref-file-default-before", "${file nexist.txt ? ${test.ref-ref-a}}", "a"},
+    {"test2.ref-file-default-before", "${file nexist.txt ? ${test3.ref-ref-a}}", "a"},
     {"test2.ref-before", "${test2.ref-a}", "a"},
     {"test.key-a", "a", "a"},
+    {"test2.kkkkkkkkkkkkkkkkkkkkkkkkkkey-b", "{test.key-a}", "{test.key-a}"},
     {"test2.ref-a", "${test.key-a}", "a"},
+    {"test3.ref-ref-a", "${test2.ref-a?failed}", "a"},
+    //{"test.ref-ref-a", "${test2.ref-a?failed}", "a"},
     {"test2.ref-default-a", "${test.key-nexist?${test.key-a}}", "a"},
     {"test2.ref-file-default", "${file nexist.txt ? ${test.key-a}}", "a"},
-    {"test.ref-ref-a", "${test2.ref-a?failed}", "a"},
     {"test2.ref-fallback-a", "${ test.key-a ? fail }", "a"},
     {"test2.ref-nexist", "${test.key-nexist? \" f a i l ' }", "\" f a i l '"},
-    {"test2.ref-fail", "${test.key-fail}", "${test.key-fail}", false, true},
+    {"test2.ref-fail", "${test.key-fail}", "${test.key-fail}", false, true, true},
     {"test2.interpolation", "This is ${test.key-a} test", "This is a test"},
     {"test2.interpolation-trick", "$ ${test.key-a}", "$ a"},
     {"test2.interpolation-trick-2", "} ${test.key-a}", "} a"},
@@ -123,7 +130,7 @@ TEST(Node, Other) {
     {".clone_source.lv1", "", ""},
     {".clone_source.lv1.lv2", "", ""},
     {".clone", "${clone .clone_source }", "#123456"},
-    {".clone.lv1", "", ""},
+    {".clone.lv1", "", "", true},
     {".clone.lv1.lv2", "", "", true},
     {".clone-fail", "${clone .nexist }", "", true},
   });

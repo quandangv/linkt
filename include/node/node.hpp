@@ -5,39 +5,39 @@
 #include <cspace/processor.hpp>
 
 namespace lini::node {
-  struct color : public meta, clonable {
+  struct color : public meta {
     cspace::processor processor;
 
     string get  () const;
-    base_p clone  (clone_handler handler, clone_mode mode) const;
+    base_p clone  (clone_context&) const;
   };
 
-  struct env : public meta, settable, clonable {
+  struct env : public meta, settable {
     string get  () const;
     bool set  (const string& value);
-    base_p clone  (clone_handler handler, clone_mode mode) const;
+    base_p clone  (clone_context&) const;
   };
 
-  struct cmd : public meta, clonable {
+  struct cmd : public meta {
     string get  () const;
-    base_p clone  (clone_handler handler, clone_mode mode) const;
+    base_p clone  (clone_context&) const;
   };
 
-  struct file : public meta, settable, clonable {
+  struct file : public meta, settable {
     struct error : error_base { using error_base::error_base; };
     string get  () const;
     bool set  (const string& value);
-    base_p clone  (clone_handler handler, clone_mode mode) const;
+    base_p clone  (clone_context&) const;
   };
 
-  struct map : public meta, clonable {
+  struct map : public meta {
     float from_min, from_range, to_min, to_range;
 
     string get  () const;
-    base_p clone  (clone_handler handler, clone_mode mode) const;
+    base_p clone  (clone_context&) const;
   };
 
-  struct string_interpolate : public base, clonable {
+  struct string_interpolate : public base {
     struct replace_spot {
       int position;
       base_p replacement;
@@ -46,6 +46,6 @@ namespace lini::node {
     std::vector<replace_spot> spots;
 
     string get  () const;
-    base_p clone  (clone_handler handler, clone_mode mode) const;
+    base_p clone  (clone_context&) const;
   };
 }

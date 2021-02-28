@@ -5,72 +5,46 @@
 #include "token_iterator.hpp"
 
 #include <map>
+#include <sstream>
 
 NAMESPACE(lini::node)
 
-base_p clone(const base& base_src, clone_handler handler, clone_mode mode) {
-  auto src = dynamic_cast<const clonable*>(&base_src);
-  return src ? src->clone(handler, mode) : handler(base_src);
+base_p base::clone() const {
+  clone_context context;
+  context.no_dependency = true;
+  auto result = clone(context);
+  return context.errors.empty() ? result :
+      throw error("Errors while cloning: \n" + context.errors.merge_errors());
 }
 
-base_p clone(const base_p& src, clone_handler handler, clone_mode mode) {
-  return src ? clone(*src, handler, mode) : base_p{};
+string errorlist::merge_errors() const {
+  std::stringstream ss;
+  for(auto& err : *this)
+    ss << err.first << ": " << err.second << '\n';
+  return ss.str();
 }
 
-base_p clone(const base_p& src, clone_mode mode) {
-  return src ? clone(*src, mode) : base_p{};
+void errorlist::report_error(int linecount, const string& msg) {
+  emplace_back("line " +std::to_string(linecount), msg);
 }
 
-base_p clone(const base& base_src, clone_mode mode) {
-  std::vector<std::pair<const wrapper*, wrapper*>> ancestors;
-  clone_handler handler = [&](const base& base_src)->base_p {
-    if (auto src = dynamic_cast<const wrapper*>(&base_src); src) {
-      auto result = std::make_shared<wrapper>();
-      ancestors.emplace_back(src, result.get());
-      result->value = clone(src->value, handler, mode);
-      src->iterate_children([&](const string& name, const base_p& child) {
-        LG_DBUG("Add child: " << name);
-        if (auto& place = result->add(name); !place)
-          place = clone(child, handler, mode);
-        LG_DBUG("End child: " << name << " " << result->get_child_ptr(name).get());
-      });
-      ancestors.pop_back();
-      return result ?: throw base::error("Empty wrapper clone result");
-    }
+void errorlist::report_error(int linecount, const string& key, const string& msg) {
+  emplace_back("line " +std::to_string(linecount) + ", key " + key, msg);
+}
 
-    if (auto src = dynamic_cast<const address_ref*>(&base_src); src) {
-      auto ancestor_it = find_if(ancestors.rbegin(), ancestors.rend(), [&](auto& pair) { return pair.first == &src->ancestor; });
-      auto ancestor = ancestor_it != ancestors.rend() ? ancestor_it->second :
-          !(bool)(mode & clone_mode::no_dependency) ? &src->ancestor :
-          throw base::error("External dependency");
+void errorlist::report_error(const string& key, const string& msg) {
+  emplace_back("Key " + key, msg);
+}
 
-      if ((int)(mode & clone_mode::optimize)) {
-        auto result = ancestor->get_child_ptr(src->path);
-        if (auto wrpr = dynamic_cast<wrapper*>(result.get()); wrpr)
-          result = wrpr->value;
-        if (!result) {
-          // This will recursively dereference chain references.
-          auto src_ancestor = ancestor_it->first;
-          auto ancestors_mark = ancestors.size();
-          ancestor_processor source_tracer = [&](tstring& path, wrapper* inner_ancestor)->void {
-            src_ancestor = dynamic_cast<wrapper*>(src_ancestor->get_child_ptr(path).get())
-                ?: throw base::error("Invalid reference");
-            ancestors.emplace_back(src_ancestor, inner_ancestor);
-          };
-          result = (ancestor->add(src->path, &source_tracer) = clone(src->get_source(), handler, mode)) ?: throw base::error("Clone returns null");
-          ancestors.erase(ancestors.begin() + ancestors_mark, ancestors.end());
-        }
-        return result ?: throw base::error("Empty address_ref clone result");
-      }
+bool errorlist::extract_key(tstring& line, int linecount, char separator, tstring& key) {
+  key = cut_front(line, separator);
+  if (key.untouched())
+    return report_error(linecount, "Line ignored: " + line), false;
+  return true;
+}
 
-      return std::make_shared<address_ref>(
-        *ancestor,
-        string(src->path),
-        clone(src->fallback, handler, mode));
-    }
-    throw base::error("Node of type '" + string(typeid(base_src).name()) + "' can't be cloned");
-  };
-  return clone(base_src, handler, mode);
+void clone_context::report_error(const string& msg) {
+  errors.report_error(current_path, msg);
 }
 
 bool is_fixed(base_p node) {
@@ -88,14 +62,12 @@ string defaultable::use_fallback(const string& msg) const {
 }
 
 base_p address_ref::get_source() const {
-  // auto result = ancestor.get_child_ptr(path);
-  // if (auto ref = dynamic_cast<address_ref*>(result.
-  return ancestor.get_child_ptr(path);
+  auto result = ancestor.get_child_ptr(path);
+  return result ?: fallback ?: throw base::error("Can't find referenced key: " + path);
 }
 
 string address_ref::get() const {
-  auto result = get_source();
-  return result ? result->get() : use_fallback("Referenced path doesn't exist: " + path);
+  return get_source()->get();
 }
 
 bool address_ref::set(const string& val) {
@@ -106,12 +78,48 @@ bool address_ref::set(const string& val) {
   return false;
 }
 
+base_p address_ref::clone(clone_context& context) const {
+  auto ancestor_it = find_if(context.ancestors.rbegin(), context.ancestors.rend(), [&](auto& pair) { return pair.first == &ancestor; });
+  auto cloned_ancestor = ancestor_it != context.ancestors.rend() ? ancestor_it->second :
+      !context.no_dependency ? &ancestor : throw base::error("External dependency");
 
-base_p meta::copy(std::shared_ptr<meta>&& dest, clone_handler handler, clone_mode mode) const {
+  if (context.optimize) {
+    auto result = cloned_ancestor->get_child_ptr(path);
+    if (auto wrpr = dynamic_cast<wrapper*>(result.get()); wrpr)
+      result = wrpr->value;
+    if (!result) {
+      // This will recursively dereference chain references.
+      auto src_ancestor = &ancestor;
+      ancestor_processor source_tracer = [&](tstring& path, wrapper* inner_ancestor)->void {
+        src_ancestor = dynamic_cast<wrapper*>(src_ancestor->get_child_ptr(path).get())
+            ?: throw base::error("Invalid reference");
+        context.ancestors.emplace_back(src_ancestor, inner_ancestor);
+      };
+      auto src = ancestor.get_child_ptr(path);
+      if (!src) {
+        LG_DBUG("Fallback: " << fallback.get());
+        result = (fallback ?: throw base::error("Clone: Can't find referenced key: " + path))->clone(context);
+      } else {
+        auto ancestors_mark = context.ancestors.size();
+        auto& place = cloned_ancestor->add(path, &source_tracer);
+        result = place = src->clone(context);
+        context.ancestors.erase(context.ancestors.begin() + ancestors_mark, context.ancestors.end());
+      }
+    }
+    return result ?: throw base::error("Empty address_ref clone result");
+  }
+
+  return std::make_shared<address_ref>(
+    *cloned_ancestor,
+    string(path),
+    fallback ? fallback->clone(context) : base_p());
+}
+
+base_p meta::copy(std::shared_ptr<meta>&& dest, clone_context& context) const {
   if (value)
-    dest->value = clone(*value, handler, mode);
+    dest->value = value->clone(context);
   if (fallback)
-    dest->fallback = clone(*fallback, handler, mode);
+    dest->fallback = fallback->clone(context);
   return dest;
 }
 
@@ -170,9 +178,7 @@ base_p parse(string& raw, tstring& str, ref_maker rmaker) {
   } else if (tokens[0] == "clone"_ts) {
     if (token_count != 2)
       throw parse_error("parse: Expected 2 components");
-    auto ref = rmaker(tokens[1], fallback);
-    return clone(*(ref->get_source().get() ?: throw parse_error("parse: Referenced key not found")));
-
+    return rmaker(tokens[1], fallback)->get_source()->clone();
   } else
     throw parse_error("Unsupported reference type: " + tokens[0]);
 }

@@ -9,37 +9,46 @@
 
 namespace lini::node {
   struct base;
+  struct wrapper;
   using std::string;
   using base_p = std::shared_ptr<base>;
 
+  struct errorlist : std::vector<std::pair<std::string, std::string>> {
+    void report_error  (int line, const std::string& msg);
+    void report_error  (int line, const std::string& key, const std::string& msg);
+    void report_error  (const std::string& key, const std::string& msg);
+    bool extract_key  (tstring& line, int linecount, char separator, tstring& key);
+    string merge_errors() const;
+  };
+  struct clone_error : error_base { using error_base::error_base; };
+  struct clone_context {
+    std::string current_path;
+    std::vector<std::pair<const wrapper*, wrapper*>> ancestors;
+    bool optimize{false}, no_dependency{false};
+    errorlist errors;
+
+    void report_error(const string& msg);
+  };
   struct base {
     struct error : error_base { using error_base::error_base; };
     virtual ~base() {}
 
     virtual string get  () const = 0;
+    virtual base_p clone  (clone_context& context) const = 0;
+    base_p clone() const;
   };
 
   struct settable {
     virtual bool set  (const string&) { return false; }
   };
 
-  enum class clone_mode {
-    exact = 0,
-    optimize = 2,
-    no_dependency = 1,
-  };
-  using clone_handler = std::function<base_p(const base&)>;
-  struct clonable {
-    virtual base_p clone  (clone_handler handler, clone_mode mode) const = 0;
-  };
-
-  struct plain : public base, settable, clonable {
+  struct plain : public base, settable {
     string val;
 
     explicit plain  (string&& val) : val(val) {}
     string get  () const { return val; }
     bool set  (const string& value) { val = value; return true; }
-    base_p clone  (clone_handler, clone_mode) const { return std::make_shared<plain>(string(val)); }
+    base_p clone  (clone_context&) const { return std::make_shared<plain>(string(val)); }
   };
 
   struct defaultable {
@@ -60,25 +69,16 @@ namespace lini::node {
     string get  () const;
     bool set  (const string& value);
     base_p get_source  () const;
+    base_p clone  (clone_context&) const;
     void invalidate  () { path = ""; }
   };
 
   struct meta : public base, defaultable {
     base_p value;
     
-    base_p copy(std::shared_ptr<meta>&& dest, clone_handler handler, clone_mode mode) const;
+    base_p copy(std::shared_ptr<meta>&& dest, clone_context& context) const;
   };
 
-  inline clone_mode operator&(clone_mode a, clone_mode b)
-  { return (clone_mode)((int)a & (int)b); }
-
-  inline clone_mode operator|(clone_mode a, clone_mode b)
-  { return (clone_mode)((int)a | (int)b); }
-
-  base_p clone  (const base& source, clone_mode mode = clone_mode::exact);
-  base_p clone  (const base_p& source, clone_mode mode = clone_mode::exact);
-  base_p clone  (const base_p& source, clone_handler handler, clone_mode mode);
-  base_p clone  (const base& source, clone_handler handler, clone_mode mode);
   bool is_fixed(base_p node);
 
   using ref_maker = std::function<std::shared_ptr<address_ref>(tstring& path, const base_p& fallback)>;

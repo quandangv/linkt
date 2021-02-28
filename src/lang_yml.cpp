@@ -58,6 +58,8 @@ void parse_yml(std::istream& is, node::wrapper& root, errorlist& err) {
           if (type == '=') {
             parent.set(key, line) ? void() : err.report_error(linecount, key, "Can't set value of key");
             LG_DBUG("Set result: " << *parent.get_child(key));
+            LG_DBUG("Set result: " << *root.get_child("bar.bat." + key));
+            LG_DBUG("Set result: " << *root.get_child("bar.base." + key));
             continue;
           }
 

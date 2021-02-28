@@ -36,10 +36,12 @@ void test_language(file_test_param testset) {
   }
 
   // Check the keys
-  auto test_doc = [&](node::base_p node) {
+  auto test_doc = [&](node::base_p node, const errorlist& errs) {
     auto doc = dynamic_cast<node::wrapper*>(node.get());
+    for(auto& err : errs)
+      ADD_FAILURE() << "Error while cloning: " << err.first << ':' << err.second;
     for(auto& pair : testset.expectations)
-        check_key(*doc, pair.path, pair.value, false);
+      check_key(*doc, pair.path, pair.value, false);
   };
   triple_node_test(base_doc, test_doc);
 
@@ -107,6 +109,7 @@ TEST(Language, Yml) {
   test_language({"yml_test", "yml",
     {
       {"bar.base.B.dumb", "hello"},
+      {"bar.base.B.L", "0.500000"},
       {"bar.bat.B.L.value", "60"},
       {"bar.bat.B.L", "0.800000"},
       {"bar.bat.stat", "60"},

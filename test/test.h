@@ -44,32 +44,34 @@ void check_key(const node::wrapper& w, string path, string expected, bool except
     cerr << "Key: " << path << endl << endl;
 }
 
-void triple_node_test(node::base_p node, std::function<void(node::base_p)> tester, int repeat = 10000) {
+void triple_node_test(node::base_p node, std::function<void(node::base_p, errorlist&)> tester, int repeat = 1) {
   auto fail_count = get_test_part_count();
   auto time = get_time_milli();
-  for (int i = 0; i < repeat; i++) {
-    tester(node);
-    if (fail_count != get_test_part_count())
-      GTEST_SKIP() << "First test failed. Skipping clone test";
-  }
+  node::clone_context context;
+  auto test = [&] {
+    for (int i = 0; i < repeat; i++) {
+      tester(node, context.errors);
+      if (fail_count != get_test_part_count())
+        return true;
+    }
+    return false;
+  };
+
+  if (test())
+    GTEST_SKIP() << "First test failed. Skipping clone test";
   auto normal_time = get_time_milli() - time;
 
-  node = clone(node);
+  node = node->clone(context);
   time = get_time_milli();
-  for (int i = 0; i < repeat; i++) {
-    tester(node);
-    if (fail_count != get_test_part_count())
-      GTEST_SKIP() << "Clone test failed. Skipping optimize test";
-  }
+  if (test())
+    GTEST_SKIP() << "Clone test failed. Skipping optimize test";
   auto clone_time = get_time_milli() - time;
 
-  node = clone(node, node::clone_mode::optimize | node::clone_mode::no_dependency);
+  context.optimize = context.no_dependency = true;
+  node = node->clone(context);
   time = get_time_milli();
-  for (int i = 0; i < repeat; i++) {
-    tester(node);
-    if (fail_count != get_test_part_count())
-      GTEST_SKIP() << "Optimize test failed.";
-  }
+  if (test())
+    GTEST_SKIP() << "Optimize test failed.";
   auto optimize_time = get_time_milli() - time;
   cout << "Test time: normal " << normal_time << ", clone " << clone_time << ", optimize " << optimize_time << endl;
 }
