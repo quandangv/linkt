@@ -2,14 +2,14 @@
 
 #include "gtest/gtest.h"
 #include "gtest/gtest-test-part.h"
-#include "lini/languages.hpp"
+#include "linked_nodes/languages.hpp"
 
 #include <iostream>
 #include <cmath>
 #include <time.h>
 
 using namespace ::testing;
-using namespace lini;
+using namespace linked_nodes;
 
 using std::cerr, std::cout, std::vector, std::endl, std::string;
 

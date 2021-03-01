@@ -6,7 +6,7 @@
 #include <cstring>
 #include <iostream>
 
-NAMESPACE(lini)
+NAMESPACE(linked_nodes)
 
 constexpr const char excluded_chars[] = "\t \"'=;#[](){}:$\\%";
 constexpr const char comment_chars[] = ";#";

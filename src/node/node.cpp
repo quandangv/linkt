@@ -6,7 +6,7 @@
 #include <cstdlib>
 #include <array>
 
-NAMESPACE(lini::node)
+NAMESPACE(linked_nodes::node)
 
 string color::get() const {
   try {

@@ -7,7 +7,7 @@
 #include <map>
 #include <sstream>
 
-NAMESPACE(lini::node)
+NAMESPACE(linked_nodes::node)
 
 // Create a clone_context and clone using default behaviour
 base_p base::clone() const {

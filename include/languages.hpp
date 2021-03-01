@@ -4,7 +4,7 @@
 
 #include "node/wrapper.hpp"
 
-namespace lini {
+namespace linked_nodes {
   using node::errorlist;
 
   void parse_ini  (std::istream&, node::wrapper&, errorlist&);

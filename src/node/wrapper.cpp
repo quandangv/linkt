@@ -6,7 +6,7 @@
 #include <sstream>
 #include <iostream>
 
-NAMESPACE(lini::node)
+NAMESPACE(linked_nodes::node)
 
 
 base_p wrapper::get_child_ptr(tstring path) const {

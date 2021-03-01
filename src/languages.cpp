@@ -1,7 +1,7 @@
 #include "languages.hpp"
 #include "common.hpp"
 
-NAMESPACE(lini)
+NAMESPACE(linked_nodes)
 
 // Escape the value and write it and the prefix to the stream
 void write_key(std::ostream& os, const string& prefix, string&& value) {

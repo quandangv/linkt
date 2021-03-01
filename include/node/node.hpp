@@ -4,7 +4,7 @@
 
 #include <cspace/processor.hpp>
 
-namespace lini::node {
+namespace linked_nodes::node {
   struct color : public meta {
     cspace::processor processor;
 

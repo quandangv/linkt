@@ -6,7 +6,7 @@
 #include <memory>
 #include <functional>
 
-namespace lini::node {
+namespace linked_nodes::node {
   struct base;
   struct wrapper;
   using std::string;
