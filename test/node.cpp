@@ -22,7 +22,7 @@ void test_nodes(parse_test testset, int repeat = 10000) {
     if (last_count != get_test_part_count())
       cerr << "Key: " << test.path << endl;
   }
-  auto test_doc = [&](node::base_p node, errorlist& errs) {
+  auto test_doc = [&](node::base_p node, node::errorlist& errs) {
     auto doc = dynamic_cast<node::wrapper*>(node.get());
     for (auto test : testset) {
       // Skip key if it is expected to fail in the previous step
@@ -43,6 +43,17 @@ TEST(Node, Simple) {
     {"a.ref", "${.key}", "foo"},
     {"a.ref-space", "${ .key }", "foo"},
   });
+}
+
+TEST(Node, Cmd) {
+  test_nodes({
+    {"msg", "1.000", "1.000"},
+    {"cmd", "${cmd echo ${msg}}", "1.000"},
+    {"cmd-ref", "${map 1 2 ${cmd}}", "2.000000"},
+    {"cmd-msg", "result is ${cmd-ref}", "result is 2.000000"},
+  }, 100);
+  test_nodes({{"cmd", "${cmd echo hello world}", "hello world"}}, 100);
+  test_nodes({{"cmd", "${cmd nexist}", "", false, true}}, 100);
 }
 
 TEST(Node, Ref) {
@@ -87,17 +98,6 @@ TEST(Node, File) {
   test_nodes({{"file3", "${file nexist.txt ? ${file key_file.txt}}", "content"}});
   test_nodes({{"file4", "${file nexist.txt ? \" f a i l ' }", "\" f a i l '"}});
   test_nodes({{"file5", "${file nexist.txt}", "${file nexist.txt}", false, true}});
-}
-
-TEST(Node, Cmd) {
-  test_nodes({
-    {"msg", "1.000", "1.000"},
-    {"cmd", "${cmd echo ${msg}}", "1.000"},
-    {"cmd-ref", "${map 1 2 ${cmd}}", "2.000000"},
-    {"cmd-msg", "result is ${cmd-ref}", "result is 2.000000"},
-  }, 100);
-  test_nodes({{"cmd", "${cmd echo hello world}", "hello world"}}, 100);
-  test_nodes({{"cmd", "${cmd nexist}", "", false, true}}, 100);
 }
 
 TEST(Node, Color) {

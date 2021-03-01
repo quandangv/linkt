@@ -33,11 +33,10 @@ set(NODE_SOURCES
   ${SRC_DIR}/node/node.cpp
   ${SRC_DIR}/node/wrapper.cpp
   ${SRC_DIR}/node/string_interpolate.cpp
+  ${SRC_DIR}/execstream.cpp
   ${TSTRING_SOURCES}
 )
 set(LINI_SOURCES
-  ${SRC_DIR}/lang_ini.cpp
-  ${SRC_DIR}/lang_yml.cpp
   ${SRC_DIR}/languages.cpp
 )
 

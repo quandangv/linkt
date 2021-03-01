@@ -5,8 +5,9 @@
 #include <string>
 #include <memory>
 #include <functional>
+#include <vector>
 
-namespace linked_nodes::node {
+namespace node {
   struct base;
   struct wrapper;
   using std::string;

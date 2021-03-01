@@ -1,12 +1,14 @@
 #include "node.hpp"
 #include "wrapper.hpp"
 #include "common.hpp"
+#include "execstream.hpp"
+#include "token_iterator.hpp"
 
 #include <fstream>
 #include <cstdlib>
 #include <array>
 
-NAMESPACE(linked_nodes::node)
+NAMESPACE(node)
 
 string color::get() const {
   try {

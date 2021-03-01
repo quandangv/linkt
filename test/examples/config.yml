@@ -1,0 +1,3 @@
+status: Hello | CPU Usage: ${cpu} | ${date}
+  date:$ cmd date +%H:%M
+  cpu:$ cmd ./cpu.sh

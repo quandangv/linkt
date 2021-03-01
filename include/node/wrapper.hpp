@@ -8,7 +8,7 @@
 #include <string>
 #include <optional>
 
-namespace linked_nodes::node {
+namespace node {
   using std::string;
 
   using ancestor_processor = std::function<void(tstring& path, wrapper* ancestor)>;

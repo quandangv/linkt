@@ -19,7 +19,7 @@ void test_language(file_test_param testset) {
   ASSERT_FALSE(ifs.fail());
 
   // Parse the file
-  errorlist err;
+  node::errorlist err;
   if (testset.language == "ini")
     parse_ini(ifs, *doc, err);
   else if (testset.language == "yml")
@@ -37,7 +37,7 @@ void test_language(file_test_param testset) {
   }
 
   // Check the keys
-  auto test_doc = [&](node::base_p node, const errorlist& errs) {
+  auto test_doc = [&](node::base_p node, const node::errorlist& errs) {
     auto doc = dynamic_cast<node::wrapper*>(node.get());
     for(auto& err : errs)
       ADD_FAILURE() << "Error while cloning: " << err.first << ':' << err.second;
@@ -143,7 +143,7 @@ TEST(Assign, Load) {
   // Load the test file
   std::ifstream ifs{"assign_test.txt"};
   ASSERT_FALSE(ifs.fail());
-  errorlist err;
+  node::errorlist err;
   parse_ini(ifs, doc, err);
   ASSERT_TRUE(err.empty());
   ifs.close();

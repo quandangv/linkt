@@ -9,7 +9,6 @@
 #include <time.h>
 
 using namespace ::testing;
-using namespace linked_nodes;
 
 using std::cerr, std::cout, std::vector, std::endl, std::string;
 
@@ -44,7 +43,7 @@ void check_key(const node::wrapper& w, string path, string expected, bool except
     cerr << "Key: " << path << endl << endl;
 }
 
-void triple_node_test(node::base_p node, std::function<void(node::base_p, errorlist&)> tester, int repeat = 10000) {
+void triple_node_test(node::base_p node, std::function<void(node::base_p, node::errorlist&)> tester, int repeat = 10000) {
   auto fail_count = get_test_part_count();
   auto time = get_time_milli();
   node::clone_context context;

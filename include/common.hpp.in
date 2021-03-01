@@ -3,6 +3,8 @@
 #include <string_view>
 #include <string>
 #include <iostream>
+#include <vector>
+#include <memory>
 
 using namespace std::literals;
 using std::vector, std::endl, std::string, std::move;

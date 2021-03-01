@@ -3,7 +3,7 @@
 #include "wrapper.hpp"
 #include "string_interpolate.hpp"
 
-NAMESPACE(linked_nodes::node)
+NAMESPACE(node)
 
 using spot = string_interpolate::replace_spot;
 
