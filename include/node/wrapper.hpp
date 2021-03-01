@@ -1,7 +1,6 @@
 #pragma once
 
 #include "base.hpp"
-#include "error.hpp"
 #include "tstring.hpp"
 
 #include <map>
@@ -13,8 +12,8 @@ namespace lini::node {
   using std::string;
 
   using ancestor_processor = std::function<void(tstring& path, wrapper* ancestor)>;
+  struct wrapper_error : std::logic_error { using logic_error::logic_error; };
   struct wrapper : public base {
-    struct error : error_base { using error_base::error_base; };
     using map_type = std::map<string, base_p>;
 
     map_type map;

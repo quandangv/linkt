@@ -3,6 +3,7 @@
 
 NAMESPACE(lini)
 
+// Escape the value and write it and the prefix to the stream
 void write_key(std::ostream& os, const string& prefix, string&& value) {
   size_t opening = 0;
   while((opening = value.find("${", opening)) != string::npos) {

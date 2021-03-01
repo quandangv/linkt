@@ -12,12 +12,13 @@ struct file_test_param {
 };
 
 void test_language(file_test_param testset) {
-  std::ifstream ifs{testset.path + ".txt"};
-  ASSERT_FALSE(ifs.fail());
-
   auto doc = new node::wrapper();
   auto base_doc = node::base_p(doc);
 
+  std::ifstream ifs{testset.path + ".txt"};
+  ASSERT_FALSE(ifs.fail());
+
+  // Parse the file
   errorlist err;
   if (testset.language == "ini")
     parse_ini(ifs, *doc, err);
@@ -45,14 +46,14 @@ void test_language(file_test_param testset) {
   };
   triple_node_test(base_doc, test_doc);
 
-  // Check wrapper export
+  // Export the result
   std::ofstream ofs{testset.path + "_export.txt"};
-
   if (testset.language == "ini")
     write_ini(ofs, *doc);
   else if (testset.language == "yml")
     write_yml(ofs, *doc);
 
+  // Check the export result
   auto command = "diff -Z '" + testset.path + "_output.txt' '" + testset.path + "_export.txt' 2>&1";
   auto file = popen(command.data(), "r");
   ASSERT_TRUE(file);
@@ -128,6 +129,8 @@ TEST(Language, Yml) {
 }
 
 node::wrapper doc;
+
+// Set a key and check if it was successful
 void set_key(const string& key, const string& newval) {
   auto last_count = get_test_part_count();
   EXPECT_TRUE(doc.set(key, newval));
@@ -137,6 +140,7 @@ void set_key(const string& key, const string& newval) {
 }
 
 TEST(Assign, Load) {
+  // Load the test file
   std::ifstream ifs{"assign_test.txt"};
   ASSERT_FALSE(ifs.fail());
   errorlist err;

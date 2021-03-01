@@ -24,7 +24,6 @@ namespace lini::node {
   };
 
   struct file : public meta, settable {
-    struct error : error_base { using error_base::error_base; };
     string get  () const;
     bool set  (const string& value);
     base_p clone  (clone_context&) const;

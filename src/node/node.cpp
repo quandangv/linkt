@@ -13,7 +13,7 @@ string color::get() const {
     auto result = processor.operate(value->get());
     return result.empty() && fallback ? fallback->get() : result;
   } catch(const std::exception& e) {
-    return use_fallback("Color processing failed, due to: " + string(e.what()));
+    return use_fallback("Color processing failed, due to: "s + e.what());
   }
 }
 
@@ -78,7 +78,7 @@ string cmd::get() const {
       result += buf.data();
     pclose(file);
   } catch (const std::exception& e) {
-    use_fallback("Encountered error: " + string(e.what()));
+    use_fallback("Encountered error: "s + e.what());
   }
   auto last_line = result.find_last_not_of("\r\n");
   result.erase(last_line + 1);

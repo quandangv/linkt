@@ -12,7 +12,7 @@ void test_nodes(parse_test testset, int repeat = 10000) {
   auto doc = new node::wrapper();
   auto base_doc = node::base_p(doc);
 
-  // Add keys
+  // Add keys to doc
   for(auto test : testset) {
     auto last_count = get_test_part_count();
     if (test.fail)
@@ -51,18 +51,16 @@ TEST(Node, Ref) {
     {"test2.ref-file-default-before", "${file nexist.txt ? ${test3.ref-ref-a}}", "a"},
     {"test2.ref-before", "${test2.ref-a}", "a"},
     {"test.key-a", "a", "a"},
-    {"test2.key-a", "a", "a"},
     {"test2.ref-a", "${test.key-a}", "a"},
     {"test3.ref-ref-a", "${test2.ref-a?failed}", "a"},
     {"test.ref-ref-a", "${test2.ref-a?failed}", "a"},
     {"test2.ref-default-a", "${test.key-nexist?${test.key-a}}", "a"},
     {"test2.ref-file-default", "${file nexist.txt ? ${test.key-a}}", "a"},
-    {"test2.ref-fallback-a", "${ test.key-a ? fail }", "a"},
     {"test2.ref-nexist", "${test.key-nexist? \" f a i l ' }", "\" f a i l '"},
     {"test2.ref-fail", "${test.key-fail}", "${test.key-fail}", false, true, true},
     {"test2.interpolation", "This is ${test.key-a} test", "This is a test"},
-    {"test2.interpolation-trick", "$ ${test.key-a}", "$ a"},
-    {"test2.interpolation-trick-2", "} ${test.key-a}", "} a"},
+    {"test2.interpolation2", "$ ${test.key-a}", "$ a"},
+    {"test2.interpolation3", "} ${test.key-a}", "} a"},
     {"test2.escape", "\\${test.key-a}", "${test.key-a}"},
     {"test2.not-escape", "\\$${test.key-a}", "\\$a"},
   });
@@ -80,15 +78,15 @@ TEST(Node, Ref) {
 }
 TEST(Node, File) {
   test_nodes({
-    {".ext", "txt", "txt"},
-    {".file", "${file key_file.${.ext} ? fail}", "content"},
-    {".file-fail", "${file nexist.${.ext} ? Can't find ${.ext} file}", "Can't find txt file"},
+    {"ext", "txt", "txt"},
+    {"file", "${file key_file.${ext} ? fail}", "content"},
+    {"file-fail", "${file nexist.${ext} ? Can't find ${ext} file}", "Can't find txt file"},
   });
-  test_nodes({{".file1", "${file key_file.txt }", "content"}});
-  test_nodes({{".file2", "${file key_file.txt?fail}", "content"}});
-  test_nodes({{".file3", "${file nexist.txt ? ${file key_file.txt}}", "content"}});
-  test_nodes({{".file4", "${file nexist.txt ? \" f a i l ' }", "\" f a i l '"}});
-  test_nodes({{".file5", "${file nexist.txt}", "${file nexist.txt}", false, true}});
+  test_nodes({{"file1", "${file key_file.txt }", "content"}});
+  test_nodes({{"file2", "${file key_file.txt?fail}", "content"}});
+  test_nodes({{"file3", "${file nexist.txt ? ${file key_file.txt}}", "content"}});
+  test_nodes({{"file4", "${file nexist.txt ? \" f a i l ' }", "\" f a i l '"}});
+  test_nodes({{"file5", "${file nexist.txt}", "${file nexist.txt}", false, true}});
 }
 
 TEST(Node, Cmd) {
@@ -98,17 +96,17 @@ TEST(Node, Cmd) {
     {"cmd-ref", "${map 1 2 ${cmd}}", "2.000000"},
     {"cmd-msg", "result is ${cmd-ref}", "result is 2.000000"},
   }, 100);
-  test_nodes({{".cmd", "${cmd echo hello world}", "hello world"}}, 100);
-  test_nodes({{".cmd", "${cmd nexist}", "", false, true}}, 100);
+  test_nodes({{"cmd", "${cmd echo hello world}", "hello world"}}, 100);
+  test_nodes({{"cmd", "${cmd nexist}", "", false, true}}, 100);
 }
 
 TEST(Node, Color) {
   test_nodes({
-    {".color", "${color #123456 }", "#123456"},
-    {".color-fallback", "${color nexist(1) ? #ffffff }", "#ffffff"},
-    {".color-hsv", "${color hsv(180, 1, 0.75)}", "#00BFBF"},
-    {".color-ref", "${color ${.color}}", "#123456"},
-    {".color-mod", "${color cielch 'lum * 1.5, hue + 60' ${.color}}", "#633E5C"},
+    {"color", "${color #123456 }", "#123456"},
+    {"color-fallback", "${color nexist(1) ? #ffffff }", "#ffffff"},
+    {"color-hsv", "${color hsv(180, 1, 0.75)}", "#00BFBF"},
+    {"color-ref", "${color ${color}}", "#123456"},
+    {"color-mod", "${color cielch 'lum * 1.5, hue + 60' ${color}}", "#633E5C"},
   });
 }
 
@@ -116,25 +114,25 @@ TEST(Node, Other) {
   setenv("test_env", "test_env", true);
   unsetenv("nexist");
 
-  test_nodes({{".interpolate", "%{${color hsv(0, 1, 0.5)}}", "%{#800000}"}});
-  test_nodes({{".dumb", "${dumb nexist.txt}", "${dumb nexist.txt}", true}});
-  test_nodes({{".dumb", "", ""}});
-  test_nodes({{".dumb", "${}", "", true}});
-  test_nodes({{".env", "${env test_env? fail}", "test_env"}});
-  test_nodes({{".env", "${env nexist? \" f a i l \" }", " f a i l "}});
-  test_nodes({{".env", "${env nexist test_env }", "", true}});
-  test_nodes({{".map", "${map 5:10 0:2 7.5}", "1.000000"}});
-  test_nodes({{".map", "${map 5:10 2 7.5 ? -1}", "1.000000"}});
-  test_nodes({{".map", "${map 5:10 7.5}", "1.000000", true}});
+  test_nodes({{"interpolate", "%{${color hsv(0, 1, 0.5)}}", "%{#800000}"}});
+  test_nodes({{"dumb", "${dumb nexist.txt}", "${dumb nexist.txt}", true}});
+  test_nodes({{"dumb", "", ""}});
+  test_nodes({{"dumb", "${}", "", true}});
+  test_nodes({{"env", "${env test_env? fail}", "test_env"}});
+  test_nodes({{"env", "${env nexist? \" f a i l \" }", " f a i l "}});
+  test_nodes({{"env", "${env nexist test_env }", "", true}});
+  test_nodes({{"map", "${map 5:10 0:2 7.5}", "1.000000"}});
+  test_nodes({{"map", "${map 5:10 2 7.5 ? -1}", "1.000000"}});
+  test_nodes({{"map", "${map 5:10 7.5}", "1.000000", true}});
   test_nodes({
-    {".clone_source", "${color #123456 }", "#123456"},
-    {".clone_source.lv1", "", ""},
-    {".clone_source.lv1.lv2", "", ""},
-    {".clone_source.dumb", "${nexist}", "", false, true, true},
-    {".clone", "${clone .clone_source }", "#123456"},
-    {".clone.lv1", "", "", true},
-    {".clone.lv1.lv2", "", "", true},
-    {".clone-fail", "${clone .nexist }", "", true},
+    {"clone_source", "${color #123456 }", "#123456"},
+    {"clone_source.lv1", "", ""},
+    {"clone_source.lv1.lv2", "", ""},
+    {"clone_source.dumb", "${nexist}", "", false, true, true},
+    {"clone", "${clone clone_source }", "#123456"},
+    {"clone.lv1", "", "", true},
+    {"clone.lv1.lv2", "", "", true},
+    {"clone-fail", "${clone nexist }", "", true},
   });
-  test_nodes({{".clone", "${clone nexist nexist2 }", "", true}});
+  test_nodes({{"clone", "${clone nexist nexist2 }", "", true}});
 }

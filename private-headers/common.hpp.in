@@ -34,6 +34,8 @@ constexpr auto DEBUG_SCOPES{"@DEBUG_SCOPES@"sv};
 
 #cmakedefine PLATFORM_LINUX
 
+#define THROW_ERROR(name, msg) throw name##_error(#name "_error: "s + msg)
+
 template<typename Left, typename Right>
 Right* assign(Left& left, const std::shared_ptr<Right>& right) {
   left = right;

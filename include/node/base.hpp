@@ -1,6 +1,5 @@
 #pragma once
 
-#include "error.hpp"
 #include "tstring.hpp"
 
 #include <string>
@@ -12,6 +11,7 @@ namespace lini::node {
   struct wrapper;
   using std::string;
   using base_p = std::shared_ptr<base>;
+  struct node_error : std::logic_error { using logic_error::logic_error; };
 
   struct errorlist : std::vector<std::pair<std::string, std::string>> {
     void report_error  (int line, const std::string& msg)
@@ -35,7 +35,6 @@ namespace lini::node {
     { errors.report_error(current_path, msg); }
   };
   struct base {
-    struct error : error_base { using error_base::error_base; };
     virtual ~base() {}
 
     virtual string get  () const = 0;
@@ -87,7 +86,7 @@ namespace lini::node {
 
   using ref_maker = std::function<std::shared_ptr<address_ref>(tstring& path, const base_p& fallback)>;
 
-  struct parse_error : error_base { using error_base::error_base; };
+  struct parse_error : std::logic_error { using logic_error::logic_error; };
   base_p parse_string  (string& raw, tstring& str, ref_maker ref_maker);
   base_p parse  (string& raw, tstring& str, ref_maker ref_maker);
 }

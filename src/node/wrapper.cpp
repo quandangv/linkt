@@ -47,7 +47,7 @@ base_p& wrapper::add(tstring path, ancestor_processor* processor) {
   trim(path);
   for(char c : path)
     if(auto invalid = strchr(" #$\"'(){}[]", c); invalid)
-      throw error("Invalid character '" + string{*invalid} + "' in path: " + path);
+      THROW_ERROR(wrapper, "Invalid character '" + string{*invalid} + "' in path: " + path);
 
   if (auto immediate_path = cut_front(path, '.'); !immediate_path.untouched()) {
     // This isn't the final part of the path
@@ -69,7 +69,7 @@ base_p& wrapper::add(tstring path, ancestor_processor* processor) {
 
 base_p& wrapper::add(tstring path, const base_p& value) {
   auto& place = add(path);
-  return place ? throw error("Duplicate key") : (place = value);
+  return place ? THROW_ERROR(wrapper, "Duplicate key") : (place = value);
 }
 
 base_p& wrapper::add(tstring path, string& raw, tstring value) {

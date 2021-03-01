@@ -20,6 +20,7 @@ struct indentpair {
     if (wrp)
       node = &wrp->add(""_ts);
   }
+  // Wrap the current node in a node::wrapper if it hasn't been already. Returns the wrapper
   node::wrapper& wrap() {
     if (!wrp) {
       wrp = dynamic_cast<node::wrapper*>(node->get());
@@ -31,54 +32,64 @@ struct indentpair {
 };
 
 void parse_yml(std::istream& is, node::wrapper& root, errorlist& err) {
-  vector<indentpair> nodes{indentpair(-1, &root)};
+  vector<indentpair> records{indentpair(-1, &root)};
   string raw;
 
-  // Iterate through lines
+  // Iterate the lines
   for (int linecount = 1; std::getline(is, raw); linecount++, raw.clear()) {
     tstring line(raw);
     int indent = ltrim(line);
-    // skip empty and comment lines
+    // Skip empty and comment lines
     if (line.empty() || strchr(comment_chars, line.front()))
       continue;
 
-    while (nodes.back().indent >= indent)
-      nodes.pop_back();
+    // The nodes with larger indentation will be closed
+    while (records.back().indent >= indent)
+      records.pop_back();
+    // Separate the key and the content
     tstring key;
     if (!err.extract_key(line, linecount, ':', key))
       continue;
 
     try {
-      auto& parent = nodes.back().wrap();
+      // The next node with smaller indentation becomes the parent
+      auto& parent = records.back().wrap();
       if (line.empty()) {
-        nodes.emplace_back(indent, &parent.add(key));
+        // Add an empty node and record it as a possible parent
+        records.emplace_back(indent, &parent.add(key));
         continue;
       }
 
-      auto type = line.front();
+      // The character after the colon determines the parsing mode
+      auto mode = line.front();
       line.erase_front();
       trim_quotes(line);
-      if (type == '=') {
+      if (mode == '=') {
+        // Assign a new value to an existing node
         parent.set(key, line) ? void() :
             err.report_error(linecount, key, "Can't set value of key");
         continue;
       }
 
+      // We are adding a new node
       parent.add(key, node::base_p{});
-      auto& node = nodes.emplace_back(indent, parent.get_child_place(key));
+      // Add a new record for the new node
+      auto& record = records.emplace_back(indent, parent.get_child_place(key));
       node::ref_maker make_ref = [&](tstring& ts, const node::base_p& fallback) {
-        return node.wrap().make_address_ref(ts, fallback);
+        // Make references relative to the current node
+        return record.wrap().make_address_ref(ts, fallback);
       };
-      if (type == ' ') {
-        *node.node = node::parse_string(raw, line, make_ref);
-      } else if (type == '$') {
-        *node.node = node::parse(raw, line, make_ref);
-      } else if (type == '^') {
-        *node.node = node::parse(raw, line, [&](tstring& ts, const node::base_p& fallback) {
+      if (mode == ' ') {
+        *record.node = node::parse_string(raw, line, make_ref);
+      } else if (mode == '$') {
+        *record.node = node::parse(raw, line, make_ref);
+      } else if (mode == '^') {
+        *record.node = node::parse(raw, line, [&](tstring& ts, const node::base_p& fallback) {
+          // Make references relative to the parent node
           return parent.make_address_ref(ts, fallback);
         });
       } else {
-        err.report_error(linecount, key, "Invalid character: " + type);
+        err.report_error(linecount, key, "Invalid parse mode: " + mode);
       }
     } catch (const std::exception& e) {
       err.report_error(linecount, key, e.what());
@@ -88,6 +99,7 @@ void parse_yml(std::istream& is, node::wrapper& root, errorlist& err) {
 
 void write_yml(std::ostream& os, const node::wrapper& root, int indent) {
   root.iterate_children([&](const string& name, const node::base& child) {
+    // The empty key is used as the value of the wrapper, skip it
     if (name.empty())
       return;
     // Indent the line

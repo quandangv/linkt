@@ -21,7 +21,6 @@ set(NODE_HEADERS
   ${PUBLIC_HEADERS_DIR}/node/base.hpp
   ${PUBLIC_HEADERS_DIR}/node/node.hpp
   ${PUBLIC_HEADERS_DIR}/node/wrapper.hpp
-  ${PUBLIC_HEADERS_DIR}/node/error.hpp
   ${STRINGS_PUBLIC_HEADERS_DIR}/tstring.hpp
 )
 set(LINI_HEADERS
