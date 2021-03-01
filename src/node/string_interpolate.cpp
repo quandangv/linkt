@@ -10,7 +10,7 @@ using spot = string_interpolate::replace_spot;
 template<typename T>
 struct base_it {
   vector<spot>::const_iterator it;
-  T& operator++() { ++it; return *(T*)this; }
+  T& operator++() { ++it; return reinterpret_cast<T&>(*this); }
   bool operator==(const T& other) const { return other.it == it; }
 };
 struct replacement_it : public base_it<replacement_it> {

@@ -18,7 +18,7 @@ namespace linked_nodes::node {
 
     map_type map;
 
-    wrapper(const base_p& value) : map{{"", value}} {}
+    explicit wrapper(const base_p& value) : map{{"", value}} {}
     wrapper() {}
 
     static wrapper& wrap  (base_p& node);

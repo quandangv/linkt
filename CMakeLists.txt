@@ -5,7 +5,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 project(linked_nodes VERSION 1.1.0)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
-include(cmake/variables)
 include(file_list)
 
 include(cmake/targets)

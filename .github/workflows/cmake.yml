@@ -11,12 +11,21 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Create Build Environment
-      run: git submodule update --init --rebase -- cmake && cmake -E make_directory ${{github.workspace}}/build
+      run: |
+        git submodule update --init --rebase -- cmake
+        cmake -E make_directory ${{github.workspace}}/build ${{github.workspace}}/lib/cspace
+
+    - name: Install cspace
+      working-directory: ${{github.workspace}}/lib/cspace
+      run: |
+        git clone https://github.com/quandangv/cspace .
+        ./build.sh -A
 
     - name: Configure CMake
       shell: bash
       working-directory: ${{github.workspace}}/build
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTS=ON
+      run: |
+        cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTS=ON
 
     - name: Build
       working-directory: ${{github.workspace}}/build
