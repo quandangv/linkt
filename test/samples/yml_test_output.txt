@@ -1,6 +1,8 @@
 bar: "%{F#fff}%{B#FF54CB} BAT 60% "
   F: #fff
     dumb: lol
+    empty:
+      dumb: lol
   base: %{B#FF007B} ? 0?
     B: #FF007B
       H: 0

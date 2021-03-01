@@ -120,7 +120,10 @@ TEST(Language, Yml) {
       {"bar.F", "#fff"},
       {"bar", "%{F#fff}%{B#FF54CB} BAT 60% "},
     },
-    { "line 19, B" }
+    {
+      "line 17, key B", "line 18", "line 19, key label", "line 20, key dumb",
+      "line 21, key dumb2"
+    }
   });
 }
 
@@ -160,6 +163,7 @@ TEST(Assign, Ref) {
   // Test fallback assignments
   set_key("ref-default-a", "foobar");
   EXPECT_EQ("foobar", *doc.get_child("key-a"_ts));
+  EXPECT_FALSE(doc.set("cmd-ref"_ts, "hello"));
 }
 
 TEST(Assign, File_Env) {

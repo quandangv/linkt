@@ -11,17 +11,13 @@ NAMESPACE(lini::node)
 
 base_p base::clone() const {
   clone_context context;
-  context.no_dependency = true;
   auto result = clone(context);
-  return context.errors.empty() ? result :
-      throw error("Errors while cloning: \n" + context.errors.merge_errors());
-}
-
-string errorlist::merge_errors() const {
+  if (context.errors.empty())
+    return result;
   std::stringstream ss;
-  for(auto& err : *this)
+  for(auto& err : context.errors)
     ss << err.first << ": " << err.second << '\n';
-  return ss.str();
+  throw error("Errors while cloning: \n" + ss.str());
 }
 
 bool errorlist::extract_key(tstring& line, int linecount, char separator, tstring& key) {
@@ -32,8 +28,6 @@ bool errorlist::extract_key(tstring& line, int linecount, char separator, tstrin
 }
 
 bool is_fixed(base_p node) {
-  if (!node)
-    throw base::error("Empty node");
   if (auto doc = dynamic_cast<wrapper*>(node.get()); doc)
     node = doc->get_child_ptr(""_ts);
   if (auto fixed = dynamic_cast<plain*>(node.get()); fixed)
@@ -130,7 +124,7 @@ base_p parse(string& raw, tstring& str, ref_maker rmaker) {
 
   } else if (tokens[0] == "env"_ts) {
     if (token_count != 2)
-      throw parse_error("parse: Expected 2 components");
+      throw parse_error("parse: Expected 1 components");
     return make_meta(std::make_shared<env>());
 
   } else if (tokens[0] == "map"_ts) {

@@ -30,10 +30,6 @@ struct indentpair {
   }
 };
 
-node::base_p throw_ref_maker(const tstring&, node::base_p&&) {
-  throw std::invalid_argument("Can't make reference to children");
-}
-
 void parse_yml(std::istream& is, node::wrapper& root, errorlist& err) {
   vector<indentpair> nodes{indentpair(-1, &root)};
   string raw;
@@ -43,48 +39,49 @@ void parse_yml(std::istream& is, node::wrapper& root, errorlist& err) {
     tstring line(raw);
     int indent = ltrim(line);
     // skip empty and comment lines
-    if (!line.empty() && !strchr(comment_chars, line.front())) {
-      while (nodes.back().indent >= indent)
-        nodes.pop_back();
-      if (tstring key; err.extract_key(line, linecount, ':', key)) {
-        try {
-          auto& parent = nodes.back().wrap();
-          if (line.empty())
-            continue;
+    if (line.empty() || strchr(comment_chars, line.front()))
+      continue;
 
-          auto type = line.front();
-          line.erase_front();
-          trim_quotes(line);
-          if (type == '=') {
-            parent.set(key, line) ? void() : err.report_error(linecount, key, "Can't set value of key");
-            LG_DBUG("Set result: " << *parent.get_child(key));
-            LG_DBUG("Set result: " << *root.get_child("bar.bat." + key));
-            LG_DBUG("Set result: " << *root.get_child("bar.base." + key));
-            continue;
-          }
+    while (nodes.back().indent >= indent)
+      nodes.pop_back();
+    tstring key;
+    if (!err.extract_key(line, linecount, ':', key))
+      continue;
 
-          parent.add(key, node::base_p{});
-          auto& node = nodes.emplace_back(indent, parent.get_child_place(key));
-          node::ref_maker make_ref = [&](tstring& ts, const node::base_p& fallback) {
-            return node.wrap().make_address_ref(ts, fallback);
-          };
-          if (*node.node)
-            err.report_error(linecount, key, "Key already have value");
-          if (type == ' ') {
-            *node.node = node::parse_string(raw, line, make_ref);
-          } else if (type == '$') {
-            *node.node = node::parse(raw, line, make_ref);
-          } else if (type == '^') {
-            *node.node = node::parse(raw, line, [&](tstring& ts, const node::base_p& fallback) {
-              return parent.make_address_ref(ts, fallback);
-            });
-          } else {
-            err.report_error(linecount, key, "Invalid character: " + type);
-          }
-        } catch (const std::exception& e) {
-          err.report_error(linecount, key, e.what());
-        }
+    try {
+      auto& parent = nodes.back().wrap();
+      if (line.empty()) {
+        nodes.emplace_back(indent, &parent.add(key));
+        continue;
       }
+
+      auto type = line.front();
+      line.erase_front();
+      trim_quotes(line);
+      if (type == '=') {
+        parent.set(key, line) ? void() :
+            err.report_error(linecount, key, "Can't set value of key");
+        continue;
+      }
+
+      parent.add(key, node::base_p{});
+      auto& node = nodes.emplace_back(indent, parent.get_child_place(key));
+      node::ref_maker make_ref = [&](tstring& ts, const node::base_p& fallback) {
+        return node.wrap().make_address_ref(ts, fallback);
+      };
+      if (type == ' ') {
+        *node.node = node::parse_string(raw, line, make_ref);
+      } else if (type == '$') {
+        *node.node = node::parse(raw, line, make_ref);
+      } else if (type == '^') {
+        *node.node = node::parse(raw, line, [&](tstring& ts, const node::base_p& fallback) {
+          return parent.make_address_ref(ts, fallback);
+        });
+      } else {
+        err.report_error(linecount, key, "Invalid character: " + type);
+      }
+    } catch (const std::exception& e) {
+      err.report_error(linecount, key, e.what());
     }
   }
 }

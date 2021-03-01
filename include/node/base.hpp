@@ -18,13 +18,12 @@ namespace lini::node {
     { emplace_back("line " +std::to_string(line), msg); }
 
     void report_error  (int line, const std::string& key, const std::string& msg)
-    { emplace_back("line " +std::to_string(line) + ", " + key, msg); }
+    { emplace_back("line " +std::to_string(line) + ", key " + key, msg); }
 
     void report_error  (const std::string& key, const std::string& msg)
     { emplace_back(key, msg); }
 
     bool extract_key  (tstring& line, int linecount, char separator, tstring& key);
-    string merge_errors() const;
   };
   struct clone_context {
     std::string current_path;
@@ -45,7 +44,7 @@ namespace lini::node {
   };
 
   struct settable {
-    virtual bool set  (const string&) { return false; }
+    virtual bool set  (const string&) = 0;
   };
 
   struct plain : public base, settable {

@@ -93,8 +93,10 @@ TEST(Node, File) {
 
 TEST(Node, Cmd) {
   test_nodes({
-    {".msg", "foo bar", "foo bar"},
-    {".cmd", "${cmd echo ${.msg}}", "foo bar"},
+    {"msg", "1.000", "1.000"},
+    {"cmd", "${cmd echo ${msg}}", "1.000"},
+    {"cmd-ref", "${map 1 2 ${cmd}}", "2.000000"},
+    {"cmd-msg", "result is ${cmd-ref}", "result is 2.000000"},
   }, 100);
   test_nodes({{".cmd", "${cmd echo hello world}", "hello world"}}, 100);
   test_nodes({{".cmd", "${cmd nexist}", "", false, true}}, 100);
@@ -117,17 +119,22 @@ TEST(Node, Other) {
   test_nodes({{".interpolate", "%{${color hsv(0, 1, 0.5)}}", "%{#800000}"}});
   test_nodes({{".dumb", "${dumb nexist.txt}", "${dumb nexist.txt}", true}});
   test_nodes({{".dumb", "", ""}});
+  test_nodes({{".dumb", "${}", "", true}});
   test_nodes({{".env", "${env test_env? fail}", "test_env"}});
   test_nodes({{".env", "${env nexist? \" f a i l \" }", " f a i l "}});
+  test_nodes({{".env", "${env nexist test_env }", "", true}});
   test_nodes({{".map", "${map 5:10 0:2 7.5}", "1.000000"}});
-  test_nodes({{".map", "${map 5:10 2 7.5}", "1.000000"}});
+  test_nodes({{".map", "${map 5:10 2 7.5 ? -1}", "1.000000"}});
+  test_nodes({{".map", "${map 5:10 7.5}", "1.000000", true}});
   test_nodes({
     {".clone_source", "${color #123456 }", "#123456"},
     {".clone_source.lv1", "", ""},
     {".clone_source.lv1.lv2", "", ""},
+    {".clone_source.dumb", "${nexist}", "", false, true, true},
     {".clone", "${clone .clone_source }", "#123456"},
     {".clone.lv1", "", "", true},
     {".clone.lv1.lv2", "", "", true},
     {".clone-fail", "${clone .nexist }", "", true},
   });
+  test_nodes({{".clone", "${clone nexist nexist2 }", "", true}});
 }
