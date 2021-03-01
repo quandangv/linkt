@@ -1,5 +1,5 @@
 # Load strings submodule
-execute_process(COMMAND git submodule update --init --rebase -- lib/strings)
+execute_process(COMMAND git submodule update --init --rebase -- ${CMAKE_CURRENT_LIST_DIR}/lib/strings)
 
 include(lib/strings/file_list)
 set(STRINGS_PUBLIC_HEADERS_DIR ${PUBLIC_HEADERS_DIR})

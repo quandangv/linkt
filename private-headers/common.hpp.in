@@ -12,27 +12,22 @@ constexpr auto DEBUG_SCOPES{"@DEBUG_SCOPES@"sv};
 #define NAMESPACE(name) namespace name {
 #define NAMESPACE_END }
 
-#cmakedefine LG_ERR(msg) std::cerr << FORMAT_RED_BOLD(ERROR:) " " << msg << std::endl;
-#ifndef LG_ERR
-#  define LG_ERR(msg)
-#endif
-
-#cmakedefine LG_WARN(msg) std::cerr << FORMAT_YELLOW_BOLD(WARN:) " " << msg << std::endl;
-#ifndef LG_WARN
-#  define LG_WARN(msg)
-#endif
+#define FORMAT_RESET  "\033[0m"
+#define FORMAT_SIZE 11
+#define FORMAT_EMPTY  "\033[0;36m\033[0m"
+#define FORMAT_EMPTY2 "\033[0;36m\033[0m\033[0;36m\033[0m"
+#define FORMAT_GREEN(content)  "\033[0;32m"#content FORMAT_RESET
+#define FORMAT_BLUE(content)   "\033[0;34m"#content FORMAT_RESET
+#define FORMAT_CYAN(content)   "\033[0;36m"#content FORMAT_RESET
+#define FORMAT_RED_BOLD(content)    "\033[1;31m"#content FORMAT_RESET
+#define FORMAT_GREEN_BOLD(content)  "\033[1;32m"#content FORMAT_RESET
+#define FORMAT_YELLOW_BOLD(content) "\033[1;33m"#content FORMAT_RESET
+#define FORMAT_BLUE_BOLD(content)   "\033[1;34m"#content FORMAT_RESET
 
 #cmakedefine LG_DBUG(msg) std::cerr << FORMAT_GREEN_BOLD(DEBUG:) " " << msg << std::endl;
 #ifndef LG_DBUG
 #  define LG_DBUG(msg)
 #endif
-
-#cmakedefine LG_INFO(msg) std::cerr << FORMAT_BLUE_BOLD(INFO:) " " << msg << std::endl;
-#ifndef LG_INFO
-#  define LG_INFO(msg)
-#endif
-
-#cmakedefine PLATFORM_LINUX
 
 #define THROW_ERROR(name, msg) throw name##_error(#name "_error: "s + msg)
 
@@ -41,6 +36,3 @@ Right* assign(Left& left, const std::shared_ptr<Right>& right) {
   left = right;
   return right.get();
 }
-
-#include "format.hpp"
-
