@@ -8,31 +8,18 @@
 
 NAMESPACE(lini::node)
 
-void wrapper::iterate_children(std::function<void(const string&, const base&)> processor) const {
-  iterate_children([&](const string& name, const base_p& child) {
-    if (child)
-      processor(name, *child);
-  });
-}
 
 base_p wrapper::get_child_ptr(tstring path) const {
   if (auto immediate_path = cut_front(trim(path), '.'); !immediate_path.untouched()) {
     if (auto iterator = map.find(immediate_path); iterator != map.end())
       if (auto child = dynamic_cast<wrapper*>(iterator->second.get()); child)
         return child->get_child_ptr(path);
-  } else if (auto iterator = map.find(path); iterator != map.end())
+  } else if (auto iterator = map.find(path); iterator != map.end()) {
+    if (auto child = dynamic_cast<wrapper*>(iterator->second.get()); child)
+      return child->map[""];
     return iterator->second;
+  }
   return {};
-}
-
-std::optional<string> wrapper::get_child(const tstring& path) const {
-  auto ptr = get_child_ptr(path);
-  return ptr ? ptr->get() : std::optional<string>{};
-}
-
-string wrapper::get_child(const tstring& path, string&& fallback) const {
-  auto result = get_child(path);
-  return result ? *result : move(fallback);
 }
 
 base_p* wrapper::get_child_place(tstring path) {
@@ -45,10 +32,16 @@ base_p* wrapper::get_child_place(tstring path) {
   return nullptr;
 }
 
-bool wrapper::set(const tstring& path, const string& value) {
-  auto target = dynamic_cast<settable*>(get_child_ptr(path).get());
-  return target ? target->set(value) : false;
+std::optional<string> wrapper::get_child(const tstring& path) const {
+  auto ptr = get_child_ptr(path);
+  return ptr ? ptr->get() : std::optional<string>{};
 }
+
+string wrapper::get_child(const tstring& path, string&& fallback) const {
+  auto result = get_child(path);
+  return result ? *result : move(fallback);
+}
+
 
 base_p& wrapper::add(tstring path, ancestor_processor* processor) {
   trim(path);
@@ -87,6 +80,20 @@ base_p& wrapper::add(tstring path, string raw) {
   return add(path, raw, tstring(raw));
 }
 
+
+void wrapper::iterate_children(std::function<void(const string&, const base_p&)> processor) const {
+  for(auto& pair : map)
+    processor(pair.first, pair.second);
+}
+
+void wrapper::iterate_children(std::function<void(const string&, const base&)> processor) const {
+  iterate_children([&](const string& name, const base_p& child) {
+    if (child)
+      processor(name, *child);
+  });
+}
+
+
 std::shared_ptr<address_ref> wrapper::make_address_ref(const tstring& ts, const base_p& fallback) {
   return std::make_unique<address_ref>(*this, ts, move(fallback));
 }
@@ -95,9 +102,9 @@ wrapper& wrapper::wrap(base_p& place) {
   return *assign(place, std::make_shared<wrapper>(place));
 }
 
-void wrapper::iterate_children(std::function<void(const string&, const base_p&)> processor) const {
-  for(auto& pair : map)
-    processor(pair.first, pair.second);
+bool wrapper::set(const tstring& path, const string& value) {
+  auto target = dynamic_cast<settable*>(get_child_ptr(path).get());
+  return target ? target->set(value) : false;
 }
 
 string wrapper::get() const {
@@ -121,7 +128,6 @@ void fill(const wrapper& src, wrapper& dest, clone_context& context) {
     } catch (const std::exception& e) {
       context.report_error(e.what());
     }
-    LG_DBUG("current path: " << context.current_path << " test2: " << context.ancestors.front().second->get_child_ptr("test2"_ts).get());
     context.current_path = last_path;
   }
   context.ancestors.pop_back();

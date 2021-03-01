@@ -24,27 +24,11 @@ string errorlist::merge_errors() const {
   return ss.str();
 }
 
-void errorlist::report_error(int linecount, const string& msg) {
-  emplace_back("line " +std::to_string(linecount), msg);
-}
-
-void errorlist::report_error(int linecount, const string& key, const string& msg) {
-  emplace_back("line " +std::to_string(linecount) + ", " + key, msg);
-}
-
-void errorlist::report_error(const string& key, const string& msg) {
-  emplace_back(key, msg);
-}
-
 bool errorlist::extract_key(tstring& line, int linecount, char separator, tstring& key) {
   key = cut_front(line, separator);
   if (key.untouched())
     return report_error(linecount, "Line ignored: " + line), false;
   return true;
-}
-
-void clone_context::report_error(const string& msg) {
-  errors.report_error(current_path, msg);
 }
 
 bool is_fixed(base_p node) {
@@ -62,12 +46,9 @@ string defaultable::use_fallback(const string& msg) const {
 }
 
 base_p address_ref::get_source() const {
-  auto result = ancestor.get_child_ptr(path);
-  return result ?: fallback ?: throw base::error("Can't find referenced key: " + path);
-}
-
-string address_ref::get() const {
-  return get_source()->get();
+  auto result = ancestor.get_child_place(path);
+  return result && *result ? *result : fallback ?:
+      throw base::error("Can't find referenced key: " + path);
 }
 
 bool address_ref::set(const string& val) {
@@ -85,20 +66,18 @@ base_p address_ref::clone(clone_context& context) const {
 
   if (context.optimize) {
     auto result = cloned_ancestor->get_child_ptr(path);
-    if (auto wrpr = dynamic_cast<wrapper*>(result.get()); wrpr)
-      result = wrpr->get_child_ptr(""_ts);
     if (!result) {
       // This will recursively dereference chain references.
       auto src_ancestor = &ancestor;
       ancestor_processor source_tracer = [&](tstring& path, wrapper* inner_ancestor)->void {
-        src_ancestor = dynamic_cast<wrapper*>(src_ancestor->get_child_ptr(path).get())
-            ?: throw base::error("Invalid reference");
+        src_ancestor = dynamic_cast<wrapper*>(src_ancestor->map.at(path).get());
         context.ancestors.emplace_back(src_ancestor, inner_ancestor);
       };
       auto place = ancestor.get_child_place(path);
       if (!place) {
         result = (fallback ?: throw base::error("Clone: Can't find referenced key: " + path))->clone(context);
       } else {
+        // Detach the object from its place while cloning to avoid cyclical references
         auto src = move(*place);
         auto ancestors_mark = context.ancestors.size();
         auto& cloned_place = cloned_ancestor->add(path, &source_tracer);

@@ -14,20 +14,26 @@ namespace lini::node {
   using base_p = std::shared_ptr<base>;
 
   struct errorlist : std::vector<std::pair<std::string, std::string>> {
-    void report_error  (int line, const std::string& msg);
-    void report_error  (int line, const std::string& key, const std::string& msg);
-    void report_error  (const std::string& key, const std::string& msg);
+    void report_error  (int line, const std::string& msg)
+    { emplace_back("line " +std::to_string(line), msg); }
+
+    void report_error  (int line, const std::string& key, const std::string& msg)
+    { emplace_back("line " +std::to_string(line) + ", " + key, msg); }
+
+    void report_error  (const std::string& key, const std::string& msg)
+    { emplace_back(key, msg); }
+
     bool extract_key  (tstring& line, int linecount, char separator, tstring& key);
     string merge_errors() const;
   };
-  struct clone_error : error_base { using error_base::error_base; };
   struct clone_context {
     std::string current_path;
     std::vector<std::pair<const wrapper*, wrapper*>> ancestors;
     bool optimize{false}, no_dependency{false};
     errorlist errors;
 
-    void report_error(const string& msg);
+    void report_error(const string& msg)
+    { errors.report_error(current_path, msg); }
   };
   struct base {
     struct error : error_base { using error_base::error_base; };
@@ -66,11 +72,10 @@ namespace lini::node {
 
     address_ref  (wrapper& ancestor, string&& path, const base_p& fallback)
         : ancestor(ancestor), path(move(path)), defaultable(fallback) {}
-    string get  () const;
+    string get  () const { return get_source()->get(); }
     bool set  (const string& value);
     base_p get_source  () const;
     base_p clone  (clone_context&) const;
-    void invalidate  () { path = ""; }
   };
 
   struct meta : public base, defaultable {

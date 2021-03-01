@@ -53,9 +53,7 @@ string file::get() const {
 
   string result(std::istreambuf_iterator<char>{ifs}, {});
   ifs.close();
-  auto last_line = result.find_last_not_of("\r\n");
-  result.erase(last_line + 1);
-  return move(result);
+  return result.erase(result.find_last_not_of("\r\n") + 1);
 }
 
 bool file::set(const string& content) {
@@ -95,9 +93,8 @@ string map::get() const {
   auto str = value ? value->get() : use_fallback("Value key doesn't exist");
   size_t remaining;
   auto num =  std::stof(str, &remaining);
-  return remaining == str.size() ?
-      std::to_string(to_min + to_range/from_range*(num - from_min)) :
-      use_fallback("value is not a number");
+  return remaining != str.size() ? use_fallback("value is not a number") :
+      std::to_string(to_min + to_range/from_range*(num - from_min));
 }
 
 base_p map::clone(clone_context& context) const {
