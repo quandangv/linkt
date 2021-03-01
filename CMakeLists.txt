@@ -6,7 +6,6 @@ project(linked_nodes VERSION 1.1.0)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
 include(file_list)
-
 include(cmake/targets)
 add_shared_lib("linked_nodes_node" "${NODE_SOURCES}" "${INCLUDE_DIRS};include/node" "${NODE_HEADERS}" "linked_nodes/node")
 add_shared_lib("linked_nodes" "${LINI_SOURCES}" "${INCLUDE_DIRS};include" "${LINI_HEADERS}" "linked_nodes")
