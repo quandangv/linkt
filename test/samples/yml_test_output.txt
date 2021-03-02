@@ -18,6 +18,7 @@ bar: "%{F#fff}%{B#FF54CB} BAT 60% "
       L: 0.800000
         value: 60
       dumb: hello
+    dumb: invalid
     label: BAT
     stat: 60
     unit: %

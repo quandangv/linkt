@@ -115,39 +115,42 @@ void parse_yml(std::istream& is, node::wrapper& root, node::errorlist& err) {
         records.emplace_back(indent, &parent.add(key));
         continue;
       }
-      // The character after the colon determines the parsing mode
-      auto mode = line.front();
-      line.erase_front();
-      trim_quotes(line);
-      if (mode == '=') {
-        // Assign a new value to an existing node
-        parent.set(key, line) ? void() :
-            err.report_error(linecount, key, "Can't set value of key");
-        continue;
+      indentpair* record = nullptr;
+      node::parse_func parser = node::parse_raw;
+      node::ref_maker rmaker = [&](tstring& ts, const node::base_p& fallback) {
+        // Make references relative to the current node
+        return record->wrap().make_address_ref(ts, fallback);
+      };
+      auto modes = cut_front(line, ' ');
+      for (auto mode : modes) {
+        switch (mode) {
+        case '^':
+          rmaker = [&](tstring& ts, const node::base_p& fallback) {
+            // Make references relative to the parent node
+            return parent.make_address_ref(ts, fallback);
+          };
+          break;
+        case '$':
+          parser = node::parse_escaped;
+          break;
+        case '=':
+          // Assign a new value to an existing node
+          parent.set(key, line) ? void() :
+              err.report_error(linecount, key, "Can't set value of key");
+          goto nextline;
+        default:
+          err.report_error(linecount, key, "Invalid parse mode: " + mode);
+          break;
+        }
       }
-      // We are adding a new node
       parent.add(key, node::base_p{});
       // Add a new record for the new node
-      auto& record = records.emplace_back(indent, parent.get_child_place(key));
-      node::ref_maker make_ref = [&](tstring& ts, const node::base_p& fallback) {
-        // Make references relative to the current node
-        return record.wrap().make_address_ref(ts, fallback);
-      };
-      if (mode == ' ') {
-        *record.node = node::parse_string(raw, line, make_ref);
-      } else if (mode == '$') {
-        *record.node = node::parse(raw, line, make_ref);
-      } else if (mode == '^') {
-        *record.node = node::parse(raw, line, [&](tstring& ts, const node::base_p& fallback) {
-          // Make references relative to the parent node
-          return parent.make_address_ref(ts, fallback);
-        });
-      } else {
-        err.report_error(linecount, key, "Invalid parse mode: " + mode);
-      }
+      record = &records.emplace_back(indent, parent.get_child_place(key));
+      *record->node = parser(raw, trim_quotes(line), rmaker);
     } catch (const std::exception& e) {
       err.report_error(linecount, key, e.what());
     }
+    nextline:;
   }
 }
 

@@ -87,7 +87,8 @@ namespace node {
 
   using ref_maker = std::function<std::shared_ptr<address_ref>(tstring& path, const base_p& fallback)>;
 
+  using parse_func = std::function<base_p(string& raw, tstring& str, ref_maker)>;
   struct parse_error : std::logic_error { using logic_error::logic_error; };
-  base_p parse_string  (string& raw, tstring& str, ref_maker ref_maker);
-  base_p parse  (string& raw, tstring& str, ref_maker ref_maker);
+  base_p parse_raw  (string& raw, tstring& str, ref_maker ref_maker);
+  base_p parse_escaped  (string& raw, tstring& str, ref_maker ref_maker);
 }

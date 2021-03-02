@@ -125,7 +125,7 @@ base_p meta::copy(std::shared_ptr<meta>&& dest, clone_context& context) const {
 }
 
 // Parse an unescaped node string
-base_p parse_string(string& raw, tstring& str, ref_maker rmaker) {
+base_p parse_raw(string& raw, tstring& str, ref_maker rmaker) {
   size_t start, end;
   if (!find_enclosed(str, raw, "${", "{", "}", start, end)) {
     // There is no node inside the string, it's a plain string
@@ -134,7 +134,7 @@ base_p parse_string(string& raw, tstring& str, ref_maker rmaker) {
     // There is a single node inside, interpolation is unecessary
     str.erase_front(2);
     str.erase_back();
-    return parse(raw, str, rmaker);
+    return parse_escaped(raw, str, rmaker);
   }
   // String interpolation
   std::stringstream ss;
@@ -145,7 +145,7 @@ base_p parse_string(string& raw, tstring& str, ref_maker rmaker) {
 
     // Make node from the token, skipping the brackets
     auto token = str.interval(start + 2, end - 1);
-    auto value = parse(raw, token, rmaker);
+    auto value = parse_escaped(raw, token, rmaker);
     if (value) {
       // Mark the position of the token in the base string
       newval->spots.emplace_back(int(ss.tellp()), value);
@@ -158,11 +158,11 @@ base_p parse_string(string& raw, tstring& str, ref_maker rmaker) {
 }
 
 // Parse an escaped node string
-base_p parse(string& raw, tstring& str, ref_maker rmaker) {
+base_p parse_escaped(string& raw, tstring& str, ref_maker rmaker) {
   // Extract the fallback before anything
   base_p fallback;
   if (auto fb_str = cut_back(str, '?'); !fb_str.untouched())
-    fallback = parse_string(raw, trim_quotes(fb_str), rmaker);
+    fallback = parse_raw(raw, trim_quotes(fb_str), rmaker);
 
   std::array<tstring, 5> tokens;
   auto token_count = fill_tokens(str, tokens);
@@ -170,7 +170,7 @@ base_p parse(string& raw, tstring& str, ref_maker rmaker) {
   // Finalize nodes that derive from node::meta
   auto make_meta = [&]<typename T>(const std::shared_ptr<T>& ptr) {
     ptr->fallback = move(fallback);
-    ptr->value = parse_string(raw, trim_quotes(tokens[token_count - 1]), rmaker);
+    ptr->value = parse_raw(raw, trim_quotes(tokens[token_count - 1]), rmaker);
     return ptr;
   };
   if (token_count == 0)

@@ -69,11 +69,11 @@ base_p& wrapper::add(tstring path, ancestor_processor* processor) {
 
 base_p& wrapper::add(tstring path, const base_p& value) {
   auto& place = add(path);
-  return place ? THROW_ERROR(wrapper, "Duplicate key") : (place = value);
+  return place ? THROW_ERROR(wrapper, "Add: Duplicate key") : (place = value);
 }
 
 base_p& wrapper::add(tstring path, string& raw, tstring value) {
-  return add(path, parse_string(raw, value, [&](tstring& ts, const base_p& fallback) { return make_address_ref(ts, fallback); }));
+  return add(path, parse_raw(raw, value, [&](tstring& ts, const base_p& fallback) { return make_address_ref(ts, fallback); }));
 }
 
 base_p& wrapper::add(tstring path, string raw) {

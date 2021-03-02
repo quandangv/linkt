@@ -1,6 +1,6 @@
 bar: '%{F${F}}${bat} '
   base: %{B${B}} ${label} ${stat}${unit}
-    B.L.value:^ stat
+    B.L.value:^$ stat
     B:$ color cielch(${L}, 1, ${H})
       H: 0
       dumb: hello
@@ -8,7 +8,7 @@ bar: '%{F${F}}${bat} '
     label: ?
     stat: 0
     unit: ?
-  bat:^ clone base
+  bat:^$ clone base
     B.H:= 0
     label:= BAT
     stat:= 60

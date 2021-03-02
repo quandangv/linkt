@@ -1,5 +1,21 @@
-status: Hello ${name}! | CPU Usage: ${cpu} | Memory Usage: ${memory} | ${date}
-  name:$ cmd echo $USER
+status: Hello ${greeting}! | CPU Usage: ${cpu} | Memory Usage: ${memory} | Battery level: ${battery} | ${date}
+  greeting:$ cmd echo $USER
   cpu:$ cmd ./cpu.sh ? N/A
   memory:$ cmd ./memory.sh ? N/A
+  battery:$ cmd ./battery.sh ${bat_name} ? N/A
+    bat_name: BAT0
   date:$ cmd date +%H:%M
+
+lemonbar: ${name}! | CPU Usage: ${cpu} | Memory Usage: ${memory} | Battery level: ${battery} | ${date}
+  base: %{B${B}} ${text}
+    B:$ color cielch(${L}, 1, ${H})
+      H: 0
+      L:$ 0.8
+    text: ?
+  name:^$ clone base
+    text:= Hello ${cmd echo $USER}!
+  cpu:^ ${clone base}
+    text:= CPU Usage: ${stat}
+  memory:
+  battery:
+  date:
