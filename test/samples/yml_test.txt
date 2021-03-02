@@ -1,10 +1,10 @@
 bar: '%{F${F}}${bat} '
   base: %{B${B}} ${label?} ${stat?}${unit?}
-    B.L.value:^$ stat ? 0
+    B.L.value:$ dep stat ? 0
     B:$ color cielch(${L}, 1, ${H}) ?
       dumb: hello
       L:$ map 100 0.5:1 ${value}
-  bat:^$ clone base
+  bat:$ clone base
     B.H: 0
     label: BAT
     stat: 60

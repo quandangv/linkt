@@ -10,18 +10,18 @@ lemonbar: '${greeting} ${cpu} ${memory} ${battery} ${date} '
   base: %{B${B}} ${text}
     B:$ color cielch(${L}, 1, ${H})
       L: 0.7
-  greeting:^$ clone base
+  greeting:$ clone base
     B.H: 0
-  cpu:^$ clone base
+  cpu:$ clone base
     B.H: 72
-  memory:^$ clone base
+  memory:$ clone base
     B.H: 144
-  battery:^$ clone base
+  battery:$ clone base
     B.H: 216
-  date:^$ clone base
+  date:$ clone base
     B.H: -72
-lemonbar.greeting.text:^$ status.greeting
-lemonbar.cpu.text:^$ status.cpu
-lemonbar.memory.text:^$ status.memory
-lemonbar.battery.text:^$ status.battery
-lemonbar.date.text:^$ status.date
+lemonbar.greeting.text:$ dep status.greeting
+lemonbar.cpu.text:$ dep status.cpu
+lemonbar.memory.text:$ dep status.memory
+lemonbar.battery.text:$ dep status.battery
+lemonbar.date.text:$ dep status.date

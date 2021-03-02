@@ -70,29 +70,14 @@ void write_ini(std::ostream& os, const node::wrapper& root, const string& prefix
 }
 
 struct indentpair {
-  node::base_p* node;
   int indent;
-  node::wrapper* wrp;
-  indentpair(int indent, node::wrapper* wrp) : wrp(wrp), indent(indent), node(nullptr) {}
-  indentpair(int indent, node::base_p* new_node) : indent(indent), node(new_node) {
-    wrp = dynamic_cast<node::wrapper*>(node->get());
-    if (wrp)
-      node = &wrp->add(""_ts);
-  }
-  // Wrap the current node in a node::wrapper if it hasn't been already. Returns the wrapper
-  node::wrapper& wrap() {
-    if (!wrp) {
-      wrp = dynamic_cast<node::wrapper*>(node->get());
-      if (!wrp)
-        node = &(wrp = &node::wrapper::wrap(*node))->add(""_ts);
-    }
-    return *wrp;
-  }
+  node::wrapper* node;
 };
 
 void parse_yml(std::istream& is, node::wrapper& root, node::errorlist& err) {
-  vector<indentpair> records{indentpair(-1, &root)};
+  vector<indentpair> records{indentpair{-1, &root}};
   string raw;
+  node::parse_context context;
 
   // Iterate the lines
   for (int linecount = 1; std::getline(is, raw); linecount++, raw.clear()) {
@@ -110,36 +95,34 @@ void parse_yml(std::istream& is, node::wrapper& root, node::errorlist& err) {
       continue;
 
     try {
-      // The next node with smaller indentation becomes the parent
-      auto& parent = records.back().wrap();
+      LG_DBUG("parse key: " <<key);
+      context.parent = records.back().node ?: (records.back().node = &context.get_current());
+      LG_DBUG("got parent: " <<key);
       if (line.empty()) {
         // Add an empty node and record it as a possible parent
-        records.emplace_back(indent, &parent.add(key));
+        records.emplace_back(indent, nullptr);
+        context.place = &context.parent->add(key);
         continue;
       }
-      indentpair* record = nullptr;
       auto modes = cut_front(line, ' ');
+      trim_quotes(line);
+      //indentpair* record = nullptr;
       
       node::parse_func parser = find(modes, '$') != tstring::npos ?
           node::parse_escaped : node::parse_raw;
-      auto rmaker = find(modes, '^') != tstring::npos ?
-          (node::ref_maker) [&](tstring& ts, const node::base_p& fallback) {
-            // Make references relative to the parent node
-            return parent.make_address_ref(ts, fallback);
-          } : (node::ref_maker) [&](tstring& ts, const node::base_p& fallback) {
-            // Make references relative to the current node
-            return record->wrap().make_address_ref(ts, fallback);
-          };
       // Assign a new value to an existing node
-      if (find(modes, '=') != tstring::npos && !parent.set(key, line)) {
-        auto ptr = parent.get_child_place(key);
+      if (find(modes, '=') != tstring::npos && !context.parent->set(key, line)) {
+        auto ptr = context.parent->get_child_place(key);
         err.report_error(linecount, key, !ptr || !*ptr ? "Key to be set doesn't exist." :
             ("Can't set value of type: "s + typeid(**ptr).name()));
+        continue;
       }
-      parent.add(key, node::base_p{});
-      // Add a new record for the new node
-      record = &records.emplace_back(indent, parent.get_child_place(key));
-      *record->node = parser(raw, trim_quotes(line), rmaker);
+      context.parent->add(key);
+      context.place = context.parent->get_child_place(key);
+      context.current = nullptr;
+
+      records.emplace_back(indent, nullptr);
+      context.get_place() = parser(raw, line, context);
     } catch (const std::exception& e) {
       err.report_error(linecount, key, e.what());
     }

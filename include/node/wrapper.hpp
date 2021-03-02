@@ -16,7 +16,7 @@ namespace node {
   struct wrapper : public base, settable {
     using map_type = std::map<string, base_p>;
 
-    map_type map;
+    map_type map{};
 
     explicit wrapper(const base_p& value) : map{{"", value}} {}
     wrapper() {}

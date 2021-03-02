@@ -85,10 +85,17 @@ namespace node {
 
   bool is_fixed(base_p node);
 
-  using ref_maker = std::function<std::shared_ptr<address_ref>(tstring& path, const base_p& fallback)>;
+  struct parse_context {
+    wrapper* parent{nullptr}, *current{nullptr};
+    base_p* place{nullptr};
 
-  using parse_func = std::function<base_p(string& raw, tstring& str, ref_maker)>;
+    wrapper& get_current();
+    wrapper& get_parent();
+    base_p& get_place();
+    friend struct parse_context_base;
+  };
+  using parse_func = std::function<base_p(string& raw, tstring& str, parse_context&)>;
   struct parse_error : std::logic_error { using logic_error::logic_error; };
-  base_p parse_raw  (string& raw, tstring& str, ref_maker ref_maker);
-  base_p parse_escaped  (string& raw, tstring& str, ref_maker ref_maker);
+  base_p parse_raw  (string& raw, tstring& str, parse_context& context);
+  base_p parse_escaped  (string& raw, tstring& str, parse_context& context);
 }

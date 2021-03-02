@@ -80,7 +80,6 @@ base_p address_ref::clone(clone_context& context) const {
     auto result = cloned_ancestor->get_child_ptr(path);
     if (!result) {
       auto place = ancestor.get_child_place(path);
-      LG_DBUG("address clone: path: " << path << " source: " << place);
       if (place) {
         // Clone the referenced node, add it to the clone result, and return the pointer
         auto src_ancestor = &ancestor;
@@ -121,8 +120,38 @@ base_p meta::copy(std::shared_ptr<meta>&& dest, clone_context& context) const {
   return dest;
 }
 
+wrapper& parse_context::get_current() {
+  if (current)
+    return *current;
+  if (!place)
+    THROW_ERROR(parse, "Get-current: Both current and place are null");
+  current = dynamic_cast<wrapper*>(place->get());
+  if (current)
+    return *current;
+  current = &wrapper::wrap(*place);
+  place = nullptr;
+  return *current;
+}
+
+wrapper& parse_context::get_parent() {
+  if (parent)
+    return *parent;
+  THROW_ERROR(parse, "parent is null");
+}
+
+base_p& parse_context::get_place() {
+  if (!place) {
+    if (!current)
+      THROW_ERROR(parse, "Get-place: Both current and place are null");
+    place = &current->map[""];
+  }
+  if (auto wrp = dynamic_cast<wrapper*>(place->get()))
+    place = &wrp->map[""];
+  return *place ? THROW_ERROR(parse, "Duplicate key") : *place;
+}
+
 // Parse an unescaped node string
-base_p parse_raw(string& raw, tstring& str, ref_maker rmaker) {
+base_p parse_raw(string& raw, tstring& str, parse_context& context) {
   size_t start, end;
   if (!find_enclosed(str, raw, "${", "{", "}", start, end)) {
     // There is no node inside the string, it's a plain string
@@ -131,7 +160,7 @@ base_p parse_raw(string& raw, tstring& str, ref_maker rmaker) {
     // There is a single node inside, interpolation is unecessary
     str.erase_front(2);
     str.erase_back();
-    return parse_escaped(raw, str, rmaker);
+    return parse_escaped(raw, str, context);
   }
   // String interpolation
   std::stringstream ss;
@@ -142,7 +171,7 @@ base_p parse_raw(string& raw, tstring& str, ref_maker rmaker) {
 
     // Make node from the token, skipping the brackets
     auto token = str.interval(start + 2, end - 1);
-    auto value = parse_escaped(raw, token, rmaker);
+    auto value = parse_escaped(raw, token, context);
     if (value) {
       // Mark the position of the token in the base string
       newval->spots.emplace_back(int(ss.tellp()), value);
@@ -151,15 +180,15 @@ base_p parse_raw(string& raw, tstring& str, ref_maker rmaker) {
   } while (find_enclosed(str, raw, "${", "{", "}", start, end));
   ss << str;
   newval->base = ss.str();
-  return move(newval);
+  return newval;
 }
 
 // Parse an escaped node string
-base_p parse_escaped(string& raw, tstring& str, ref_maker rmaker) {
+base_p parse_escaped(string& raw, tstring& str, parse_context& context) {
   // Extract the fallback before anything
   base_p fallback;
   if (auto fb_str = cut_back(str, '?'); !fb_str.untouched())
-    fallback = parse_raw(raw, trim_quotes(fb_str), rmaker);
+    fallback = parse_raw(raw, trim_quotes(fb_str), context);
 
   std::array<tstring, 5> tokens;
   auto token_count = fill_tokens(str, tokens);
@@ -167,14 +196,18 @@ base_p parse_escaped(string& raw, tstring& str, ref_maker rmaker) {
   // Finalize nodes that derive from node::meta
   auto make_meta = [&]<typename T>(const std::shared_ptr<T>& ptr) {
     ptr->fallback = move(fallback);
-    ptr->value = parse_raw(raw, trim_quotes(tokens[token_count - 1]), rmaker);
+    ptr->value = parse_raw(raw, trim_quotes(tokens[token_count - 1]), context);
     return ptr;
   };
   if (token_count == 0)
     THROW_ERROR(parse, "Empty reference string");
   if (token_count == 1) {
-    // Return a reference node
-    return rmaker(tokens[0], fallback);
+    return std::make_shared<address_ref>(context.get_current(), tokens[0], fallback);
+
+  } else if (tokens[0] == "dep"_ts) {
+    if (token_count != 2)
+      THROW_ERROR(parse, "env: Expected 1 components");
+    return std::make_shared<address_ref>(context.get_parent(), tokens[1], fallback);
 
   } else if (tokens[0] == "file"_ts) {
     tokens[token_count - 1].merge(tokens[1]);
@@ -214,7 +247,7 @@ base_p parse_escaped(string& raw, tstring& str, ref_maker rmaker) {
   } else if (tokens[0] == "clone"_ts) {
     if (token_count != 2)
       THROW_ERROR(parse, "clone: Expected 1 components");
-    return rmaker(tokens[1], fallback)->get_source()->clone();
+    return address_ref(context.get_parent(), tokens[1], base_p()).get_source()->clone();
   } else
     THROW_ERROR(parse, "Unsupported reference type: " + tokens[0]);
 }

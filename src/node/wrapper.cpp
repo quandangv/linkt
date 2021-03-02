@@ -76,7 +76,9 @@ base_p& wrapper::add(tstring path, const base_p& value) {
 }
 
 base_p& wrapper::add(tstring path, string& raw, tstring value) {
-  return add(path, parse_raw(raw, value, [&](tstring& ts, const base_p& fallback) { return make_address_ref(ts, fallback); }));
+  auto& place = add(path);
+  parse_context context{this, this, &place};
+  return add(path, parse_raw(raw, value, context));
 }
 
 base_p& wrapper::add(tstring path, string raw) {
@@ -102,7 +104,9 @@ std::shared_ptr<address_ref> wrapper::make_address_ref(const tstring& ts, const 
 }
 
 wrapper& wrapper::wrap(base_p& place) {
-  return *assign(place, std::make_shared<wrapper>(place));
+  auto wrp = new wrapper(place);
+  place = base_p(wrp);
+  return *wrp;
 }
 
 bool wrapper::set(const tstring& path, const string& value) {
@@ -113,9 +117,8 @@ bool wrapper::set(const tstring& path, const string& value) {
 bool wrapper::set(const string& value) {
   auto& place = map[""];
   if (auto target = dynamic_cast<settable*>(place.get()))
-    target->set(value);
-  place = std::make_shared<plain>(string(value));
-  return true;
+    return target->set(value);
+  return false;
 }
 
 string wrapper::get() const {
