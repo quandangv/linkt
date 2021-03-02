@@ -34,9 +34,9 @@ bool errorlist::extract_key(tstring& line, int linecount, char separator, tstrin
 
 // Checks if the value of a node come directly from a plain node, meaning it never changes
 bool is_fixed(base_p node) {
-  if (auto doc = dynamic_cast<wrapper*>(node.get()); doc)
+  if (auto doc = dynamic_cast<wrapper*>(node.get()))
     node = doc->get_child_ptr(""_ts);
-  if (auto fixed = dynamic_cast<plain*>(node.get()); fixed)
+  if (auto fixed = dynamic_cast<plain*>(node.get()))
     return true;
   return false;
 }

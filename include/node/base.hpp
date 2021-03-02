@@ -61,7 +61,7 @@ namespace node {
 
     defaultable  () {}
     explicit defaultable  (const base_p& fallback) : fallback(fallback) {}
-    string use_fallback  (const string& error_message) const;
+    [[nodiscard]] string use_fallback  (const string& error_message) const;
   };
 
   struct wrapper;

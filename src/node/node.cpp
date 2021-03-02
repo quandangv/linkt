@@ -1,7 +1,6 @@
 #include "node.hpp"
 #include "wrapper.hpp"
 #include "common.hpp"
-#include "execstream.hpp"
 #include "token_iterator.hpp"
 
 #include <fstream>
@@ -78,9 +77,10 @@ string cmd::get() const {
     std::array<char, 128> buf;
     while (fgets(buf.data(), 128, file) != nullptr)
       result += buf.data();
-    pclose(file);
+    if (auto exit_code = WEXITSTATUS(pclose(file)))
+      return use_fallback("Process produced exit code: " + std::to_string(exit_code));
   } catch (const std::exception& e) {
-    use_fallback("Encountered error: "s + e.what());
+    return use_fallback("Encountered error: "s + e.what());
   }
   auto last_line = result.find_last_not_of("\r\n");
   result.erase(last_line + 1);

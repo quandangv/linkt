@@ -12,10 +12,10 @@ NAMESPACE(node)
 base_p wrapper::get_child_ptr(tstring path) const {
   if (auto immediate_path = cut_front(trim(path), '.'); !immediate_path.untouched()) {
     if (auto iterator = map.find(immediate_path); iterator != map.end())
-      if (auto child = dynamic_cast<wrapper*>(iterator->second.get()); child)
+      if (auto child = dynamic_cast<wrapper*>(iterator->second.get()))
         return child->get_child_ptr(path);
   } else if (auto iterator = map.find(path); iterator != map.end()) {
-    if (auto child = dynamic_cast<wrapper*>(iterator->second.get()); child)
+    if (auto child = dynamic_cast<wrapper*>(iterator->second.get()))
       return child->map[""];
     return iterator->second;
   }
@@ -25,7 +25,7 @@ base_p wrapper::get_child_ptr(tstring path) const {
 base_p* wrapper::get_child_place(tstring path) {
   if (auto immediate_path = cut_front(trim(path), '.'); !immediate_path.untouched()) {
     if (auto iterator = map.find(immediate_path); iterator != map.end())
-      if (auto child = dynamic_cast<wrapper*>(iterator->second.get()); child)
+      if (auto child = dynamic_cast<wrapper*>(iterator->second.get()))
         return child->get_child_place(path);
   } else if (auto iterator = map.find(path); iterator != map.end())
     return &iterator->second;
@@ -45,8 +45,8 @@ string wrapper::get_child(const tstring& path, string&& fallback) const {
 
 base_p& wrapper::add(tstring path, ancestor_processor* processor) {
   trim(path);
-  for(char c : path)
-    if(auto invalid = strchr(" #$\"'(){}[]", c); invalid)
+  for (char c : path)
+    if (auto invalid = strchr(" #$\"'(){}[]", c))
       THROW_ERROR(wrapper, "Invalid character '" + string{*invalid} + "' in path: " + path);
 
   if (auto immediate_path = cut_front(path, '.'); !immediate_path.untouched()) {
@@ -122,9 +122,8 @@ void fill(const wrapper& src, wrapper& dest, clone_context& context) {
       if (pair.second)
         if (auto& place = dest.map[pair.first]; !place)
           place = pair.second->clone(context);
-        else if (auto wrp = dynamic_cast<wrapper*>(place.get()); wrp)
+        else if (auto wrp = dynamic_cast<wrapper*>(place.get()))
           fill(dynamic_cast<wrapper&>(*pair.second), *wrp, context);
-        else LG_DBUG("Skipped key: " << pair.first);
     } catch (const std::exception& e) {
       context.report_error(e.what());
     }

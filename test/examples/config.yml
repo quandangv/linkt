@@ -1,3 +1,5 @@
-status: Hello | CPU Usage: ${cpu} | ${date}
+status: Hello ${name}! | CPU Usage: ${cpu} | Memory Usage: ${memory} | ${date}
+  name:$ cmd echo $USER
+  cpu:$ cmd ./cpu.sh ? N/A
+  memory:$ cmd ./memory.sh ? N/A
   date:$ cmd date +%H:%M
-  cpu:$ cmd ./cpu.sh

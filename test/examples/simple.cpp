@@ -30,5 +30,4 @@ int main() {
     else
       std::cout << *result << std::endl;
   }
-  return 0;
 }

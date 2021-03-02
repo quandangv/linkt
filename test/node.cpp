@@ -54,6 +54,7 @@ TEST(Node, Cmd) {
   }, 100);
   test_nodes({{"cmd", "${cmd echo hello world}", "hello world"}}, 100);
   test_nodes({{"cmd", "${cmd nexist}", "", false, true}}, 100);
+  test_nodes({{"cmd", "${cmd nexist ? fail}", "fail"}}, 100);
 }
 
 TEST(Node, Ref) {
