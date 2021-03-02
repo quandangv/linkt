@@ -1,21 +1,27 @@
-status: Hello ${greeting}! | CPU Usage: ${cpu} | Memory Usage: ${memory} | Battery level: ${battery} | ${date}
-  greeting:$ cmd echo $USER
-  cpu:$ cmd ./cpu.sh ? N/A
-  memory:$ cmd ./memory.sh ? N/A
-  battery:$ cmd ./battery.sh ${bat_name} ? N/A
+status: ${greeting} | ${cpu} | ${memory} | ${battery} | ${date}
+  greeting: Hello ${cmd echo $USER}
+  cpu: CPU Usage: ${cmd ./cpu.sh ? N/A}
+  memory: Memory Usage: ${cmd ./memory.sh ? N/A}
+  battery: Battery level: ${cmd ./battery.sh ${bat_name} ? N/A}
     bat_name: BAT0
   date:$ cmd date +%H:%M
 
-lemonbar: ${name}! | CPU Usage: ${cpu} | Memory Usage: ${memory} | Battery level: ${battery} | ${date}
+lemonbar: '${greeting} ${cpu} ${memory} ${battery} ${date} '
   base: %{B${B}} ${text}
     B:$ color cielch(${L}, 1, ${H})
-      H: 0
-      L:$ 0.8
-    text: ?
-  name:^$ clone base
-    text:= Hello ${cmd echo $USER}!
-  cpu:^ ${clone base}
-    text:= CPU Usage: ${stat}
-  memory:
-  battery:
-  date:
+      L: 0.7
+  greeting:^$ clone base
+    B.H: 0
+  cpu:^$ clone base
+    B.H: 72
+  memory:^$ clone base
+    B.H: 144
+  battery:^$ clone base
+    B.H: 216
+  date:^$ clone base
+    B.H: -72
+lemonbar.greeting.text:^$ status.greeting
+lemonbar.cpu.text:^$ status.cpu
+lemonbar.memory.text:^$ status.memory
+lemonbar.battery.text:^$ status.battery
+lemonbar.date.text:^$ status.date

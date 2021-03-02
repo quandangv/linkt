@@ -12,7 +12,7 @@ using namespace ::testing;
 
 using std::cerr, std::cout, std::vector, std::endl, std::string;
 
-constexpr int base_repeat = 1;
+constexpr int base_repeat = 5;
 
 const TestResult& get_test_result() {
   auto error = std::runtime_error("Null pointer! Are we in a test?");

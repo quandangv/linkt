@@ -126,14 +126,15 @@ string wrapper::get() const {
 void fill(const wrapper& src, wrapper& dest, clone_context& context) {
   context.ancestors.emplace_back(&src, &dest);
   for(auto& pair : src.map) {
+    if (!pair.second)
+      continue;
     auto last_path = context.current_path;
     context.current_path += context.ancestors.size() == 1 ? pair.first : ("." + pair.first);
     try {
-      if (pair.second)
-        if (auto& place = dest.map[pair.first]; !place)
-          place = pair.second->clone(context);
-        else if (auto wrp = dynamic_cast<wrapper*>(place.get()))
-          fill(dynamic_cast<wrapper&>(*pair.second), *wrp, context);
+      if (auto& place = dest.map[pair.first]; !place)
+        place = pair.second->clone(context);
+      else if (auto wrp = dynamic_cast<wrapper*>(place.get()))
+        fill(dynamic_cast<wrapper&>(*pair.second), *wrp, context);
     } catch (const std::exception& e) {
       context.report_error(e.what());
     }
