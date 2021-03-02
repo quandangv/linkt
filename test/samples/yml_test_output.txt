@@ -3,15 +3,11 @@ bar: "%{F#fff}%{B#FF54CB} BAT 60% "
     dumb: lol
     empty:
       dumb: lol
-  base: %{B#FF007B} ? 0?
-    B: #FF007B
-      H: 0
+  base: "%{B}  "
+    B:
       L: 0.500000
         value: 0
       dumb: hello
-    label: ?
-    stat: 0
-    unit: ?
   bat: %{B#FF54CB} BAT 60%
     B: #FF54CB
       H: 0

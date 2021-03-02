@@ -92,11 +92,15 @@ base_p cmd::clone(clone_context& context) const {
 }
 
 string map::get() const {
-  auto str = value ? value->get() : use_fallback("Value key doesn't exist");
-  size_t remaining;
-  auto num =  std::stof(str, &remaining);
-  return remaining != str.size() ? use_fallback("value is not a number") :
-      std::to_string(to_min + to_range/from_range*(num - from_min));
+  try {
+    auto str = value ? value->get() : use_fallback("Value key doesn't exist");
+    size_t remaining;
+    auto num =  std::stof(str, &remaining);
+    return remaining != str.size() ? use_fallback("value is not a number") :
+        std::to_string(to_min + to_range/from_range*(num - from_min));
+  } catch (const std::exception& e) {
+    return use_fallback("Linear mapping failed, due to: "s + e.what());
+  }
 }
 
 base_p map::clone(clone_context& context) const {

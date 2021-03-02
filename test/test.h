@@ -12,6 +12,8 @@ using namespace ::testing;
 
 using std::cerr, std::cout, std::vector, std::endl, std::string;
 
+constexpr int base_repeat = 1;
+
 const TestResult& get_test_result() {
   auto error = std::runtime_error("Null pointer! Are we in a test?");
   return *(((UnitTest::GetInstance() ?: throw error)->current_test_info() ?: throw error)->result() ?: throw error);
@@ -43,7 +45,7 @@ void check_key(const node::wrapper& w, string path, string expected, bool except
     cerr << "Key: " << path << endl << endl;
 }
 
-void triple_node_test(node::base_p node, std::function<void(node::base_p, node::errorlist&)> tester, int repeat = 10000) {
+void triple_node_test(node::base_p node, std::function<void(node::base_p, node::errorlist&)> tester, int repeat = base_repeat * 100) {
   auto fail_count = get_test_part_count();
   auto time = get_time_milli();
   node::clone_context context;

@@ -8,7 +8,7 @@ struct parse_test_single {
 };
 using parse_test = vector<parse_test_single>;
 
-void test_nodes(parse_test testset, int repeat = 10000) {
+void test_nodes(parse_test testset, int repeat = base_repeat * 100) {
   auto doc = new node::wrapper();
   auto base_doc = node::base_p(doc);
 
@@ -51,10 +51,10 @@ TEST(Node, Cmd) {
     {"cmd", "${cmd echo ${msg}}", "1.000"},
     {"cmd-ref", "${map 1 2 ${cmd}}", "2.000000"},
     {"cmd-msg", "result is ${cmd-ref}", "result is 2.000000"},
-  }, 100);
-  test_nodes({{"cmd", "${cmd echo hello world}", "hello world"}}, 100);
-  test_nodes({{"cmd", "${cmd nexist}", "", false, true}}, 100);
-  test_nodes({{"cmd", "${cmd nexist ? fail}", "fail"}}, 100);
+  }, base_repeat);
+  test_nodes({{"cmd", "${cmd echo hello world}", "hello world"}}, base_repeat);
+  test_nodes({{"cmd", "${cmd nexist}", "", false, true}}, base_repeat);
+  test_nodes({{"cmd", "${cmd nexist ? fail}", "fail"}}, base_repeat);
 }
 
 TEST(Node, Ref) {

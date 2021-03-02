@@ -8,7 +8,8 @@
 
 NAMESPACE(node)
 
-
+// Returns the pointer to the node at the specified path
+// This will return the inner node of a wrapper.
 base_p wrapper::get_child_ptr(tstring path) const {
   if (auto immediate_path = cut_front(trim(path), '.'); !immediate_path.untouched()) {
     if (auto iterator = map.find(immediate_path); iterator != map.end())
@@ -22,6 +23,8 @@ base_p wrapper::get_child_ptr(tstring path) const {
   return {};
 }
 
+// Returns the pointer to the storage of the node or wrapper at the specified path
+// Returns null if it doesn't exist
 base_p* wrapper::get_child_place(tstring path) {
   if (auto immediate_path = cut_front(trim(path), '.'); !immediate_path.untouched()) {
     if (auto iterator = map.find(immediate_path); iterator != map.end())
@@ -107,6 +110,14 @@ bool wrapper::set(const tstring& path, const string& value) {
   return target ? target->set(value) : false;
 }
 
+bool wrapper::set(const string& value) {
+  auto& place = map[""];
+  if (auto target = dynamic_cast<settable*>(place.get()))
+    target->set(value);
+  place = std::make_shared<plain>(string(value));
+  return true;
+}
+
 string wrapper::get() const {
   const auto& value = get_child_ptr(""_ts);
   return value ? value->get() : "";
@@ -117,7 +128,6 @@ void fill(const wrapper& src, wrapper& dest, clone_context& context) {
   for(auto& pair : src.map) {
     auto last_path = context.current_path;
     context.current_path += context.ancestors.size() == 1 ? pair.first : ("." + pair.first);
-
     try {
       if (pair.second)
         if (auto& place = dest.map[pair.first]; !place)

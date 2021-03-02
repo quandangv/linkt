@@ -54,7 +54,7 @@ void test_language(file_test_param testset) {
     write_yml(ofs, *doc);
 
   // Check the export result
-  auto command = "diff -Z '" + testset.path + "_output.txt' '" + testset.path + "_export.txt' 2>&1";
+  auto command = "diff '" + testset.path + "_output.txt' '" + testset.path + "_export.txt' 2>&1";
   auto file = popen(command.data(), "r");
   ASSERT_TRUE(file);
   std::array<char, 2> buf;
@@ -110,7 +110,6 @@ TEST(Language, Yml) {
   test_language({"yml_test", "yml",
     {
       {"bar.base.B.dumb", "hello"},
-      {"bar.base.B.L", "0.500000"},
       {"bar.bat.B.L.value", "60"},
       {"bar.bat.B.L", "0.800000"},
       {"bar.bat.stat", "60"},
@@ -122,8 +121,8 @@ TEST(Language, Yml) {
       {"bar", "%{F#fff}%{B#FF54CB} BAT 60% "},
     },
     {
-      "line 17, key B", "line 18", "line 19, key label", "line 20, key dumb",
-      "line 21, key dumb2"
+      "line 13, key B", "line 14", "line 15, key label",
+      "line 17, key dumb2"
     }
   });
 }

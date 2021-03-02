@@ -80,13 +80,8 @@ base_p address_ref::clone(clone_context& context) const {
     auto result = cloned_ancestor->get_child_ptr(path);
     if (!result) {
       auto place = ancestor.get_child_place(path);
-      if (!place) {
-        // If the referenced node can't be found, return a clone of the fallback
-        if (fallback)
-          result = fallback->clone(context);
-        else
-          context.report_error("Can't find referenced key: " + path);
-      } else {
+      LG_DBUG("address clone: path: " << path << " source: " << place);
+      if (place) {
         // Clone the referenced node, add it to the clone result, and return the pointer
         auto src_ancestor = &ancestor;
         ancestor_processor record_ancestor = [&](tstring& path, wrapper* inner_ancestor)->void {
@@ -103,9 +98,11 @@ base_p address_ref::clone(clone_context& context) const {
         result = cloned_place = src->clone(context);
         context.ancestors.erase(context.ancestors.begin() + ancestors_mark, context.ancestors.end());
         *place = src;
-      }
+        return result;
+      } else if (fallback)
+        // If the referenced node can't be found, return a clone of the fallback
+        return result = fallback->clone(context);
     }
-    return result;
   }
 
   // Return a reference to the corresponding path in the clone result

@@ -15,10 +15,12 @@ void write_key(std::ostream& os, const string& prefix, string&& value) {
     value.insert(value.begin() + opening, '\\');
     opening += 2;
   }
-  if (isspace(value.front()) || isspace(value.back()))
-    os << prefix << '"' << value << '"' << endl;
+  if (value.empty())
+    os << prefix << endl;
+  else if (isspace(value.front()) || isspace(value.back()))
+    os << prefix << " \"" << value << '"' << endl;
   else
-    os << prefix << value << endl;
+    os << prefix << ' ' << value << endl;
 }
 
 void parse_ini(std::istream& is, node::wrapper& root, node::errorlist& err) {
@@ -57,9 +59,9 @@ void write_ini(std::ostream& os, const node::wrapper& root, const string& prefix
       // Otherwise, they will break the section
       wrappers.push_back(std::make_pair(name, ctn));
       if (auto value = child.get(); !value.empty())
-        write_key(os, name + " = ", move(value));
+        write_key(os, name + " =", move(value));
     } else
-      write_key(os, name + " = ", child.get());
+      write_key(os, name + " =", child.get());
   });
   for(auto pair : wrappers) {
     os << endl << '[' << prefix << pair.first << ']' << endl;
@@ -116,32 +118,23 @@ void parse_yml(std::istream& is, node::wrapper& root, node::errorlist& err) {
         continue;
       }
       indentpair* record = nullptr;
-      node::parse_func parser = node::parse_raw;
-      node::ref_maker rmaker = [&](tstring& ts, const node::base_p& fallback) {
-        // Make references relative to the current node
-        return record->wrap().make_address_ref(ts, fallback);
-      };
       auto modes = cut_front(line, ' ');
-      for (auto mode : modes) {
-        switch (mode) {
-        case '^':
-          rmaker = [&](tstring& ts, const node::base_p& fallback) {
+      
+      node::parse_func parser = find(modes, '$') != tstring::npos ?
+          node::parse_escaped : node::parse_raw;
+      auto rmaker = find(modes, '^') != tstring::npos ?
+          (node::ref_maker) [&](tstring& ts, const node::base_p& fallback) {
             // Make references relative to the parent node
             return parent.make_address_ref(ts, fallback);
+          } : (node::ref_maker) [&](tstring& ts, const node::base_p& fallback) {
+            // Make references relative to the current node
+            return record->wrap().make_address_ref(ts, fallback);
           };
-          break;
-        case '$':
-          parser = node::parse_escaped;
-          break;
-        case '=':
-          // Assign a new value to an existing node
-          parent.set(key, line) ? void() :
-              err.report_error(linecount, key, "Can't set value of key");
-          goto nextline;
-        default:
-          err.report_error(linecount, key, "Invalid parse mode: " + mode);
-          break;
-        }
+      // Assign a new value to an existing node
+      if (find(modes, '=') != tstring::npos && !parent.set(key, line)) {
+        auto ptr = parent.get_child_place(key);
+        err.report_error(linecount, key, !ptr || !*ptr ? "Key to be set doesn't exist." :
+            ("Can't set value of type: "s + typeid(**ptr).name()));
       }
       parent.add(key, node::base_p{});
       // Add a new record for the new node
@@ -161,7 +154,7 @@ void write_yml(std::ostream& os, const node::wrapper& root, int indent) {
       return;
     // Indent the line
     std::fill_n(std::ostream_iterator<char>(os), indent, ' ');
-    write_key(os, name + ": ", child.get());
+    write_key(os, name + ":", child.get());
     
     auto ctn = dynamic_cast<const node::wrapper*>(&child);
     if(ctn)

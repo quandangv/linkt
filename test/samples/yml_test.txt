@@ -1,18 +1,14 @@
 bar: '%{F${F}}${bat} '
-  base: %{B${B}} ${label} ${stat}${unit}
-    B.L.value:^$ stat
-    B:$ color cielch(${L}, 1, ${H})
-      H: 0
+  base: %{B${B}} ${label?} ${stat?}${unit?}
+    B.L.value:^$ stat ? 0
+    B:$ color cielch(${L}, 1, ${H}) ?
       dumb: hello
       L:$ map 100 0.5:1 ${value}
-    label: ?
-    stat: 0
-    unit: ?
   bat:^$ clone base
-    B.H:= 0
-    label:= BAT
-    stat:= 60
-    unit:= %
+    B.H: 0
+    label: BAT
+    stat: 60
+    unit: %
 
     B:= invalid assignment
     invalid = hello
