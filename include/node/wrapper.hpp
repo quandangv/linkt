@@ -25,7 +25,7 @@ namespace node {
 
     base_p& add  (tstring path, ancestor_processor* processor = nullptr);
     base_p& add  (tstring path, const base_p& value);
-    base_p& add  (tstring path, string& raw, tstring value);
+    base_p& add  (tstring path, string& raw, tstring value, parse_context& context);
     base_p& add  (tstring path, string raw);
 
     base_p get_child_ptr  (tstring path) const;
@@ -38,8 +38,9 @@ namespace node {
 
     bool set  (const tstring& path, const string& value);
     bool set  (const string& value);
+    void merge  (const wrapper& source, clone_context&);
     string get  () const;
     std::shared_ptr<address_ref> make_address_ref  (const tstring&, const base_p&);
-    base_p clone  (clone_context& context) const;
+    base_p clone  (clone_context&) const;
   };
 }

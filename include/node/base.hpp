@@ -26,6 +26,7 @@ namespace node {
 
     bool extract_key  (tstring& line, int linecount, char separator, tstring& key);
   };
+
   struct clone_context {
     std::string current_path;
     std::vector<std::pair<const wrapper*, wrapper*>> ancestors;
@@ -35,12 +36,16 @@ namespace node {
     void report_error(const string& msg)
     { errors.report_error(current_path, msg); }
   };
+
+  struct throwing_clone_context : public clone_context {
+    ~throwing_clone_context() noexcept(false);
+  };
+
   struct base {
     virtual ~base() {}
 
     virtual string get  () const = 0;
     virtual base_p clone  (clone_context& context) const = 0;
-    base_p clone() const;
   };
 
   struct settable {
@@ -88,6 +93,7 @@ namespace node {
   struct parse_context {
     wrapper* parent{nullptr}, *current{nullptr};
     base_p* place{nullptr};
+    bool absolute_ref{false};
 
     wrapper& get_current();
     wrapper& get_parent();

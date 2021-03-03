@@ -9,16 +9,12 @@
 
 NAMESPACE(node)
 
-// Create a clone_context and clone using default behaviour
-base_p base::clone() const {
-  clone_context context;
-  auto result = clone(context);
-  // Return only if the clone produce no error
-  if (context.errors.empty())
-    return result;
-  // Otherwise throw an exception containing all the errors
+throwing_clone_context::~throwing_clone_context()  noexcept(false) {
+  if (std::uncaught_exceptions() || errors.empty())
+    return;
+  // Throw an exception containing all the errors
   std::stringstream ss;
-  for(auto& err : context.errors)
+  for(auto& err : errors)
     ss << err.first << ": " << err.second << '\n';
   THROW_ERROR(node, "Errors while cloning: \n" + ss.str());
 }
@@ -147,7 +143,7 @@ base_p& parse_context::get_place() {
   }
   if (auto wrp = dynamic_cast<wrapper*>(place->get()))
     place = &wrp->map[""];
-  return *place ? THROW_ERROR(parse, "Duplicate key") : *place;
+  return *place ? THROW_ERROR(parse, "get_place: Duplicate key") : *place;
 }
 
 // Parse an unescaped node string
@@ -202,7 +198,7 @@ base_p parse_escaped(string& raw, tstring& str, parse_context& context) {
   if (token_count == 0)
     THROW_ERROR(parse, "Empty reference string");
   if (token_count == 1) {
-    return std::make_shared<address_ref>(context.get_current(), tokens[0], fallback);
+    return std::make_shared<address_ref>(context.absolute_ref ? context.get_parent() : context.get_current(), tokens[0], fallback);
 
   } else if (tokens[0] == "dep"_ts) {
     if (token_count != 2)
@@ -247,7 +243,16 @@ base_p parse_escaped(string& raw, tstring& str, parse_context& context) {
   } else if (tokens[0] == "clone"_ts) {
     if (token_count != 2)
       THROW_ERROR(parse, "clone: Expected 1 components");
-    return address_ref(context.get_parent(), tokens[1], base_p()).get_source()->clone();
+    auto source = address_ref(context.get_parent(), tokens[1], base_p()).get_source();
+    if (!source)
+      THROW_ERROR(parse, "clone: Can't find the referenced node");
+
+    throwing_clone_context clone_context;
+    if (auto wrp = dynamic_cast<wrapper*>(source.get())) {
+      context.get_current().merge(*wrp, clone_context);
+      return base_p();
+    }
+    return source->clone(clone_context);
   } else
     THROW_ERROR(parse, "Unsupported reference type: " + tokens[0]);
 }

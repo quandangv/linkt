@@ -72,17 +72,22 @@ base_p& wrapper::add(tstring path, ancestor_processor* processor) {
 
 base_p& wrapper::add(tstring path, const base_p& value) {
   auto& place = add(path);
-  return place ? THROW_ERROR(wrapper, "Add: Duplicate key") : (place = value);
+  return !place ? (place = value) : !value ? place : THROW_ERROR(wrapper, "Add: Duplicate key");
 }
 
-base_p& wrapper::add(tstring path, string& raw, tstring value) {
-  auto& place = add(path);
-  parse_context context{this, this, &place};
-  return add(path, parse_raw(raw, value, context));
+base_p& wrapper::add(tstring path, string& raw, tstring value, parse_context& context) {
+  context.place = &add(path);
+  if (auto node = parse_raw(raw, value, context))
+    return context.get_place() = node;
+  return *context.place;
 }
 
 base_p& wrapper::add(tstring path, string raw) {
-  return add(path, raw, tstring(raw));
+  tstring ts(raw);
+  parse_context context{this, nullptr, &add(path)};
+  if (auto node = parse_raw(raw, ts, context))
+    return context.get_place() = node;
+  return context.get_place();
 }
 
 
@@ -126,18 +131,18 @@ string wrapper::get() const {
   return value ? value->get() : "";
 }
 
-void fill(const wrapper& src, wrapper& dest, clone_context& context) {
-  context.ancestors.emplace_back(&src, &dest);
+void wrapper::merge(const wrapper& src, clone_context& context) {
+  context.ancestors.emplace_back(&src, this);
   for(auto& pair : src.map) {
     if (!pair.second)
       continue;
     auto last_path = context.current_path;
     context.current_path += context.ancestors.size() == 1 ? pair.first : ("." + pair.first);
     try {
-      if (auto& place = dest.map[pair.first]; !place)
+      if (auto& place = map[pair.first]; !place)
         place = pair.second->clone(context);
       else if (auto wrp = dynamic_cast<wrapper*>(place.get()))
-        fill(dynamic_cast<wrapper&>(*pair.second), *wrp, context);
+        wrp->merge(dynamic_cast<wrapper&>(*pair.second), context);
     } catch (const std::exception& e) {
       context.report_error(e.what());
     }
@@ -148,7 +153,7 @@ void fill(const wrapper& src, wrapper& dest, clone_context& context) {
 
 base_p wrapper::clone(clone_context& context) const {
   auto result = std::make_shared<wrapper>();
-  fill(*this, *result, context);
+  result->merge(*this, context);
   return result;
 }
 

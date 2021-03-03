@@ -26,6 +26,7 @@ void write_key(std::ostream& os, const string& prefix, string&& value) {
 void parse_ini(std::istream& is, node::wrapper& root, node::errorlist& err) {
   string prefix;
   string raw;
+  node::parse_context context { &root, nullptr, nullptr, true };
   // Iterate through lines
   for (int linecount = 1; std::getline(is, raw); linecount++, raw.clear()) {
     tstring line(raw);
@@ -39,7 +40,7 @@ void parse_ini(std::istream& is, node::wrapper& root, node::errorlist& err) {
     } if (tstring key; err.extract_key(line, linecount, '=', key)) {
       // This is a key
       try {
-        root.add(prefix + key, raw, trim_quotes(line));
+        root.add(prefix + key, raw, trim_quotes(line), context);
       } catch (const std::exception& e) {
         err.report_error(linecount, e.what());
       }
@@ -122,7 +123,8 @@ void parse_yml(std::istream& is, node::wrapper& root, node::errorlist& err) {
       context.current = nullptr;
 
       records.emplace_back(indent, nullptr);
-      context.get_place() = parser(raw, line, context);
+      if (auto value = parser(raw, line, context))
+        context.get_place() = value;
     } catch (const std::exception& e) {
       err.report_error(linecount, key, e.what());
     }

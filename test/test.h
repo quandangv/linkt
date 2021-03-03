@@ -13,6 +13,7 @@ using namespace ::testing;
 using std::cerr, std::cout, std::vector, std::endl, std::string;
 
 constexpr int base_repeat = 5;
+constexpr int print_time = false;
 
 const TestResult& get_test_result() {
   auto error = std::runtime_error("Null pointer! Are we in a test?");
@@ -73,5 +74,6 @@ void triple_node_test(node::base_p node, std::function<void(node::base_p, node::
   if (test())
     GTEST_SKIP() << "Optimize test failed.";
   auto optimize_time = get_time_milli() - time;
-  cout << "Test time: normal " << std::setw(3) << normal_time << ", optimized " << std::setw(3) << optimize_time << endl;
+  if (print_time)
+    cout << "Test time: normal " << std::setw(3) << normal_time << ", optimized " << std::setw(3) << optimize_time << endl;
 }

@@ -12,13 +12,15 @@ void test_nodes(parse_test testset, int repeat = base_repeat * 100) {
   auto doc = new node::wrapper();
   auto base_doc = node::base_p(doc);
 
+  node::parse_context context{doc, nullptr, nullptr, true};
   // Add keys to doc
   for(auto test : testset) {
+    tstring ts{test.value};
     auto last_count = get_test_part_count();
     if (test.fail)
-      EXPECT_ANY_THROW(doc->add(test.path, move(test.value))) << "Expected error";
+      EXPECT_ANY_THROW(doc->add(test.path, test.value, ts, context)) << "Expected error";
     else
-      EXPECT_NO_THROW(doc->add(test.path, move(test.value))) << "Unexpected error";
+      EXPECT_NO_THROW(doc->add(test.path, test.value, ts, context)) << "Unexpected error";
     if (last_count != get_test_part_count())
       cerr << "Key: " << test.path << endl;
   }
@@ -111,6 +113,21 @@ TEST(Node, Color) {
   });
 }
 
+TEST(Node, Clone) {
+  test_nodes({
+    {"clone_source", "${color #123456 }", "#123456"},
+    {"clone_source.lv1", "abc", "abc"},
+    {"clone_source.lv1.lv2", "abc", "abc"},
+    {"clone_source.dumb", "${nexist}", "", false, true, true},
+    {"clone", "${clone clone_source }", "#123456"},
+    {"clone.lv1", "def", "def", true},
+    {"clone.lv1.lv2", "def", "def", true},
+    {"clone-fail", "${clone nexist }", "", true},
+  });
+  test_nodes({{"clone2", "${clone nexist nexist2 }", "", true}});
+  test_nodes({{"clone3", "${clone nexist}", "", true}});
+}
+
 TEST(Node, Other) {
   setenv("test_env", "test_env", true);
   unsetenv("nexist");
@@ -125,15 +142,4 @@ TEST(Node, Other) {
   test_nodes({{"map", "${map 5:10 0:2 7.5}", "1.000000"}});
   test_nodes({{"map", "${map 5:10 2 7.5 ? -1}", "1.000000"}});
   test_nodes({{"map", "${map 5:10 7.5}", "1.000000", true}});
-  test_nodes({
-    {"clone_source", "${color #123456 }", "#123456"},
-    {"clone_source.lv1", "", ""},
-    {"clone_source.lv1.lv2", "", ""},
-    {"clone_source.dumb", "${nexist}", "", false, true, true},
-    {"clone", "${clone clone_source }", "#123456"},
-    {"clone.lv1", "", "", true},
-    {"clone.lv1.lv2", "", "", true},
-    {"clone-fail", "${clone nexist }", "", true},
-  });
-  test_nodes({{"clone", "${clone nexist nexist2 }", "", true}});
 }

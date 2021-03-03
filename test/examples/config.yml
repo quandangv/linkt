@@ -6,6 +6,11 @@ status: ${greeting} | ${cpu} | ${memory} | ${battery} | ${date}
     bat_name: BAT0
   date:$ cmd date +%H:%M
 
+lemonbar.greeting.text:$ dep status.greeting
+lemonbar.cpu.text:$ dep status.cpu
+lemonbar.memory.text:$ dep status.memory
+lemonbar.battery.text:$ dep status.battery
+lemonbar.date.text:$ dep status.date
 lemonbar: '${greeting} ${cpu} ${memory} ${battery} ${date} '
   base: %{B${B}} ${text}
     B:$ color cielch(${L}, 1, ${H})
@@ -17,11 +22,6 @@ lemonbar: '${greeting} ${cpu} ${memory} ${battery} ${date} '
   memory:$ clone base
     B.H: 144
   battery:$ clone base
-    B.H: 216
+    B.H: -144
   date:$ clone base
     B.H: -72
-lemonbar.greeting.text:$ dep status.greeting
-lemonbar.cpu.text:$ dep status.cpu
-lemonbar.memory.text:$ dep status.memory
-lemonbar.battery.text:$ dep status.battery
-lemonbar.date.text:$ dep status.date

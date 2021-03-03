@@ -20,14 +20,26 @@ int main() {
       std::cout << "At " << e.first << ": " << e.second << std::endl;
   }
 
+  std::cout << "Available keys: \n";
+  std::cout << "  status\n";
+  std::cout << "  status.greeting\n";
+  std::cout << "  status.cpu\n";
+  std::cout << "  status.memory\n";
+  std::cout << "  status.battery\n";
+  std::cout << "  status.date\n";
+  std::cout << "  lemonbar\n";
   while (true) {
-    std::cout << "Enter path to get: ";
+    std::cout << "Enter key to get value: ";
     std::string path;
     std::getline(std::cin, path);
-    auto result = wrapper.get_child(path);
-    if (!result)
-      std::cout << "Path '" << path << "' have no value." << std::endl;
-    else
-      std::cout << *result << std::endl;
+    try {
+      auto result = wrapper.get_child(path);
+      if (!result)
+        std::cout << "Path '" << path << "' have no value." << std::endl;
+      else
+        std::cout << *result << std::endl;
+    } catch (const std::exception& e) {
+      std::cout << "Error while retrieving key: " << e.what() << std::endl;
+    }
   }
 }
