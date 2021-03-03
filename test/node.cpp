@@ -122,7 +122,9 @@ TEST(Node, Clone) {
     {"clone", "${clone clone_source }", "#123456"},
     {"clone.lv1", "def", "def", true},
     {"clone.lv1.lv2", "def", "def", true},
-    {"clone-fail", "${clone nexist }", "", true},
+    {"clone.lv1.dumb", "abc", "abc"},
+    {"clone_merge", "${clone clone_source clone}", "#123456"},
+    {"clone_merge.lv1.dumb", "def", "def", true},
   });
   test_nodes({{"clone2", "${clone nexist nexist2 }", "", true}});
   test_nodes({{"clone3", "${clone nexist}", "", true}});
@@ -142,4 +144,10 @@ TEST(Node, Other) {
   test_nodes({{"map", "${map 5:10 0:2 7.5}", "1.000000"}});
   test_nodes({{"map", "${map 5:10 2 7.5 ? -1}", "1.000000"}});
   test_nodes({{"map", "${map 5:10 7.5}", "1.000000", true}});
+  test_nodes({
+    {"base", "${map 100 1 ${rel stat}}", "", false, true},
+    {"clone.stat", "60", "60"},
+    {"clone", "${clone base}", "0.600000"},
+    {"clone.stat", "60", "60", true},
+  });
 }

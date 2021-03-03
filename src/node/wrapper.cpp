@@ -76,20 +76,14 @@ base_p& wrapper::add(tstring path, const base_p& value) {
 }
 
 base_p& wrapper::add(tstring path, string& raw, tstring value, parse_context& context) {
-  context.place = &add(path);
+  add(path);
+  context.parent = this;
+  context.current = nullptr;
+  context.place = get_child_place(path);
   if (auto node = parse_raw(raw, value, context))
     return context.get_place() = node;
   return *context.place;
 }
-
-base_p& wrapper::add(tstring path, string raw) {
-  tstring ts(raw);
-  parse_context context{this, nullptr, &add(path)};
-  if (auto node = parse_raw(raw, ts, context))
-    return context.get_place() = node;
-  return context.get_place();
-}
-
 
 void wrapper::iterate_children(std::function<void(const string&, const base_p&)> processor) const {
   for(auto& pair : map)

@@ -93,7 +93,7 @@ namespace node {
   struct parse_context {
     wrapper* parent{nullptr}, *current{nullptr};
     base_p* place{nullptr};
-    bool absolute_ref{false};
+    bool parent_based_ref{false};
 
     wrapper& get_current();
     wrapper& get_parent();

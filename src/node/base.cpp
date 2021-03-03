@@ -121,8 +121,7 @@ wrapper& parse_context::get_current() {
     return *current;
   if (!place)
     THROW_ERROR(parse, "Get-current: Both current and place are null");
-  current = dynamic_cast<wrapper*>(place->get());
-  if (current)
+  if (current = dynamic_cast<wrapper*>(place->get()))
     return *current;
   current = &wrapper::wrap(*place);
   place = nullptr;
@@ -198,12 +197,17 @@ base_p parse_escaped(string& raw, tstring& str, parse_context& context) {
   if (token_count == 0)
     THROW_ERROR(parse, "Empty reference string");
   if (token_count == 1) {
-    return std::make_shared<address_ref>(context.absolute_ref ? context.get_parent() : context.get_current(), tokens[0], fallback);
+    return std::make_shared<address_ref>(context.parent_based_ref ? context.get_parent() : context.get_current(), tokens[0], fallback);
 
   } else if (tokens[0] == "dep"_ts) {
     if (token_count != 2)
       THROW_ERROR(parse, "env: Expected 1 components");
     return std::make_shared<address_ref>(context.get_parent(), tokens[1], fallback);
+
+  } else if (tokens[0] == "rel"_ts) {
+    if (token_count != 2)
+      THROW_ERROR(parse, "env: Expected 1 components");
+    return std::make_shared<address_ref>(context.get_current(), tokens[1], fallback);
 
   } else if (tokens[0] == "file"_ts) {
     tokens[token_count - 1].merge(tokens[1]);
@@ -241,18 +245,20 @@ base_p parse_escaped(string& raw, tstring& str, parse_context& context) {
     return make_meta(newval);
 
   } else if (tokens[0] == "clone"_ts) {
-    if (token_count != 2)
-      THROW_ERROR(parse, "clone: Expected 1 components");
-    auto source = address_ref(context.get_parent(), tokens[1], base_p()).get_source();
-    if (!source)
-      THROW_ERROR(parse, "clone: Can't find the referenced node");
+    for (int i = 1; i < token_count; i++) {
+      auto source = address_ref(context.get_parent(), tokens[i], base_p()).get_source();
+      if (!source)
+        THROW_ERROR(parse, "clone: Can't find the referenced path: " + tokens[i]);
 
-    throwing_clone_context clone_context;
-    if (auto wrp = dynamic_cast<wrapper*>(source.get())) {
-      context.get_current().merge(*wrp, clone_context);
-      return base_p();
+      throwing_clone_context clone_context;
+      if (auto wrp = dynamic_cast<wrapper*>(source.get())) {
+        context.get_current().merge(*wrp, clone_context);
+      } else if (i == token_count -1) {
+        return source->clone(clone_context);
+      } else
+        THROW_ERROR(parse, "Can't merge non-wrapper nodes");
     }
-    return source->clone(clone_context);
+    return base_p();
   } else
     THROW_ERROR(parse, "Unsupported reference type: " + tokens[0]);
 }

@@ -26,7 +26,6 @@ namespace node {
     base_p& add  (tstring path, ancestor_processor* processor = nullptr);
     base_p& add  (tstring path, const base_p& value);
     base_p& add  (tstring path, string& raw, tstring value, parse_context& context);
-    base_p& add  (tstring path, string raw);
 
     base_p get_child_ptr  (tstring path) const;
     base_p* get_child_place  (tstring path);
