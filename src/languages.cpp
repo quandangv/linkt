@@ -128,7 +128,6 @@ void parse_yml(std::istream& is, node::wrapper& root, node::errorlist& err) {
     } catch (const std::exception& e) {
       err.report_error(linecount, key, e.what());
     }
-    nextline:;
   }
 }
 

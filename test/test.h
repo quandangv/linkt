@@ -37,8 +37,9 @@ void check_key(const node::wrapper& w, string path, string expected, bool except
   try {
     auto result = w.get_child(path);
     EXPECT_TRUE(result) << "Can't retrieve key";
-    if (last_count == get_test_part_count())
+    if (last_count == get_test_part_count()) {
       EXPECT_EQ(*result, expected) << "Unexpected value";
+    }
   } catch (const std::exception& e) {
     EXPECT_TRUE(exception) << "Unexpected exception thrown: " << e.what();
   }

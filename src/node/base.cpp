@@ -32,9 +32,7 @@ bool errorlist::extract_key(tstring& line, int linecount, char separator, tstrin
 bool is_fixed(base_p node) {
   if (auto doc = dynamic_cast<wrapper*>(node.get()))
     node = doc->get_child_ptr(""_ts);
-  if (auto fixed = dynamic_cast<plain*>(node.get()))
-    return true;
-  return false;
+  return dynamic_cast<plain*>(node.get());
 }
 
 // Returns the value of the fallback if available. Otherwise throws an error
@@ -121,7 +119,7 @@ wrapper& parse_context::get_current() {
     return *current;
   if (!place)
     THROW_ERROR(parse, "Get-current: Both current and place are null");
-  if (current = dynamic_cast<wrapper*>(place->get()))
+  if ((current = dynamic_cast<wrapper*>(place->get())))
     return *current;
   current = &wrapper::wrap(*place);
   place = nullptr;

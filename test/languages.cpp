@@ -58,7 +58,7 @@ void test_language(file_test_param testset) {
   auto file = popen(command.data(), "r");
   ASSERT_TRUE(file);
   std::array<char, 2> buf;
-  fgets(buf.data(), 2, file);
+  (void)fgets(buf.data(), 2, file);
   EXPECT_TRUE(feof(file))
       << "Output of command not empty: " << command;
   pclose(file);
@@ -120,10 +120,7 @@ TEST(Language, Yml) {
       {"bar.F", "#fff"},
       {"bar", "%{F#fff}%{B#FF54CB} BAT 60% "},
     },
-    {
-      "line 13, key B", "line 14", "line 15, key label",
-      "line 17, key dumb2"
-    }
+    { "line 13, key B", "line 14", "line 15, key label", "line 17, key dumb2" }
   });
 }
 

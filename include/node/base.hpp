@@ -75,7 +75,7 @@ namespace node {
     string path;
 
     address_ref  (wrapper& ancestor, string&& path, const base_p& fallback)
-        : ancestor(ancestor), path(move(path)), defaultable(fallback) {}
+        : defaultable(fallback), ancestor(ancestor), path(move(path)) {}
     string get  () const { return get_source()->get(); }
     bool set  (const string& value);
     base_p get_source  () const;

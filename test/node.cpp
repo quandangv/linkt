@@ -4,7 +4,7 @@
 
 struct parse_test_single {
   string path, value, parsed;
-  bool fail, exception, clone_fail;
+  bool fail{false}, exception{false}, clone_fail{false};
 };
 using parse_test = vector<parse_test_single>;
 
@@ -31,7 +31,6 @@ void test_nodes(parse_test testset, int repeat = base_repeat * 100) {
       if (test.fail || test.clone_fail) {
         std::erase_if(errs, [&](auto pair) { return pair.first == test.path; });
       } else {
-        auto fail_count = get_test_part_count();
         check_key(*doc, test.path, test.parsed, test.exception);
       }
     }
