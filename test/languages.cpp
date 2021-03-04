@@ -57,10 +57,7 @@ void test_language(file_test_param testset) {
   auto command = "diff '" + testset.path + "_output.txt' '" + testset.path + "_export.txt' 2>&1";
   auto file = popen(command.data(), "r");
   ASSERT_TRUE(file);
-  std::array<char, 2> buf;
-  (void)fgets(buf.data(), 2, file);
-  EXPECT_TRUE(feof(file))
-      << "Output of command not empty: " << command;
+  EXPECT_EQ(fgetc(file), EOF) << "Output of command not empty: " << command;
   pclose(file);
 }
 
