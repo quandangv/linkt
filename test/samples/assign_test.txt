@@ -10,3 +10,5 @@ env = ${env test_env? fail}
 env-nexist = ${env nexist? " f a i l " }
 cmd = ${cmd echo hello}
 cmd-ref = ${cmd}
+wrapper.key-b = b
+wrapper = wrapper

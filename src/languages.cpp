@@ -96,9 +96,7 @@ void parse_yml(std::istream& is, node::wrapper& root, node::errorlist& err) {
       continue;
 
     try {
-      LG_DBUG("parse key: " <<key);
       context.parent = records.back().node ?: (records.back().node = &context.get_current());
-      LG_DBUG("got parent: " <<key);
       if (line.empty()) {
         // Add an empty node and record it as a possible parent
         records.emplace_back(indent, nullptr);

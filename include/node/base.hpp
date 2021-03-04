@@ -52,8 +52,10 @@ namespace node {
     virtual bool set  (const string&) = 0;
   };
 
-  struct plain : public base, settable {
+  struct plain : base, settable {
+  private:
     string val;
+  public:
 
     explicit plain  (string&& val) : val(val) {}
     string get  () const { return val; }
@@ -82,10 +84,18 @@ namespace node {
     base_p clone  (clone_context&) const;
   };
 
-  struct meta : public base, defaultable {
-    base_p value;
-    
-    base_p copy(std::shared_ptr<meta>&& dest, clone_context& context) const;
+  struct meta : base, defaultable {
+    const base_p value;
+
+    meta(const base_p& value);
+
+    template <typename T>
+    std::shared_ptr<T> copy(clone_context& context) const {
+      auto result = std::make_shared<T>(value->clone(context));
+      if (fallback)
+        result->fallback = fallback->clone(context);
+      return result;
+    }
   };
 
   bool is_fixed(base_p node);

@@ -19,17 +19,10 @@ string color::get() const {
 }
 
 base_p color::clone(clone_context& context) const {
-  auto result = std::make_shared<color>();
-  if (!value)
-    context.report_error("Color: value is empty");
-
-  result->value = value->clone(context);
+  auto result = meta::copy<color>(context);
   if (context.optimize && is_fixed(result->value))
     return std::make_shared<plain>(get());
-
   result->processor = processor;
-  if (fallback)
-    result->fallback = fallback->clone(context);
   return result;
 }
 
@@ -44,7 +37,7 @@ bool env::set(const string& newval) {
 }
 
 base_p env::clone(clone_context& context) const {
-  return meta::copy(std::make_shared<env>(), context);
+  return meta::copy<env>(context);
 }
 
 string file::get() const {
@@ -67,7 +60,7 @@ bool file::set(const string& content) {
 }
 
 base_p file::clone(clone_context& context) const {
-  return meta::copy(std::make_shared<file>(), context);
+  return meta::copy<file>(context);
 }
 
 string cmd::get() const {
@@ -88,7 +81,7 @@ string cmd::get() const {
 }
 
 base_p cmd::clone(clone_context& context) const {
-  return meta::copy(std::make_shared<cmd>(), context);
+  return meta::copy<cmd>(context);
 }
 
 string map::get() const {
@@ -104,9 +97,7 @@ string map::get() const {
 }
 
 base_p map::clone(clone_context& context) const {
-  auto result = std::make_shared<map>();
-  if (value)
-    result->value = value->clone(context);
+  auto result = meta::copy<map>(context);
   if (context.optimize && is_fixed(result->value))
       return std::make_shared<plain>(get());
 
@@ -114,8 +105,6 @@ base_p map::clone(clone_context& context) const {
   result->from_range = from_range;
   result->to_min = to_min;
   result->to_range = to_range;
-  if (fallback)
-    result->fallback = fallback->clone(context);
   return result;
 }
 

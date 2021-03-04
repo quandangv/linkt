@@ -28,6 +28,11 @@ bool errorlist::extract_key(tstring& line, int linecount, char separator, tstrin
   return true;
 }
 
+meta::meta(const base_p& value) : value(value) {
+  if (!value)
+    THROW_ERROR(node, "meta: value can not be null");
+}
+
 // Checks if the value of a node come directly from a plain node, meaning it never changes
 bool is_fixed(base_p node) {
   if (auto doc = dynamic_cast<wrapper*>(node.get()))
@@ -105,15 +110,6 @@ base_p address_ref::clone(clone_context& context) const {
     fallback ? fallback->clone(context) : base_p());
 }
 
-// Clone the value and fallback of this object to another object.
-base_p meta::copy(std::shared_ptr<meta>&& dest, clone_context& context) const {
-  if (value)
-    dest->value = value->clone(context);
-  if (fallback)
-    dest->fallback = fallback->clone(context);
-  return dest;
-}
-
 wrapper& parse_context::get_current() {
   if (current)
     return *current;
@@ -187,10 +183,10 @@ base_p parse_escaped(string& raw, tstring& str, parse_context& context) {
   auto token_count = fill_tokens(str, tokens);
 
   // Finalize nodes that derive from node::meta
-  auto make_meta = [&]<typename T>(const std::shared_ptr<T>& ptr) {
-    ptr->fallback = move(fallback);
-    ptr->value = parse_raw(raw, trim_quotes(tokens[token_count - 1]), context);
-    return ptr;
+  auto make_meta = [&]<typename T>() {
+    auto result = std::make_shared<T>(parse_raw(raw, tokens[token_count - 1], context));
+    result->fallback = move(fallback);
+    return result;
   };
   if (token_count == 0)
     THROW_ERROR(parse, "Empty reference string");
@@ -209,45 +205,42 @@ base_p parse_escaped(string& raw, tstring& str, parse_context& context) {
 
   } else if (tokens[0] == "file"_ts) {
     tokens[token_count - 1].merge(tokens[1]);
-    return make_meta(std::make_shared<file>());
+    return make_meta.operator()<file>();
     
   } else if (tokens[0] == "cmd"_ts) {
     tokens[token_count - 1].merge(tokens[1]);
-    return make_meta(std::make_shared<cmd>());
+    return make_meta.operator()<cmd>();
 
   } else if (tokens[0] == "env"_ts) {
     if (token_count != 2)
       THROW_ERROR(parse, "env: Expected 1 components");
-    return make_meta(std::make_shared<env>());
+    return make_meta.operator()<env>();
 
   } else if (tokens[0] == "map"_ts) {
     if (token_count != 4)
       THROW_ERROR(parse, "map: Expected 3 components");
-    auto newval = std::make_shared<map>();
+    auto result = make_meta.operator()<map>();
     if (auto min = cut_front(tokens[1], ':'); !min.untouched())
-      newval->from_min = convert<float, strtof>(min);
-    newval->from_range = convert<float, strtof>(tokens[1]) - newval->from_min;
+      result->from_min = convert<float, strtof>(min);
+    result->from_range = convert<float, strtof>(tokens[1]) - result->from_min;
 
     if (auto min = cut_front(tokens[2], ':'); !min.untouched())
-      newval->to_min = convert<float, strtof>(min);
-    newval->to_range = convert<float, strtof>(tokens[2]) - newval->to_min;
-    return make_meta(newval);
+      result->to_min = convert<float, strtof>(min);
+    result->to_range = convert<float, strtof>(tokens[2]) - result->to_min;
+    return result;
 
   } else if (tokens[0] == "color"_ts) {
-    auto newval = std::make_shared<color>();
+    auto result = make_meta.operator()<color>();
     if (token_count > 2) {
       if (token_count > 3)
-        newval->processor.inter = cspace::stospace(tokens[1]);
-      newval->processor.add_modification(tokens[token_count - 2]);
+        result->processor.inter = cspace::stospace(tokens[1]);
+      result->processor.add_modification(tokens[token_count - 2]);
     }
-    return make_meta(newval);
+    return result;
 
   } else if (tokens[0] == "clone"_ts) {
     for (int i = 1; i < token_count; i++) {
       auto source = address_ref(context.get_parent(), tokens[i], base_p()).get_source();
-      if (!source)
-        THROW_ERROR(parse, "clone: Can't find the referenced path: " + tokens[i]);
-
       throwing_clone_context clone_context;
       if (auto wrp = dynamic_cast<wrapper*>(source.get())) {
         context.get_current().merge(*wrp, clone_context);

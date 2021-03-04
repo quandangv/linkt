@@ -98,10 +98,6 @@ void wrapper::iterate_children(std::function<void(const string&, const base&)> p
 }
 
 
-std::shared_ptr<address_ref> wrapper::make_address_ref(const tstring& ts, const base_p& fallback) {
-  return std::make_unique<address_ref>(*this, ts, move(fallback));
-}
-
 wrapper& wrapper::wrap(base_p& place) {
   auto wrp = new wrapper(place);
   place = base_p(wrp);
@@ -111,13 +107,6 @@ wrapper& wrapper::wrap(base_p& place) {
 bool wrapper::set(const tstring& path, const string& value) {
   auto target = dynamic_cast<settable*>(get_child_ptr(path).get());
   return target ? target->set(value) : false;
-}
-
-bool wrapper::set(const string& value) {
-  auto& place = map[""];
-  if (auto target = dynamic_cast<settable*>(place.get()))
-    return target->set(value);
-  return false;
 }
 
 string wrapper::get() const {
@@ -132,14 +121,10 @@ void wrapper::merge(const wrapper& src, clone_context& context) {
       continue;
     auto last_path = context.current_path;
     context.current_path += context.ancestors.size() == 1 ? pair.first : ("." + pair.first);
-    try {
-      if (auto& place = map[pair.first]; !place)
-        place = pair.second->clone(context);
-      else if (auto wrp = dynamic_cast<wrapper*>(place.get()))
-        wrp->merge(dynamic_cast<wrapper&>(*pair.second), context);
-    } catch (const std::exception& e) {
-      context.report_error(e.what());
-    }
+    if (auto& place = map[pair.first]; !place)
+      place = pair.second->clone(context);
+    else if (auto wrp = dynamic_cast<wrapper*>(place.get()))
+      wrp->merge(dynamic_cast<wrapper&>(*pair.second), context);
     context.current_path = last_path;
   }
   context.ancestors.pop_back();

@@ -13,7 +13,7 @@ namespace node {
 
   using ancestor_processor = std::function<void(tstring& path, wrapper* ancestor)>;
   struct wrapper_error : std::logic_error { using logic_error::logic_error; };
-  struct wrapper : public base, settable {
+  struct wrapper : base {
     using map_type = std::map<string, base_p>;
 
     map_type map{};
@@ -36,10 +36,8 @@ namespace node {
     void iterate_children  (std::function<void(const string&, const base&)> processor) const;
 
     bool set  (const tstring& path, const string& value);
-    bool set  (const string& value);
     void merge  (const wrapper& source, clone_context&);
     string get  () const;
-    std::shared_ptr<address_ref> make_address_ref  (const tstring&, const base_p&);
     base_p clone  (clone_context&) const;
   };
 }

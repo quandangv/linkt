@@ -12,7 +12,7 @@ using namespace ::testing;
 
 using std::cerr, std::cout, std::vector, std::endl, std::string;
 
-constexpr int base_repeat = 5;
+constexpr int base_repeat = 500;
 constexpr int print_time = false;
 
 const TestResult& get_test_result() {
@@ -47,7 +47,9 @@ void check_key(const node::wrapper& w, string path, string expected, bool except
     cerr << "Key: " << path << endl << endl;
 }
 
-void triple_node_test(node::base_p node, std::function<void(node::base_p, node::errorlist&)> tester, int repeat = base_repeat * 100) {
+void triple_node_test(node::base_p node, std::function<void(node::base_p, node::errorlist&)> tester, int repeat = base_repeat) {
+  if (repeat <= 0)
+    repeat = 1;
   auto fail_count = get_test_part_count();
   auto time = get_time_milli();
   node::clone_context context;

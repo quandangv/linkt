@@ -8,7 +8,7 @@ struct parse_test_single {
 };
 using parse_test = vector<parse_test_single>;
 
-void test_nodes(parse_test testset, int repeat = base_repeat * 100) {
+void test_nodes(parse_test testset, int repeat = base_repeat) {
   auto doc = new node::wrapper();
   auto base_doc = node::base_p(doc);
 
@@ -52,10 +52,10 @@ TEST(Node, Cmd) {
     {"cmd", "${cmd echo ${msg}}", "1.000"},
     {"cmd-ref", "${map 1 2 ${cmd}}", "2.000000"},
     {"cmd-msg", "result is ${cmd-ref}", "result is 2.000000"},
-  }, base_repeat);
-  test_nodes({{"cmd", "${cmd echo hello world}", "hello world"}}, base_repeat);
-  test_nodes({{"cmd", "${cmd nexist}", "", false, true}}, base_repeat);
-  test_nodes({{"cmd", "${cmd nexist ? fail}", "fail"}}, base_repeat);
+  }, base_repeat / 100);
+  test_nodes({{"cmd", "${cmd echo hello world}", "hello world"}}, base_repeat / 100);
+  test_nodes({{"cmd", "${cmd nexist}", "", false, true}}, base_repeat / 100);
+  test_nodes({{"cmd", "${cmd nexist ? fail}", "fail"}}, base_repeat / 100);
 }
 
 TEST(Node, Ref) {
@@ -88,6 +88,8 @@ TEST(Node, Ref) {
     {"ref-not-cyclic-1", "${ref-not-cyclic-2}", ""},
     {"ref-not-cyclic-2", "", ""}
   });
+  test_nodes({{"dep", "${dep fail fail2}", "", true}});
+  test_nodes({{"dep", "${rel fail fail2}", "", true}});
 }
 TEST(Node, File) {
   test_nodes({
@@ -110,6 +112,10 @@ TEST(Node, Color) {
     {"color-ref", "${color ${color}}", "#123456"},
     {"color-mod", "${color cielch 'lum * 1.5, hue + 60' ${color}}", "#633E5C"},
   });
+  test_nodes({
+    {"clone5.stat", "60", "60"},
+    {"color-fail", "${color ${clone clone5}}", "", true},
+  });
 }
 
 TEST(Node, Clone) {
@@ -127,26 +133,32 @@ TEST(Node, Clone) {
   });
   test_nodes({{"clone2", "${clone nexist nexist2 }", "", true}});
   test_nodes({{"clone3", "${clone nexist}", "", true}});
+  test_nodes({
+    {"base", "${map 100 1 ${rel stat}}", "", false, true},
+    {"clone4.stat", "60", "60"},
+    {"clone4", "${clone base}", "0.600000"},
+    {"clone4.stat", "60", "60", true},
+  });
+  test_nodes({
+    {"src1.key1", "a", "a"},
+    {"src2.key2", "b", "b"},
+    {"src3", "c", "c"},
+    {"merge", "${clone src1 src2 src3}", "c"},
+    {"merge-fail", "${clone src3 src2 src1}", "", true},
+  });
 }
 
 TEST(Node, Other) {
   setenv("test_env", "test_env", true);
   unsetenv("nexist");
-
   test_nodes({{"interpolate", "%{${color hsv(0, 1, 0.5)}}", "%{#800000}"}});
   test_nodes({{"dumb", "${dumb nexist.txt}", "${dumb nexist.txt}", true}});
   test_nodes({{"dumb", "", ""}});
   test_nodes({{"dumb", "${}", "", true}});
-  test_nodes({{"env", "${env test_env? fail}", "test_env"}});
+  test_nodes({{"env", "${env 'test_env' ? fail}", "test_env"}});
   test_nodes({{"env", "${env nexist? \" f a i l \" }", " f a i l "}});
   test_nodes({{"env", "${env nexist test_env }", "", true}});
   test_nodes({{"map", "${map 5:10 0:2 7.5}", "1.000000"}});
   test_nodes({{"map", "${map 5:10 2 7.5 ? -1}", "1.000000"}});
   test_nodes({{"map", "${map 5:10 7.5}", "1.000000", true}});
-  test_nodes({
-    {"base", "${map 100 1 ${rel stat}}", "", false, true},
-    {"clone.stat", "60", "60"},
-    {"clone", "${clone base}", "0.600000"},
-    {"clone.stat", "60", "60", true},
-  });
 }

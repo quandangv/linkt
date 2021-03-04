@@ -148,10 +148,23 @@ TEST(Assign, Load) {
   EXPECT_EQ(doc.get_child("key-a"_ts, "fallback"), "a");
   EXPECT_EQ(doc.get(), "");
   EXPECT_ANY_THROW(doc.get_child("ref-fail"_ts));
+  doc.add("manual"_ts, std::make_shared<node::plain>("hello"));
+  EXPECT_EQ(doc.get_child("manual"_ts, "fail"), "hello");
+  
+  node::parse_context test_context{nullptr, nullptr, nullptr};
+  EXPECT_THROW(test_context.get_current(), node::parse_error);
+  EXPECT_THROW(test_context.get_place(), node::parse_error);
+  EXPECT_THROW(test_context.get_parent(), node::parse_error);
+  EXPECT_THROW({
+    node::throwing_clone_context context;
+    context.no_dependency = true;
+    doc.get_child_ptr("ref-a"_ts)->clone(context);
+  }, node::node_error);
 }
 
 TEST(Assign, Ref) {
   // Test local_ref assignments
+  set_key("key-a", "b");
   set_key("key-a", "a");
   set_key("ref-a", "foo");
   set_key("ref-ref-a", "bar");
