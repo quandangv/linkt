@@ -43,6 +43,7 @@ TEST(Node, Simple) {
     {".key", "foo", "foo"},
     {"a.ref", "${.key}", "foo"},
     {"a.ref-space", "${ .key }", "foo"},
+    {"newline", "hello\\nworld", "hello\nworld"},
   });
 }
 
@@ -152,9 +153,9 @@ TEST(Node, Other) {
   setenv("test_env", "test_env", true);
   unsetenv("nexist");
   test_nodes({{"interpolate", "%{${color hsv(0, 1, 0.5)}}", "%{#800000}"}});
-  test_nodes({{"dumb", "${dumb nexist.txt}", "${dumb nexist.txt}", true}});
-  test_nodes({{"dumb", "", ""}});
-  test_nodes({{"dumb", "${}", "", true}});
+  test_nodes({{"dumb1", "${dumb nexist.txt}", "${dumb nexist.txt}", true}});
+  test_nodes({{"dumb2", "", ""}});
+  test_nodes({{"dumb3", "${}", "", true}});
   test_nodes({{"env", "${env 'test_env' ? fail}", "test_env"}});
   test_nodes({{"env", "${env nexist? \" f a i l \" }", " f a i l "}});
   test_nodes({{"env", "${env nexist test_env }", "", true}});

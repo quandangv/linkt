@@ -141,6 +141,17 @@ base_p& parse_context::get_place() {
 
 // Parse an unescaped node string
 base_p parse_raw(string& raw, tstring& str, parse_context& context) {
+  for (auto it = str.begin(); it < str.end() - 1; it++) {
+    if (*it == '\\') {
+      switch (*++it) {
+        case 'n': str.replace(raw, it - str.begin() - 1, 2, "\n"); break;
+        case 't': str.replace(raw, it - str.begin() - 1, 2, "\t"); break;
+        case '\\': str.replace(raw, it - str.begin() - 1, 2, "\\"); break;
+        case '$': --it; break;
+        default: THROW_ERROR(parse, "Unknown escape sequence: \\" + string{*it});
+      }
+    }
+  }
   size_t start, end;
   if (!find_enclosed(str, raw, "${", "{", "}", start, end)) {
     // There is no node inside the string, it's a plain string
