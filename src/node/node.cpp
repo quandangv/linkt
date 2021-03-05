@@ -84,6 +84,30 @@ base_p cmd::clone(clone_context& context) const {
   return meta::copy<cmd>(context);
 }
 
+string save::get() const {
+  auto str = value->get();
+  auto sep = str.rfind('\n');
+  string result;
+  if (sep == string::npos) {
+    result = str;
+    str = "";
+  } else {
+    result = str.substr(sep + 1);
+    str.erase(sep);
+  }
+  if (auto conv_target = dynamic_cast<settable*>(target.get());
+      !conv_target || !conv_target->set(str))
+    THROW_ERROR(node, "save: Can't set value to target");
+  return result;
+}
+
+base_p save::clone(clone_context& context) const {
+  auto result = std::make_shared<save>();
+  result->value = value->clone(context);
+  result->target = target->clone(context);
+  return result;
+}
+
 string map::get() const {
   try {
     auto str = value ? value->get() : use_fallback("Value key doesn't exist");

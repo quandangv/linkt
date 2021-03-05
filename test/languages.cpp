@@ -140,7 +140,9 @@ TEST(Assign, Load) {
   parse_ini(ifs, doc, err);
   ASSERT_TRUE(err.empty());
   ifs.close();
+}
 
+TEST(Assign, Other_tests) {
   // Test wrapper functionalities
   EXPECT_FALSE(doc.get_child("nexist"_ts));
   EXPECT_EQ(doc.get_child("nexist"_ts, "fallback"), "fallback");
@@ -160,6 +162,10 @@ TEST(Assign, Load) {
     context.no_dependency = true;
     doc.get_child_ptr("ref-a"_ts)->clone(context);
   }, node::node_error);
+
+  EXPECT_EQ(doc.get_child("appender"_ts, "fail"), "I ");
+  EXPECT_EQ(doc.get_child("appender"_ts, "fail"), "I eat sleep rave repeat ");
+  EXPECT_EQ(doc.get_child("appender"_ts, "fail"), "I eat sleep rave repeat eat sleep rave repeat ");
 }
 
 TEST(Assign, Ref) {

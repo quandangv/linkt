@@ -227,6 +227,16 @@ base_p parse_escaped(string& raw, tstring& str, parse_context& context) {
       THROW_ERROR(parse, "env: Expected 1 components");
     return make_meta.operator()<env>();
 
+  } else if (tokens[0] == "save"_ts) {
+    if (token_count != 3)
+      THROW_ERROR(parse, "save: Expected 2 components");
+    auto result = std::make_shared<save>();
+    result->target = std::make_shared<address_ref>(context.get_current(), tokens[1], base_p());
+    result->value = parse_raw(raw, tokens[2], context);
+    if (!result->value)
+      THROW_ERROR(parse, "save: Invalid 2nd component");
+    return result;
+
   } else if (tokens[0] == "map"_ts) {
     if (token_count != 4)
       THROW_ERROR(parse, "map: Expected 3 components");

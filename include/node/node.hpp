@@ -33,6 +33,14 @@ namespace node {
     base_p clone  (clone_context&) const;
   };
 
+  struct save : base {
+    base_p value;
+    base_p target;
+
+    string get  () const;
+    base_p clone  (clone_context&) const;
+  };
+
   struct map : public meta {
     using meta::meta;
     float from_min{0}, from_range{0}, to_min{0}, to_range{0};

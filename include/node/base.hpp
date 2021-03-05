@@ -53,9 +53,7 @@ namespace node {
   };
 
   struct plain : base, settable {
-  private:
     string val;
-  public:
 
     explicit plain  (string&& val) : val(val) {}
     string get  () const { return val; }
@@ -72,7 +70,7 @@ namespace node {
   };
 
   struct wrapper;
-  struct address_ref : public base, defaultable, settable {
+  struct address_ref : base, defaultable, settable {
     wrapper& ancestor;
     string path;
 
