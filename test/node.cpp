@@ -54,9 +54,10 @@ TEST(Node, Cmd) {
     {"cmd-ref", "${map 1 2 ${cmd}}", "2.000000"},
     {"cmd-msg", "result is ${cmd-ref}", "result is 2.000000"},
   }, base_repeat / 100);
-  test_nodes({{"cmd", "${cmd echo hello world}", "hello world"}}, base_repeat / 100);
-  test_nodes({{"cmd", "${cmd nexist}", "", false, true}}, base_repeat / 100);
-  test_nodes({{"cmd", "${cmd nexist ? fail}", "fail"}}, base_repeat / 100);
+  test_nodes({{"cmd2", "${cmd echo hello world}", "hello world"}}, base_repeat / 100);
+  test_nodes({{"cmd3", "${cmd nexist}", "", false, true}}, base_repeat / 100);
+  test_nodes({{"cmd4", "${cmd nexist ? fail}", "fail"}}, base_repeat / 100);
+  test_nodes({{"cmd4", "${cmd nexist ?}", ""}}, base_repeat / 100);
 }
 
 TEST(Node, Ref) {
@@ -100,7 +101,7 @@ TEST(Node, File) {
   });
   test_nodes({{"file1", "${file key_file.txt }", "content"}});
   test_nodes({{"file2", "${file key_file.txt?fail}", "content"}});
-  test_nodes({{"file3", "${file nexist.txt ? ${file key_file.txt}}", "content"}});
+  test_nodes({{"file3", "${file nexist.txt ?   ${file key_file.txt}}", "content"}});
   test_nodes({{"file4", "${file nexist.txt ? \" f a i l ' }", "\" f a i l '"}});
   test_nodes({{"file5", "${file nexist.txt}", "${file nexist.txt}", false, true}});
 }
@@ -156,9 +157,10 @@ TEST(Node, Other) {
   test_nodes({{"dumb1", "${dumb nexist.txt}", "${dumb nexist.txt}", true}});
   test_nodes({{"dumb2", "", ""}});
   test_nodes({{"dumb3", "${}", "", true}});
-  test_nodes({{"env", "${env 'test_env' ? fail}", "test_env"}});
-  test_nodes({{"env", "${env nexist? \" f a i l \" }", " f a i l "}});
-  test_nodes({{"env", "${env nexist test_env }", "", true}});
+  test_nodes({{"env1", "${env 'test_env' ? fail}", "test_env"}});
+  test_nodes({{"env1", "${env ${nexist ? test_env}}", "test_env"}});
+  test_nodes({{"env2", "${env nexist? \" f a i l \" }", " f a i l "}});
+  test_nodes({{"env3", "${env nexist test_env }", "", true}});
   test_nodes({{"map", "${map 5:10 0:2 7.5}", "1.000000"}});
   test_nodes({{"map", "${map 5:10 2 7.5 ? -1}", "1.000000"}});
   test_nodes({{"map", "${map 5:10 7.5}", "1.000000", true}});

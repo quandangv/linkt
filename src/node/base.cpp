@@ -183,15 +183,28 @@ base_p parse_raw(string& raw, tstring& str, parse_context& context) {
   return newval;
 }
 
+int word_matcher(int c) {
+  return c == '?' ? 2 : std::isspace(c) ? 0 : 1;
+}
+
 // Parse an escaped node string
 base_p parse_escaped(string& raw, tstring& str, parse_context& context) {
+  std::array<tstring, 7> tokens;
+  auto token_count = fill_tokens<word_matcher, 7>(str, tokens);
+
   // Extract the fallback before anything
   base_p fallback;
-  if (auto fb_str = cut_back(str, '?'); !fb_str.untouched())
-    fallback = parse_raw(raw, trim_quotes(fb_str), context);
-
-  std::array<tstring, 5> tokens;
-  auto token_count = fill_tokens(str, tokens);
+  for (int i = token_count; i--> 0;) {
+    if (!tokens[i].empty() && tokens[i].front() == '?') {
+      tokens[i].erase_front();
+      auto last_element = token_count - 1;
+      token_count = i;
+      if (tokens[i].empty() && i < last_element)
+        i++;
+      tokens[i].merge(tokens[last_element]);
+      fallback = parse_raw(raw, tokens[i], context);
+    } else trim_quotes(tokens[i]);
+  }
 
   // Finalize nodes that derive from node::meta
   auto make_meta = [&]<typename T>() {
