@@ -7,3 +7,6 @@
 [submodule "lib/strings"]
 	path = lib/strings
 	url = https://github.com/quandangv/strings
+[submodule "lib/cspace"]
+	path = lib/cspace
+	url = https://github.com/quandangv/cspace

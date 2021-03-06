@@ -3,10 +3,10 @@ execute_process(COMMAND git submodule update --init --rebase -- ${CMAKE_CURRENT_
 
 include(lib/strings/file_list)
 set(STRINGS_PUBLIC_HEADERS_DIR ${PUBLIC_HEADERS_DIR})
-list(APPEND INCLUDE_DIRS ${STRINGS_PUBLIC_HEADERS_DIR})
+set(INCLUDE_DIRS ${STRINGS_PUBLIC_HEADERS_DIR})
 
 # paths to various directories
-get_filename_component(GENERATED_HEADERS_DIR ${CMAKE_BINARY_DIR}/generated-headers ABSOLUTE)
+get_filename_component(GENERATED_HEADERS_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated-headers ABSOLUTE)
 get_filename_component(PUBLIC_HEADERS_DIR    ${CMAKE_CURRENT_LIST_DIR}/include ABSOLUTE)
 get_filename_component(PRIVATE_HEADERS_DIR   ${CMAKE_CURRENT_LIST_DIR}/private-headers ABSOLUTE)
 get_filename_component(SRC_DIR               ${CMAKE_CURRENT_LIST_DIR}/src ABSOLUTE)

@@ -1,20 +1,33 @@
-cmake_minimum_required(VERSION 3.1.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.10)
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
 project(linked_nodes VERSION 1.1.0)
 
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
+list(PREPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 include(file_list)
 include(cmake/targets)
 add_shared_lib("linked_nodes_node" "${NODE_SOURCES}" "${INCLUDE_DIRS};include/node" "${NODE_HEADERS}" "linked_nodes/node")
 add_shared_lib("linked_nodes" "${LINI_SOURCES}" "${INCLUDE_DIRS};include" "${LINI_HEADERS}" "linked_nodes")
-find_library(cspace cspace REQUIRED)
-target_link_libraries(linked_nodes_node ${cspace})
-target_link_libraries(linked_nodes linked_nodes_node)
-
-configure_file(${PUBLIC_HEADERS_DIR}/common.hpp.in  ${GENERATED_HEADERS_DIR}/common.hpp)
 
 if(BUILD_TESTS)
   include(cmake/test)
 endif()
+set(BUILD_TESTS OFF)
+
+find_library(CSPACE cspace)
+if(NOT CSPACE)
+  message("Cspace library not found, building it...")
+  execute_process(WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+    COMMAND git submodule update --init --rebase lib/cspace)
+  add_subdirectory(lib/cspace)
+  target_link_libraries(linked_nodes_node cspace)
+  target_compile_options(linked_nodes_node PRIVATE "-I${CMAKE_CURRENT_BINARY_DIR}/include")
+  message("Building cspace done!")
+else()
+  target_link_libraries(linked_nodes_node ${CSPACE})
+endif()
+
+target_link_libraries(linked_nodes linked_nodes_node)
+
+configure_file(${PUBLIC_HEADERS_DIR}/common.hpp.in  ${GENERATED_HEADERS_DIR}/common.hpp)

@@ -190,7 +190,7 @@ int word_matcher(int c) {
 // Parse an escaped node string
 base_p parse_escaped(string& raw, tstring& str, parse_context& context) {
   std::array<tstring, 7> tokens;
-  auto token_count = fill_tokens<word_matcher, 7>(str, tokens);
+  auto token_count = fill_tokens<word_matcher>(str, tokens);
 
   // Extract the fallback before anything
   base_p fallback;
