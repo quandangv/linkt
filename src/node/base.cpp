@@ -244,8 +244,8 @@ base_p parse_escaped(string& raw, tstring& str, parse_context& context) {
     if (token_count != 3)
       THROW_ERROR(parse, "save: Expected 2 components");
     auto result = std::make_shared<cache>();
-    result->cache_duration = std::chrono::milliseconds((int)convert<float,strtof>(tokens[1]));
-    result->cache_expire = std::chrono::steady_clock::now();
+    auto duration = *(parse_long(tokens[1].begin(), tokens[1].size()) ?: THROW_ERROR(parse, "1st component must be a number"));
+    result->cache_duration = std::chrono::milliseconds(duration);
     result->source = parse_raw(raw, tokens[2], context);
     if (!result->source)
       THROW_ERROR(parse, "save: Invalid 2nd component");
