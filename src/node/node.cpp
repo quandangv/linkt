@@ -108,6 +108,21 @@ base_p save::clone(clone_context& context) const {
   return result;
 }
 
+string cache::get() const {
+  if (auto now = std::chrono::steady_clock::now(); now > cache_expire) {
+    cache_str = source->get();
+    cache_expire = now + cache_duration;
+  }
+  return cache_str;
+}
+
+base_p cache::clone(clone_context& context) const {
+  auto result = std::make_shared<cache>();
+  result->source = source->clone(context);
+  result->cache_duration = cache_duration;
+  return result;
+}
+
 string map::get() const {
   try {
     auto str = value ? value->get() : use_fallback("Value key doesn't exist");

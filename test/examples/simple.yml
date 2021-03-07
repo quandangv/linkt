@@ -1,9 +1,9 @@
 status: Hello ${name} | CPU Usage: ${cpu} | Memory Usage: ${memory} | Battery level: ${battery} | ${date}
   name:$ cmd echo $USER
-  cpu:$ save last-param ${cmd ./cpu.sh ${last-param} ? N/A}
+  cpu:$ save last-param ${cmd ./scripts/cpu.sh ${last-param}}
     last-param: 0 0
-  memory:$ cmd ./memory.sh ? N/A
-  battery:$ cmd ./battery.sh ${bat_name} ? N/A
+  memory:$ cmd ./scripts/memory.sh ? N/A
+  battery:$ cmd ./scripts/battery.sh ${bat_name} ? N/A
     bat_name: BAT1
   date:$ cmd date +%H:%M
 
@@ -17,7 +17,7 @@ lemonbar: '${greeting} ${cpu} ${memory} ${sep}%{r}${battery} ${date} ${sep}%{B-}
   base: ${dep sep}%{B${B}} ${text}
     B.base:$ color cielch(${L}, 1, ${H})
       L: 0.7
-      H:$ cmd ./anim-base.sh 60
+      H:$ cmd ./scripts/anim-base.sh 60
   greeting:$ clone base
     B:$ color cielch 'h + 0' ${base}
   cpu:$ clone base

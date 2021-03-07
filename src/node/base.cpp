@@ -240,6 +240,17 @@ base_p parse_escaped(string& raw, tstring& str, parse_context& context) {
       THROW_ERROR(parse, "env: Expected 1 components");
     return make_meta.operator()<env>();
 
+  } else if (tokens[0] == "cache"_ts) {
+    if (token_count != 3)
+      THROW_ERROR(parse, "save: Expected 2 components");
+    auto result = std::make_shared<cache>();
+    result->cache_duration = std::chrono::milliseconds((int)convert<float,strtof>(tokens[1]));
+    result->cache_expire = std::chrono::steady_clock::now();
+    result->source = parse_raw(raw, tokens[2], context);
+    if (!result->source)
+      THROW_ERROR(parse, "save: Invalid 2nd component");
+    return result;
+
   } else if (tokens[0] == "save"_ts) {
     if (token_count != 3)
       THROW_ERROR(parse, "save: Expected 2 components");

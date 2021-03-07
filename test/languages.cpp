@@ -165,7 +165,11 @@ TEST(Assign, Other_tests) {
 
   EXPECT_EQ(doc.get_child("appender"_ts, "fail"), "I ");
   EXPECT_EQ(doc.get_child("appender"_ts, "fail"), "I eat sleep rave repeat ");
-  EXPECT_EQ(doc.get_child("appender"_ts, "fail"), "I eat sleep rave repeat eat sleep rave repeat ");
+  EXPECT_EQ(doc.get_child("cache"_ts, "fail"), "I eat sleep rave repeat eat sleep rave repeat ");
+  EXPECT_EQ(doc.get_child("cache"_ts, "fail"), "I eat sleep rave repeat eat sleep rave repeat ");
+  EXPECT_EQ(doc.get_child("cache"_ts, "fail"), "I eat sleep rave repeat eat sleep rave repeat ");
+  EXPECT_EQ(doc.get_child("cache_too_short"_ts, "fail"), "I eat sleep rave repeat eat sleep rave repeat eat sleep rave repeat ");
+  EXPECT_EQ(doc.get_child("cache_too_short"_ts, "fail"), "I eat sleep rave repeat eat sleep rave repeat eat sleep rave repeat eat sleep rave repeat ");
 }
 
 TEST(Assign, Ref) {

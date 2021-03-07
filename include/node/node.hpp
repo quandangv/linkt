@@ -2,6 +2,7 @@
 
 #include "base.hpp"
 
+#include <chrono>
 #include <cspace/processor.hpp>
 
 namespace node {
@@ -36,6 +37,16 @@ namespace node {
   struct save : base {
     base_p value;
     base_p target;
+
+    string get  () const;
+    base_p clone  (clone_context&) const;
+  };
+
+  struct cache : base {
+    base_p source;
+    std::chrono::milliseconds cache_duration;
+    mutable string cache_str;
+    mutable std::chrono::time_point<std::chrono::steady_clock> cache_expire;
 
     string get  () const;
     base_p clone  (clone_context&) const;

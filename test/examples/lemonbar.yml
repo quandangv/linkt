@@ -1,0 +1,30 @@
+lemonbar: '${greeting} ${cpu} ${memory} ${sep}%{r}${battery} ${date} ${sep}%{B-}'
+  sep: '%{B#fff} '
+  base: ${dep sep}%{B${B}} ${text}
+    B.base:$ color cielch(${L}, 1, ${H})
+      L: 0.7
+      H:$ cmd ./scripts/anim-base.sh 60
+  cached_base:$ clone base
+    raw:$ cache 1000 ${dep calculation}
+  greeting:$ clone base
+    B:$ color cielch 'h + 0' ${base}
+    text: Hello ${dep raw}
+  cpu:$ clone cached_base
+    B:$ color cielch 'h + 72' ${base}
+    text: CPU ${dep raw}
+  memory:$ clone cached_base
+    B:$ color cielch 'h + 144' ${base}
+    text: RAM ${dep raw}
+  battery:$ clone cached_base
+    B:$ color cielch 'h + -144' ${base}
+    text: BAT ${dep raw}
+  date:$ clone base
+    B:$ color cielch 'h + -72' ${base}
+
+lemonbar.greeting.raw:$ env USER
+lemonbar.cpu.calculation:$ save last_status ${cmd ./scripts/cpu.sh ${last_status} ? N/A}
+  last_status: 0 0
+lemonbar.memory.calculation:$ cmd ./scripts/memory.sh ? N/A
+lemonbar.battery.calculation:$ cmd ./scripts/battery.sh ${bat_name} ? N/A
+  bat_name: BAT1
+lemonbar.date.text:$ cmd date +%H:%M

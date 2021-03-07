@@ -1,11 +1,13 @@
 #include <linked_nodes/languages.hpp>
 #include <iostream>
 #include <fstream>
+#include <chrono>
+#include <thread>
 
 int main() {
-  std::ifstream file {"simple.yml"};
+  std::ifstream file {"lemonbar.yml"};
   if (file.fail()) {
-    std::cout << "Failed to load file 'simple.yml'. "
+    std::cout << "Failed to load file 'lemonbar.yml'. "
         "Make sure that you are working in the directory test/example." << std::endl;
     return 1;
   }
@@ -20,26 +22,19 @@ int main() {
       std::cout << "At " << e.first << ": " << e.second << std::endl;
   }
 
-  std::cout << "Available keys: \n";
-  std::cout << "  status\n";
-  std::cout << "  status.greeting\n";
-  std::cout << "  status.cpu\n";
-  std::cout << "  status.memory\n";
-  std::cout << "  status.battery\n";
-  std::cout << "  status.date\n";
-  std::cout << "  lemonbar\n";
+  std::cout << "If you have lemonbar installed,\n"
+      "Pass the result of this program to lemonbar and get a simple status bar\n";
   while (true) {
-    std::cout << "Enter key to get value: ";
-    std::string path;
-    std::getline(std::cin, path);
+    auto next_frame = std::chrono::system_clock::now() + std::chrono::milliseconds(200);
     try {
-      auto result = wrapper.get_child(path);
+      auto result = wrapper.get_child("lemonbar"_ts);
       if (!result)
-        std::cout << "Path '" << path << "' have no value." << std::endl;
+        std::cout << "Failed to retrieve the key at path 'lemonbar'";
       else
         std::cout << *result << std::endl;
     } catch (const std::exception& e) {
       std::cout << "Error while retrieving key: " << e.what() << std::endl;
     }
+    std::this_thread::sleep_until(next_frame);
   }
 }
