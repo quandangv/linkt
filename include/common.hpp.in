@@ -39,9 +39,17 @@ Right* assign(Left& left, const std::shared_ptr<Right>& right) {
   return right.get();
 }
 
-inline std::optional<int> parse_long(const char* str, size_t len) {
+inline std::optional<long int> parse_long(const char* str, size_t len) {
   char* end;
   auto result = std::strtol(str, &end, 10);
+  if (end != str + len)
+    return {};
+  return result;
+}
+
+inline std::optional<unsigned long int> parse_ulong(const char* str, size_t len) {
+  char* end;
+  auto result = std::strtoul(str, &end, 10);
   if (end != str + len)
     return {};
   return result;

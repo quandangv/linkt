@@ -25,7 +25,7 @@ int main() {
   std::cout << "If you have lemonbar installed,\n"
       "Pass the result of this program to lemonbar and get a simple status bar\n";
   while (true) {
-    auto next_frame = std::chrono::system_clock::now() + std::chrono::milliseconds(200);
+    auto next_frame = std::chrono::system_clock::now() + std::chrono::milliseconds(100);
     try {
       auto result = wrapper.get_child("lemonbar"_ts);
       if (!result)

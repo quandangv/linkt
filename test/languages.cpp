@@ -1,6 +1,7 @@
 #include "test.h"
 
 #include <fstream>
+#include <thread>
 #include <unistd.h>
 
 struct file_test_param {
@@ -132,17 +133,18 @@ void set_key(const string& key, const string& newval) {
     cerr << "Key: " << key << endl;
 }
 
-TEST(Assign, Load) {
+TEST(Misc, Load) {
   // Load the test file
-  std::ifstream ifs{"assign_test.txt"};
+  std::ifstream ifs{"misc_test.txt"};
   ASSERT_FALSE(ifs.fail());
   node::errorlist err;
   parse_ini(ifs, doc, err);
-  ASSERT_TRUE(err.empty());
+  for(auto& e : err)
+    ADD_FAILURE() << "At " << e.first << ": " << e.second << endl;
   ifs.close();
 }
 
-TEST(Assign, Other_tests) {
+TEST(Misc, wrapper) {
   // Test wrapper functionalities
   EXPECT_FALSE(doc.get_child("nexist"_ts));
   EXPECT_EQ(doc.get_child("nexist"_ts, "fallback"), "fallback");
@@ -152,7 +154,9 @@ TEST(Assign, Other_tests) {
   EXPECT_ANY_THROW(doc.get_child("ref-fail"_ts));
   doc.add("manual"_ts, std::make_shared<node::plain>("hello"));
   EXPECT_EQ(doc.get_child("manual"_ts, "fail"), "hello");
-  
+}
+
+TEST(Misc, parse_errors) {
   node::parse_context test_context{nullptr, nullptr, nullptr};
   EXPECT_THROW(test_context.get_current(), node::parse_error);
   EXPECT_THROW(test_context.get_place(), node::parse_error);
@@ -162,17 +166,37 @@ TEST(Assign, Other_tests) {
     context.no_dependency = true;
     doc.get_child_ptr("ref-a"_ts)->clone(context);
   }, node::node_error);
-
-  EXPECT_EQ(doc.get_child("appender"_ts, "fail"), "I ");
-  EXPECT_EQ(doc.get_child("appender"_ts, "fail"), "I eat sleep rave repeat ");
-  EXPECT_EQ(doc.get_child("cache"_ts, "fail"), "I eat sleep rave repeat eat sleep rave repeat ");
-  EXPECT_EQ(doc.get_child("cache"_ts, "fail"), "I eat sleep rave repeat eat sleep rave repeat ");
-  EXPECT_EQ(doc.get_child("cache"_ts, "fail"), "I eat sleep rave repeat eat sleep rave repeat ");
-  EXPECT_EQ(doc.get_child("cache_too_short"_ts, "fail"), "I eat sleep rave repeat eat sleep rave repeat eat sleep rave repeat ");
-  EXPECT_EQ(doc.get_child("cache_too_short"_ts, "fail"), "I eat sleep rave repeat eat sleep rave repeat eat sleep rave repeat eat sleep rave repeat ");
 }
 
-TEST(Assign, Ref) {
+TEST(Misc, save_cache) {
+  EXPECT_EQ(doc.get_child("appender"_ts, "fail"), "I");
+  EXPECT_EQ(doc.get_child("appender"_ts, "fail"), "I eat");
+  EXPECT_EQ(doc.get_child("cache"_ts, "fail"), "I eat eat");
+  EXPECT_EQ(doc.get_child("cache"_ts, "fail"), "I eat eat");
+  EXPECT_EQ(doc.get_child("cache"_ts, "fail"), "I eat eat");
+  EXPECT_EQ(doc.get_child("cache_too_short"_ts, "fail"), "I eat eat eat");
+  EXPECT_EQ(doc.get_child("cache_too_short"_ts, "fail"), "I eat eat eat eat");
+}
+
+TEST(Misc, array_cache) {
+  EXPECT_EQ(doc.get_child("multiplier"_ts, "fail"), "0 10");
+  EXPECT_EQ(doc.get_child("array_cache"_ts, "fail"), "0 10 10");
+  EXPECT_EQ(doc.get_child("array_cache"_ts, "fail"), "0 10 10");
+  set_key("multiplier.source", "2");
+  EXPECT_EQ(doc.get_child("array_cache"_ts, "fail"), "0 10 10 20");
+  EXPECT_EQ(doc.get_child("array_cache2"_ts, "fail"), "0 10 10 20");
+}
+
+TEST(Misc, clock) {
+  auto clock = stoi(doc.get_child("clock"_ts, "fail"));
+  EXPECT_LT(clock, 1000);
+  EXPECT_GE(clock, 0);
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  auto clock2 = stoi(doc.get_child("clock"_ts, "fail"));
+  EXPECT_NE(clock, clock2);
+}
+
+TEST(Misc, assign_ref) {
   // Test local_ref assignments
   set_key("key-a", "b");
   set_key("key-a", "a");
@@ -186,7 +210,7 @@ TEST(Assign, Ref) {
   EXPECT_FALSE(doc.set("cmd-ref"_ts, "hello"));
 }
 
-TEST(Assign, File_Env) {
+TEST(Misc, assign_file_env) {
   // Test file_ref assignments
   set_key("ref-nexist", "barfoo");
   set_key("env-nexist", "barbar");

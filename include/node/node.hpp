@@ -6,6 +6,8 @@
 #include <cspace/processor.hpp>
 
 namespace node {
+  using steady_time = std::chrono::time_point<std::chrono::steady_clock>;
+
   struct color : public meta {
     using meta::meta;
     cspace::processor processor;
@@ -46,15 +48,33 @@ namespace node {
     base_p source;
     std::chrono::milliseconds cache_duration;
     mutable string cache_str;
-    mutable std::chrono::time_point<std::chrono::steady_clock> cache_expire;
+    mutable steady_time cache_expire;
 
     string get  () const;
     base_p clone  (clone_context&) const;
   };
 
-  struct map : public meta {
+  struct array_cache : base {
+    base_p source, calculator;
+    mutable std::shared_ptr<std::vector<string>> cache_arr;
+
+    string get  () const;
+    string get  (size_t index) const;
+    base_p clone  (clone_context&) const;
+  };
+
+  struct map : meta {
     using meta::meta;
     float from_min{0}, from_range{0}, to_min{0}, to_range{0};
+
+    string get  () const;
+    base_p clone  (clone_context&) const;
+  };
+
+  struct clock : base {
+    std::chrono::milliseconds tick_duration;
+    size_t loop;
+    mutable steady_time zero_point;
 
     string get  () const;
     base_p clone  (clone_context&) const;

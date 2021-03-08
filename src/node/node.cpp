@@ -90,7 +90,6 @@ string save::get() const {
   string result;
   if (sep == string::npos) {
     result = str;
-    str = "";
   } else {
     result = str.substr(sep + 1);
     str.erase(sep);
@@ -123,6 +122,29 @@ base_p cache::clone(clone_context& context) const {
   return result;
 }
 
+string array_cache::get() const {
+  auto str = source->get();
+  auto index = *(parse_ulong(str.data(), str.size()) ?: THROW_ERROR(parse, "Expected numeric value: " + str));
+  return get(index);
+}
+
+string array_cache::get(size_t index) const {
+  if (index >=cache_arr->size())
+    THROW_ERROR(node, "Index larger than cache maximum: " + std::to_string(index) + " > " + std::to_string(cache_arr->size() - 1));
+  if (auto& result = cache_arr->operator[](index); result.empty()) {
+    LG_DBUG("Get new");
+    return result = calculator->get();
+  } else return result;
+}
+
+base_p array_cache::clone(clone_context& context) const {
+  auto result = std::make_shared<array_cache>();
+  result->source = source->clone(context);
+  result->calculator = calculator->clone(context);
+  result->cache_arr = cache_arr;
+  return result;
+}
+
 string map::get() const {
   try {
     auto str = value ? value->get() : use_fallback("Value key doesn't exist");
@@ -144,6 +166,19 @@ base_p map::clone(clone_context& context) const {
   result->from_range = from_range;
   result->to_min = to_min;
   result->to_range = to_range;
+  return result;
+}
+
+string clock::get() const {
+  auto unlooped = (std::chrono::steady_clock::now() - zero_point) / tick_duration;
+  return std::to_string(unlooped % loop);
+}
+
+base_p clock::clone(clone_context&) const {
+  auto result = std::make_shared<clock>();
+  result->tick_duration = tick_duration;
+  result->loop = loop;
+  result->zero_point = zero_point;
   return result;
 }
 

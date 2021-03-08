@@ -187,6 +187,11 @@ int word_matcher(int c) {
   return c == '?' ? 2 : std::isspace(c) ? 0 : 1;
 }
 
+base_p checked_parse_raw(string& raw, tstring& str, parse_context& context) {
+  auto result = parse_raw(raw, str, context);
+  return result ?: THROW_ERROR(parse, "Unexpected empty parse result");
+}
+
 // Parse an escaped node string
 base_p parse_escaped(string& raw, tstring& str, parse_context& context) {
   std::array<tstring, 7> tokens;
@@ -208,7 +213,7 @@ base_p parse_escaped(string& raw, tstring& str, parse_context& context) {
 
   // Finalize nodes that derive from node::meta
   auto make_meta = [&]<typename T>() {
-    auto result = std::make_shared<T>(parse_raw(raw, tokens[token_count - 1], context));
+    auto result = std::make_shared<T>(checked_parse_raw(raw, tokens[token_count - 1], context));
     result->fallback = move(fallback);
     return result;
   };
@@ -242,23 +247,51 @@ base_p parse_escaped(string& raw, tstring& str, parse_context& context) {
 
   } else if (tokens[0] == "cache"_ts) {
     if (token_count != 3)
-      THROW_ERROR(parse, "save: Expected 2 components");
+      THROW_ERROR(parse, "cache: Expected 2 components");
     auto result = std::make_shared<cache>();
-    auto duration = *(parse_long(tokens[1].begin(), tokens[1].size()) ?: THROW_ERROR(parse, "1st component must be a number"));
+    auto duration = *(parse_ulong(tokens[1].begin(), tokens[1].size()) ?: THROW_ERROR(parse, "1st component must be a number"));
     result->cache_duration = std::chrono::milliseconds(duration);
-    result->source = parse_raw(raw, tokens[2], context);
-    if (!result->source)
-      THROW_ERROR(parse, "save: Invalid 2nd component");
+    result->source = checked_parse_raw(raw, tokens[2], context);
     return result;
+
+  } else if (tokens[0] == "clock"_ts) {
+    if (token_count != 4)
+      THROW_ERROR(parse, "cache: Expected 2 components");
+    auto result = std::make_shared<clock>();
+    auto tmp = *(parse_ulong(tokens[1].begin(), tokens[1].size()) ?: THROW_ERROR(parse, "All components must be numbers"));
+    result->tick_duration = std::chrono::milliseconds(tmp);
+    tmp = *(parse_ulong(tokens[2].begin(), tokens[2].size()) ?: THROW_ERROR(parse, "All components must be numbers"));
+    result->loop = tmp;
+    tmp = *(parse_ulong(tokens[3].begin(), tokens[3].size()) ?: THROW_ERROR(parse, "All components must be numbers"));
+    result->zero_point = steady_time(result->tick_duration * tmp);
+    return result;
+
+  } else if (tokens[0] == "array_cache"_ts) {
+    if (token_count == 4) {
+      auto result = std::make_shared<array_cache>();
+      auto size = parse_ulong(tokens[1].begin(), tokens[1].size());
+      if (size) {
+        result->cache_arr = std::make_shared<std::vector<string>>(*size + 1);
+        for (size_t i = 0; i < size; i++)
+          result->cache_arr->emplace_back();
+      } else {
+        auto cache_base = address_ref(context.get_parent(), tokens[1], base_p()).get_source();
+        if (auto cache = dynamic_cast<array_cache*>(cache_base.get()))
+          result->cache_arr = cache->cache_arr;
+        else THROW_ERROR(parse, "1st argument must be the size of the cache or a parent path to another array_cache");
+      }
+      result->source = checked_parse_raw(raw, tokens[2], context);
+      result->calculator = checked_parse_raw(raw, tokens[3], context);
+      return result;
+    } else
+      THROW_ERROR(parse, "array_cache: Expected 3 components");
 
   } else if (tokens[0] == "save"_ts) {
     if (token_count != 3)
       THROW_ERROR(parse, "save: Expected 2 components");
     auto result = std::make_shared<save>();
     result->target = std::make_shared<address_ref>(context.get_current(), tokens[1], base_p());
-    result->value = parse_raw(raw, tokens[2], context);
-    if (!result->value)
-      THROW_ERROR(parse, "save: Invalid 2nd component");
+    result->value = checked_parse_raw(raw, tokens[2], context);
     return result;
 
   } else if (tokens[0] == "map"_ts) {
@@ -296,7 +329,7 @@ base_p parse_escaped(string& raw, tstring& str, parse_context& context) {
     }
     return base_p();
   } else
-    THROW_ERROR(parse, "Unsupported reference type: " + tokens[0]);
+    THROW_ERROR(parse, "Unsupported operator type: " + tokens[0]);
 }
 
 NAMESPACE_END

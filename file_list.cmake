@@ -43,7 +43,7 @@ set(INTERNAL_TESTS)
 set(EXTERNAL_TESTS node languages)
 set(COPIED_FILES
   key_file.txt
-  assign_test.txt
+  misc_test.txt
   ini_test.txt
   ini_test_output.txt
   yml_test.txt
