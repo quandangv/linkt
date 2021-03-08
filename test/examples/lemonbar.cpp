@@ -32,14 +32,19 @@ int main() {
 
   std::cout << "If you have lemonbar installed,\n"
       "Pass the result of this program to lemonbar and get a simple status bar\n";
+  double avg_time = 0;
+  constexpr double recent_weight = 0.05;
   while (true) {
-    auto next_frame = std::chrono::system_clock::now() + std::chrono::milliseconds(5);
+    auto next_frame = std::chrono::steady_clock::now() + std::chrono::milliseconds(50);
     try {
+      clock_t start_retrieve = clock();
       auto result = wrapper.get_child("lemonbar"_ts);
+      double elapsed = double(clock() - start_retrieve) / CLOCKS_PER_SEC * 1000;
+      avg_time = elapsed * recent_weight + avg_time * (1 - recent_weight);
       if (!result)
         std::cout << "Failed to retrieve the key at path 'lemonbar'";
       else
-        std::cout << *result << std::endl;
+        std::cout << *result << "%{F#fff B#000} " << avg_time << "ms" << std::endl;
     } catch (const std::exception& e) {
       std::cout << "Error while retrieving key: " << e.what() << std::endl;
     }

@@ -46,7 +46,7 @@ namespace node {
 
   struct cache : base {
     base_p source;
-    std::chrono::milliseconds cache_duration;
+    base_p duration_ms;
     mutable string cache_str;
     mutable steady_time cache_expire;
 

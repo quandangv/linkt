@@ -39,18 +39,21 @@ Right* assign(Left& left, const std::shared_ptr<Right>& right) {
   return right.get();
 }
 
-inline std::optional<long int> parse_long(const char* str, size_t len) {
-  char* end;
-  auto result = std::strtol(str, &end, 10);
-  if (end != str + len)
-    return {};
-  return result;
-}
-
 inline std::optional<unsigned long int> parse_ulong(const char* str, size_t len) {
   char* end;
   auto result = std::strtoul(str, &end, 10);
   if (end != str + len)
     return {};
   return result;
+}
+
+inline unsigned long int force_parse_ulong(const char* str, size_t len) {
+  char* end;
+  auto result = std::strtoul(str, &end, 10);
+  if (end != str + len)
+    throw std::logic_error("Parse to ulong failed: "s + str);
+  return result;
+}
+inline unsigned long int force_parse_ulong(const string& str) {
+  return force_parse_ulong(str.data(), str.size());
 }

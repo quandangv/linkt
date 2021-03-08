@@ -110,7 +110,7 @@ base_p save::clone(clone_context& context) const {
 string cache::get() const {
   if (auto now = std::chrono::steady_clock::now(); now > cache_expire) {
     cache_str = source->get();
-    cache_expire = now + cache_duration;
+    cache_expire = now + std::chrono::milliseconds(force_parse_ulong(duration_ms->get()));
   }
   return cache_str;
 }
@@ -118,7 +118,7 @@ string cache::get() const {
 base_p cache::clone(clone_context& context) const {
   auto result = std::make_shared<cache>();
   result->source = source->clone(context);
-  result->cache_duration = cache_duration;
+  result->duration_ms = duration_ms->clone(context);
   result->cache_str = cache_str;
   result->cache_expire = cache_expire;
   return result;

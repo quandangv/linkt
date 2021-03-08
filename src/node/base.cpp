@@ -249,8 +249,7 @@ base_p parse_escaped(string& raw, tstring& str, parse_context& context) {
     if (token_count != 3)
       THROW_ERROR(parse, "cache: Expected 2 components");
     auto result = std::make_shared<cache>();
-    auto duration = *(parse_ulong(tokens[1].begin(), tokens[1].size()) ?: THROW_ERROR(parse, "1st component must be a number"));
-    result->cache_duration = std::chrono::milliseconds(duration);
+    result->duration_ms = checked_parse_raw(raw, tokens[1], context);
     result->source = checked_parse_raw(raw, tokens[2], context);
     return result;
 
@@ -258,11 +257,11 @@ base_p parse_escaped(string& raw, tstring& str, parse_context& context) {
     if (token_count != 4)
       THROW_ERROR(parse, "cache: Expected 2 components");
     auto result = std::make_shared<clock>();
-    auto tmp = *(parse_ulong(tokens[1].begin(), tokens[1].size()) ?: THROW_ERROR(parse, "All components must be numbers"));
+    auto tmp = force_parse_ulong(tokens[1].begin(), tokens[1].size());
     result->tick_duration = std::chrono::milliseconds(tmp);
-    tmp = *(parse_ulong(tokens[2].begin(), tokens[2].size()) ?: THROW_ERROR(parse, "All components must be numbers"));
+    tmp = force_parse_ulong(tokens[2].begin(), tokens[2].size());
     result->loop = tmp;
-    tmp = *(parse_ulong(tokens[3].begin(), tokens[3].size()) ?: THROW_ERROR(parse, "All components must be numbers"));
+    tmp = force_parse_ulong(tokens[3].begin(), tokens[3].size());
     result->zero_point = steady_time(result->tick_duration * tmp);
     return result;
 
