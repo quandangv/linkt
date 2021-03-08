@@ -22,10 +22,18 @@ int main() {
       std::cout << "At " << e.first << ": " << e.second << std::endl;
   }
 
+  node::clone_context context;
+  wrapper.optimize(context);
+  if (!context.errors.empty()) {
+    std::cout << "Error while optimizing:\n";
+    for (auto& e : context.errors)
+      std::cout << "At " << e.first << ": " << e.second << std::endl;
+  }
+
   std::cout << "If you have lemonbar installed,\n"
       "Pass the result of this program to lemonbar and get a simple status bar\n";
   while (true) {
-    auto next_frame = std::chrono::system_clock::now() + std::chrono::milliseconds(100);
+    auto next_frame = std::chrono::system_clock::now() + std::chrono::milliseconds(5);
     try {
       auto result = wrapper.get_child("lemonbar"_ts);
       if (!result)

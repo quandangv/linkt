@@ -36,6 +36,7 @@ namespace node {
     void iterate_children  (std::function<void(const string&, const base&)> processor) const;
 
     bool set  (const tstring& path, const string& value);
+    void optimize  (clone_context&);
     void merge  (const wrapper& source, clone_context&);
     string get  () const;
     base_p clone  (clone_context&) const;

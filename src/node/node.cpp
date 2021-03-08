@@ -119,6 +119,8 @@ base_p cache::clone(clone_context& context) const {
   auto result = std::make_shared<cache>();
   result->source = source->clone(context);
   result->cache_duration = cache_duration;
+  result->cache_str = cache_str;
+  result->cache_expire = cache_expire;
   return result;
 }
 
@@ -132,7 +134,6 @@ string array_cache::get(size_t index) const {
   if (index >=cache_arr->size())
     THROW_ERROR(node, "Index larger than cache maximum: " + std::to_string(index) + " > " + std::to_string(cache_arr->size() - 1));
   if (auto& result = cache_arr->operator[](index); result.empty()) {
-    LG_DBUG("Get new");
     return result = calculator->get();
   } else return result;
 }

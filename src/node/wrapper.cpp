@@ -114,6 +114,13 @@ string wrapper::get() const {
   return value ? value->get() : "";
 }
 
+void wrapper::optimize(clone_context& context) {
+  context.optimize = true;
+  wrapper tmp;
+  tmp.merge(*this, context);
+  map = move(tmp.map);
+}
+
 void wrapper::merge(const wrapper& src, clone_context& context) {
   context.ancestors.emplace_back(&src, this);
   for(auto& pair : src.map) {
