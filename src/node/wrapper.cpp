@@ -128,13 +128,17 @@ void wrapper::merge(const wrapper& src, clone_context& context) {
       continue;
     auto last_path = context.current_path;
     context.current_path += context.ancestors.size() == 1 ? pair.first : ("." + pair.first);
-    if (auto& place = map[pair.first]; !place)
-      place = pair.second->clone(context);
-    else if (auto wrp = dynamic_cast<wrapper*>(place.get())) {
-      if (auto src_wrp = dynamic_cast<wrapper*>(pair.second.get()))
-        wrp->merge(*src_wrp, context);
-      else
-        wrp->map[""] = pair.second->clone(context);
+    try {
+      if (auto& place = map[pair.first]; !place)
+        place = pair.second->clone(context);
+      else if (auto wrp = dynamic_cast<wrapper*>(place.get())) {
+        if (auto src_wrp = dynamic_cast<wrapper*>(pair.second.get()))
+          wrp->merge(*src_wrp, context);
+        else
+          wrp->map[""] = pair.second->clone(context);
+      }
+    } catch (const std::exception& e) {
+      context.report_error("Exception while cloning " + context.current_path + ": " + e.what());
     }
     context.current_path = last_path;
   }
