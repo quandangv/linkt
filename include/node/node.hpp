@@ -82,8 +82,9 @@ namespace node {
 
   struct string_interpolate : public base {
     struct replace_spot {
-      int position{0};;
+      int position;
       base_s replacement;
+      replace_spot(int pos, base_s repl) : position(pos), replacement(repl) {}
     };
     string base;
     std::vector<replace_spot> spots;

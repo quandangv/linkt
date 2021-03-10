@@ -5,6 +5,7 @@
 #include "token_iterator.hpp"
 
 #include <map>
+#include <array>
 #include <sstream>
 
 NAMESPACE(node)
