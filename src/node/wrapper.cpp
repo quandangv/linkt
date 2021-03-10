@@ -54,8 +54,12 @@ base_s& wrapper::add(tstring path, ancestor_processor* processor) {
   if (auto immediate_path = cut_front(path, '.'); !immediate_path.untouched()) {
     // This isn't the final part of the path
     auto& ptr = map[immediate_path];
-    auto ancestor = !ptr ? assign(ptr, std::make_shared<wrapper>())
-        : dynamic_cast<wrapper*>(ptr.get()) ?: wrap(ptr).get();
+    wrapper_s ancestor;
+    if (!ptr) {
+      ancestor = std::make_shared<wrapper>();
+      ptr = ancestor;
+    } else if (!(ancestor = std::dynamic_pointer_cast<wrapper>(ptr)))
+      ancestor = wrap(ptr);
     if (processor)
       processor->operator()(immediate_path, ancestor);
     return ancestor->add(path);
@@ -113,12 +117,11 @@ string wrapper::get() const {
   return value ? value->get() : "";
 }
 
-wrapper& wrapper::optimize(clone_context& context) {
+void wrapper::optimize(clone_context& context) {
   context.optimize = true;
   wrapper tmp;
   tmp.map.swap(map);
   merge(tmp, context);
-  return *this;
 }
 
 void wrapper::merge(const wrapper& src, clone_context& context) {

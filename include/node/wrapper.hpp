@@ -11,7 +11,7 @@
 
 namespace node {
   using std::string;
-  using ancestor_processor = std::function<void(tstring& path, wrapper* ancestor)>;
+  using ancestor_processor = std::function<void(tstring& path, wrapper_s ancestor)>;
   struct wrapper_error : std::logic_error { using logic_error::logic_error; };
 
   struct wrapper : base, std::enable_shared_from_this<wrapper> {
@@ -37,7 +37,7 @@ namespace node {
     void iterate_children  (std::function<void(const string&, const base&)> processor) const;
 
     bool set  (const tstring& path, const string& value);
-    wrapper& optimize  (clone_context&);
+    void optimize  (clone_context&);
     void merge  (const wrapper& source, clone_context&);
     string get  () const;
     base_s clone  (clone_context&) const;

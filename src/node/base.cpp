@@ -88,9 +88,9 @@ base_s address_ref::clone(clone_context& context) const {
       if (place) {
         // Clone the referenced node, add it to the clone result, and return the pointer
         auto src_ancestor = &ancestor;
-        ancestor_processor record_ancestor = [&](tstring& path, wrapper* inner_ancestor)->void {
+        ancestor_processor record_ancestor = [&](tstring& path, wrapper_s inner_ancestor)->void {
           src_ancestor = dynamic_cast<wrapper*>(src_ancestor->map.at(path).get());
-          context.ancestors.emplace_back(src_ancestor, inner_ancestor);
+          context.ancestors.emplace_back(src_ancestor, inner_ancestor.get());
         };
         // Detach the object from its place while cloning to avoid cyclical references
         auto src = move(*place);
