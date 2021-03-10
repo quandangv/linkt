@@ -101,12 +101,12 @@ namespace node {
   bool is_fixed(base_s node);
 
   struct parse_context {
-    wrapper* parent{nullptr}, *current{nullptr};
+    wrapper_s parent, current;
     base_s* place{nullptr};
     bool parent_based_ref{false};
 
-    wrapper& get_current();
-    wrapper& get_parent();
+    wrapper_s get_current();
+    wrapper_s get_parent();
     base_s& get_place();
     friend struct parse_context_base;
   };

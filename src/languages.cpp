@@ -27,7 +27,7 @@ node::wrapper_s parse_ini(std::istream& is, node::errorlist& err) {
   string prefix;
   string raw;
   auto root = std::make_shared<node::wrapper>();
-  node::parse_context context { root.get(), nullptr, nullptr, true };
+  node::parse_context context { root, nullptr, nullptr, true };
   // Iterate through lines
   for (int linecount = 1; std::getline(is, raw); linecount++, raw.clear()) {
     tstring line(raw);
@@ -75,13 +75,13 @@ void write_ini(std::ostream& os, const node::wrapper_s& root, const string& pref
 
 struct indentpair {
   int indent;
-  node::wrapper* node;
-  indentpair(int indent, node::wrapper* node) : indent(indent), node(node) {}
+  node::wrapper_s node;
+  indentpair(int indent, node::wrapper_s node) : indent(indent), node(node) {}
 };
 
 node::wrapper_s parse_yml(std::istream& is, node::errorlist& err) {
   auto root = std::make_shared<node::wrapper>();
-  vector<indentpair> records{indentpair{-1, root.get()}};
+  vector<indentpair> records{indentpair{-1, root}};
   string raw;
   node::parse_context context;
 
@@ -101,10 +101,10 @@ node::wrapper_s parse_yml(std::istream& is, node::errorlist& err) {
       continue;
 
     try {
-      context.parent = records.back().node ?: (records.back().node = &context.get_current());
+      context.parent = records.back().node ?: (records.back().node = context.get_current());
       if (line.empty()) {
         // Add an empty node and record it as a possible parent
-        records.emplace_back(indent, nullptr);
+        records.emplace_back(indent, node::wrapper_s());
         context.place = &context.parent->add(key);
         continue;
       }
@@ -123,7 +123,7 @@ node::wrapper_s parse_yml(std::istream& is, node::errorlist& err) {
       }
       context.parent->add(key);
       context.place = context.parent->get_child_place(key);
-      context.current = nullptr;
+      context.current.reset();
 
       records.emplace_back(indent, nullptr);
       if (auto value = parser(raw, line, context))

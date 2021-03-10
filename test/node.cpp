@@ -9,25 +9,23 @@ struct parse_test_single {
 using parse_test = vector<parse_test_single>;
 
 void test_nodes(parse_test testset, int repeat = base_repeat) {
-  node::wrapper tmp_doc;
-  auto doc = new node::wrapper();
-  auto base_doc = node::base_s(doc);
+  auto doc = std::make_shared<node::wrapper>();
 
   node::parse_context context{doc, nullptr, nullptr, true};
   // Add keys to doc
   for(auto test : testset) {
-    tstring ts{test.value};
     auto last_count = get_test_part_count();
-    if (test.fail)
-      EXPECT_ANY_THROW(tmp_doc.add(test.path, test.value, ts, context)) << "Expected error";
-    else
-      EXPECT_NO_THROW(tmp_doc.add(test.path, test.value, ts, context)) << "Unexpected error";
+    tstring ts{test.value};
+    try {
+      doc->add(test.path, test.value, ts, context);
+    } catch (const std::exception& e) {
+      EXPECT_TRUE(test.fail);
+    }
     if (last_count != get_test_part_count())
       cerr << "Key: " << test.path << endl;
   }
-  *doc = tmp_doc;
   auto test_doc = [&](node::base_s node, node::errorlist& errs) {
-    auto doc = dynamic_cast<node::wrapper*>(node.get());
+    auto doc = std::dynamic_pointer_cast<node::wrapper>(node);
     for (auto test : testset) {
       // Skip key if it is expected to fail in the previous step
       if (test.fail || test.clone_fail) {
@@ -37,7 +35,7 @@ void test_nodes(parse_test testset, int repeat = base_repeat) {
       }
     }
   };
-  triple_node_test(base_doc, test_doc, repeat);
+  triple_node_test(doc, test_doc, repeat);
 }
 
 TEST(Node, Simple) {

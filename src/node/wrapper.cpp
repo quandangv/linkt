@@ -55,7 +55,7 @@ base_s& wrapper::add(tstring path, ancestor_processor* processor) {
     // This isn't the final part of the path
     auto& ptr = map[immediate_path];
     auto ancestor = !ptr ? assign(ptr, std::make_shared<wrapper>())
-        : dynamic_cast<wrapper*>(ptr.get()) ?: &wrap(ptr);
+        : dynamic_cast<wrapper*>(ptr.get()) ?: wrap(ptr).get();
     if (processor)
       processor->operator()(immediate_path, ancestor);
     return ancestor->add(path);
@@ -76,8 +76,8 @@ base_s& wrapper::add(tstring path, const base_s& value) {
 
 base_s& wrapper::add(tstring path, string& raw, tstring value, parse_context& context) {
   add(path);
-  context.parent = this;
-  context.current = nullptr;
+  context.parent = shared_from_this();
+  context.current.reset();
   context.place = get_child_place(path);
   if (auto node = parse_raw(raw, value, context))
     return context.get_place() = node;
@@ -97,10 +97,10 @@ void wrapper::iterate_children(std::function<void(const string&, const base&)> p
 }
 
 
-wrapper& wrapper::wrap(base_s& place) {
-  auto wrp = new wrapper(place);
-  place = base_s(wrp);
-  return *wrp;
+wrapper_s wrapper::wrap(base_s& place) {
+  auto wrp = std::make_shared<wrapper>(place);
+  place = wrp;
+  return wrp;
 }
 
 bool wrapper::set(const tstring& path, const string& value) {
@@ -149,18 +149,6 @@ base_s wrapper::clone(clone_context& context) const {
   auto result = std::make_shared<wrapper>();
   result->merge(*this, context);
   return result;
-}
-
-wrapper& wrapper::operator=(const wrapper& other) {
-  clone_context context;
-  merge(other, context);
-  return *this;
-}
-
-wrapper& wrapper::operator=(wrapper&& other) {
-  map.swap(other.map);
-  other.map.clear();
-  return *this;
 }
 
 NAMESPACE_END

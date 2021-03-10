@@ -138,7 +138,7 @@ node::wrapper_s load_doc() {
 node::wrapper_s load_optimized_doc() {
   auto doc = load_doc();
   node::clone_context context;
-  context.no_dependency = true;
+  //context.no_dependency = true;
   doc->optimize(context);
 
   if (!context.errors.empty()) {

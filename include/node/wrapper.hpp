@@ -7,26 +7,22 @@
 #include <vector>
 #include <string>
 #include <optional>
+#include <memory>
 
 namespace node {
   using std::string;
-
   using ancestor_processor = std::function<void(tstring& path, wrapper* ancestor)>;
   struct wrapper_error : std::logic_error { using logic_error::logic_error; };
-  struct wrapper : base {
+
+  struct wrapper : base, std::enable_shared_from_this<wrapper> {
     using map_type = std::map<string, base_s>;
 
     map_type map{};
 
-    wrapper& operator=(const wrapper&);
-    wrapper& operator=(wrapper&&);
-    wrapper(const wrapper& other) { operator=(other); }
-    wrapper(wrapper&& other) { operator=(std::move(other)); }
-
     explicit wrapper(const base_s& value) : map{{"", value}} {}
     wrapper() {}
 
-    static wrapper& wrap  (base_s& node);
+    static wrapper_s wrap  (base_s& node);
 
     base_s& add  (tstring path, ancestor_processor* processor = nullptr);
     base_s& add  (tstring path, const base_s& value);

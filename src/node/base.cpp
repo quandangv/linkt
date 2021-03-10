@@ -116,21 +116,21 @@ base_s address_ref::clone(clone_context& context) const {
     fallback ? fallback->clone(context) : base_s());
 }
 
-wrapper& parse_context::get_current() {
+wrapper_s parse_context::get_current() {
   if (current)
-    return *current;
+    return current;
   if (!place)
     THROW_ERROR(parse, "Get-current: Both current and place are null");
-  if ((current = dynamic_cast<wrapper*>(place->get())))
-    return *current;
-  current = &wrapper::wrap(*place);
+  if ((current = std::dynamic_pointer_cast<wrapper>(*place)))
+    return current;
+  current = wrapper::wrap(*place);
   place = nullptr;
-  return *current;
+  return current;
 }
 
-wrapper& parse_context::get_parent() {
+wrapper_s parse_context::get_parent() {
   if (parent)
-    return *parent;
+    return parent;
   THROW_ERROR(parse, "parent is null");
 }
 
@@ -226,17 +226,17 @@ base_s parse_escaped(string& raw, tstring& str, parse_context& context) {
   if (token_count == 0)
     THROW_ERROR(parse, "Empty reference string");
   if (token_count == 1) {
-    return std::make_shared<address_ref>(context.parent_based_ref ? context.get_parent() : context.get_current(), tokens[0], fallback);
+    return std::make_shared<address_ref>(context.parent_based_ref ? *context.get_parent() : *context.get_current(), tokens[0], fallback);
 
   } else if (tokens[0] == "dep"_ts) {
     if (token_count != 2)
       THROW_ERROR(parse, "env: Expected 1 components");
-    return std::make_shared<address_ref>(context.get_parent(), tokens[1], fallback);
+    return std::make_shared<address_ref>(*context.get_parent(), tokens[1], fallback);
 
   } else if (tokens[0] == "rel"_ts) {
     if (token_count != 2)
       THROW_ERROR(parse, "env: Expected 1 components");
-    return std::make_shared<address_ref>(context.get_current(), tokens[1], fallback);
+    return std::make_shared<address_ref>(*context.get_current(), tokens[1], fallback);
 
   } else if (tokens[0] == "file"_ts) {
     tokens[token_count - 1].merge(tokens[1]);
@@ -280,10 +280,10 @@ base_s parse_escaped(string& raw, tstring& str, parse_context& context) {
         for (size_t i = 0; i < size; i++)
           result->cache_arr->emplace_back();
       } else {
-        auto cache_base = address_ref(context.get_parent(), tokens[1], base_s()).get_source();
+        auto cache_base = address_ref(*context.get_parent(), tokens[1], base_s()).get_source();
         if (auto cache = dynamic_cast<array_cache*>(cache_base.get()))
           result->cache_arr = cache->cache_arr;
-        else THROW_ERROR(parse, "1st argument must be the size of the cache or a parent path to another array_cache");
+        else THROW_ERROR(parse, "1st argument must be the size of the cache or a parent path to another array_cache: " + str);
       }
       result->source = checked_parse_raw(raw, tokens[2], context);
       result->calculator = checked_parse_raw(raw, tokens[3], context);
@@ -295,7 +295,7 @@ base_s parse_escaped(string& raw, tstring& str, parse_context& context) {
     if (token_count != 3)
       THROW_ERROR(parse, "save: Expected 2 components");
     auto result = std::make_shared<save>();
-    result->target = std::make_shared<address_ref>(context.get_current(), tokens[1], base_s());
+    result->target = std::make_shared<address_ref>(*context.get_current(), tokens[1], base_s());
     result->value = checked_parse_raw(raw, tokens[2], context);
     return result;
 
@@ -323,10 +323,10 @@ base_s parse_escaped(string& raw, tstring& str, parse_context& context) {
 
   } else if (tokens[0] == "clone"_ts) {
     for (int i = 1; i < token_count; i++) {
-      auto source = address_ref(context.get_parent(), tokens[i], base_s()).get_source();
+      auto source = address_ref(*context.get_parent(), tokens[i], base_s()).get_source();
       throwing_clone_context clone_context;
       if (auto wrp = dynamic_cast<wrapper*>(source.get())) {
-        context.get_current().merge(*wrp, clone_context);
+        context.get_current()->merge(*wrp, clone_context);
       } else if (i == token_count -1) {
         return source->clone(clone_context);
       } else
