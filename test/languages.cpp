@@ -129,9 +129,13 @@ node::wrapper load_doc() {
   EXPECT_FALSE(ifs.fail());
   node::errorlist err;
   parse_ini(ifs, doc, err);
-  for(auto& e : err)
-    ADD_FAILURE() << "At " << e.first << ": " << e.second << endl;
   ifs.close();
+
+  if (!err.empty()) {
+    for(auto& e : err)
+      ADD_FAILURE() << "At " << e.first << ": " << e.second << endl;
+    throw std::logic_error("Failed loading document");
+  }
   return doc;
 }
 node::wrapper load_optimized_doc() {
@@ -139,8 +143,12 @@ node::wrapper load_optimized_doc() {
   node::clone_context context;
   context.no_dependency = true;
   doc.optimize(context);
-  for(auto& e : context.errors)
-    ADD_FAILURE() << "At " << e.first << ": " << e.second << endl;
+
+  if (!context.errors.empty()) {
+    for(auto& e : context.errors)
+      ADD_FAILURE() << "At " << e.first << ": " << e.second << endl;
+    throw std::logic_error("Failed loading document");
+  }
   return doc;
 }
 
