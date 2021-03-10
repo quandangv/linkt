@@ -13,6 +13,7 @@ namespace node {
   using std::string;
   using base_s = std::shared_ptr<base>;
   using wrapper_s = std::shared_ptr<wrapper>;
+  using const_wrapper_s = std::shared_ptr<const wrapper>;
   struct node_error : std::logic_error { using logic_error::logic_error; };
 
   struct errorlist : std::vector<std::pair<std::string, std::string>> {
@@ -30,7 +31,7 @@ namespace node {
 
   struct clone_context {
     std::string current_path;
-    std::vector<std::pair<const wrapper*, wrapper*>> ancestors;
+    std::vector<std::pair<const_wrapper_s, wrapper_s>> ancestors;
     bool optimize{false}, no_dependency{false};
     errorlist errors;
 

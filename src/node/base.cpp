@@ -68,15 +68,15 @@ bool address_ref::set(const string& val) {
 
 base_s address_ref::clone(clone_context& context) const {
   // Find the corresponding ancestor in the clone result tree
-  auto ancestor_it = find_if(context.ancestors.rbegin(), context.ancestors.rend(), [&](auto& pair) { return pair.first == &ancestor; });
-  wrapper* cloned_ancestor;
+  auto ancestor_it = find_if(context.ancestors.rbegin(), context.ancestors.rend(), [&](auto& pair) { return pair.first.get() == &ancestor; });
+  wrapper_s cloned_ancestor;
   if (ancestor_it != context.ancestors.rend()) {
     cloned_ancestor = ancestor_it->second;
   } else if (context.no_dependency) {
     context.report_error("External dependency");
     return base_s();
   } else {
-    cloned_ancestor = &ancestor;
+    cloned_ancestor = ancestor.shared_from_this();
   }
 
   // Return a pointer to the referenced node
@@ -87,10 +87,10 @@ base_s address_ref::clone(clone_context& context) const {
       auto place = ancestor.get_child_place(path);
       if (place) {
         // Clone the referenced node, add it to the clone result, and return the pointer
-        auto src_ancestor = &ancestor;
+        auto src_ancestor = ancestor.shared_from_this();
         ancestor_processor record_ancestor = [&](tstring& path, wrapper_s inner_ancestor)->void {
-          src_ancestor = dynamic_cast<wrapper*>(src_ancestor->map.at(path).get());
-          context.ancestors.emplace_back(src_ancestor, inner_ancestor.get());
+          src_ancestor = std::dynamic_pointer_cast<wrapper>(src_ancestor->map.at(path));
+          context.ancestors.emplace_back(src_ancestor, inner_ancestor);
         };
         // Detach the object from its place while cloning to avoid cyclical references
         auto src = move(*place);
@@ -325,8 +325,8 @@ base_s parse_escaped(string& raw, tstring& str, parse_context& context) {
     for (int i = 1; i < token_count; i++) {
       auto source = address_ref(*context.get_parent(), tokens[i], base_s()).get_source();
       throwing_clone_context clone_context;
-      if (auto wrp = dynamic_cast<wrapper*>(source.get())) {
-        context.get_current()->merge(*wrp, clone_context);
+      if (auto wrp = std::dynamic_pointer_cast<wrapper>(source)) {
+        context.get_current()->merge(wrp, clone_context);
       } else if (i == token_count -1) {
         return source->clone(clone_context);
       } else

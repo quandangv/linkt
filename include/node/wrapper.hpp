@@ -38,7 +38,7 @@ namespace node {
 
     bool set  (const tstring& path, const string& value);
     void optimize  (clone_context&);
-    void merge  (const wrapper& source, clone_context&);
+    void merge  (const const_wrapper_s& source, clone_context&);
     string get  () const;
     base_s clone  (clone_context&) const;
   };

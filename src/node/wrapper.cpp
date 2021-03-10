@@ -119,14 +119,14 @@ string wrapper::get() const {
 
 void wrapper::optimize(clone_context& context) {
   context.optimize = true;
-  wrapper tmp;
-  tmp.map.swap(map);
+  auto tmp = std::make_shared<wrapper>();
+  tmp->map.swap(map);
   merge(tmp, context);
 }
 
-void wrapper::merge(const wrapper& src, clone_context& context) {
-  context.ancestors.emplace_back(&src, this);
-  for(auto& pair : src.map) {
+void wrapper::merge(const const_wrapper_s& src, clone_context& context) {
+  context.ancestors.emplace_back(src, shared_from_this());
+  for(auto& pair : src->map) {
     if (!pair.second)
       continue;
     auto last_path = context.current_path;
@@ -135,8 +135,8 @@ void wrapper::merge(const wrapper& src, clone_context& context) {
       if (auto& place = map[pair.first]; !place)
         place = pair.second->clone(context);
       else if (auto wrp = dynamic_cast<wrapper*>(place.get())) {
-        if (auto src_wrp = dynamic_cast<wrapper*>(pair.second.get()))
-          wrp->merge(*src_wrp, context);
+        if (auto src_wrp = std::dynamic_pointer_cast<wrapper>(pair.second))
+          wrp->merge(src_wrp, context);
         else
           wrp->map[""] = pair.second->clone(context);
       }
@@ -150,7 +150,7 @@ void wrapper::merge(const wrapper& src, clone_context& context) {
 
 base_s wrapper::clone(clone_context& context) const {
   auto result = std::make_shared<wrapper>();
-  result->merge(*this, context);
+  result->merge(shared_from_this(), context);
   return result;
 }
 
