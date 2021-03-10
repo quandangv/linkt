@@ -13,18 +13,16 @@ struct file_test_param {
 };
 
 void test_language(file_test_param testset) {
-  auto doc = new node::wrapper();
-  auto base_doc = node::base_s(doc);
-
   std::ifstream ifs{testset.path + ".txt"};
   ASSERT_FALSE(ifs.fail());
 
   // Parse the file
   node::errorlist err;
+  node::wrapper_s doc;
   if (testset.language == "ini")
-    parse_ini(ifs, *doc, err);
+    doc = parse_ini(ifs, err);
   else if (testset.language == "yml")
-    parse_yml(ifs, *doc, err);
+    doc = parse_yml(ifs, err);
 
   // Check for unexpected errors
   for(auto& e : err) {
@@ -45,14 +43,14 @@ void test_language(file_test_param testset) {
     for(auto& pair : testset.expectations)
       check_key(*doc, pair.path, pair.value, false);
   };
-  triple_node_test(base_doc, test_doc);
+  triple_node_test(doc, test_doc);
 
   // Export the result
   std::ofstream ofs{testset.path + "_export.txt"};
   if (testset.language == "ini")
-    write_ini(ofs, *doc);
+    write_ini(ofs, doc);
   else if (testset.language == "yml")
-    write_yml(ofs, *doc);
+    write_yml(ofs, doc);
 
   // Check the export result
   auto command = "diff '" + testset.path + "_output.txt' '" + testset.path + "_export.txt' 2>&1";
@@ -122,13 +120,12 @@ TEST(Language, Yml) {
   });
 }
 
-node::wrapper load_doc() {
-  node::wrapper doc;
+node::wrapper_s load_doc() {
   // Load the test file
   std::ifstream ifs{"misc_test.txt"};
   EXPECT_FALSE(ifs.fail());
   node::errorlist err;
-  parse_ini(ifs, doc, err);
+  auto doc = parse_ini(ifs, err);
   ifs.close();
 
   if (!err.empty()) {
@@ -138,11 +135,11 @@ node::wrapper load_doc() {
   }
   return doc;
 }
-node::wrapper load_optimized_doc() {
+node::wrapper_s load_optimized_doc() {
   auto doc = load_doc();
   node::clone_context context;
   context.no_dependency = true;
-  doc.optimize(context);
+  doc->optimize(context);
 
   if (!context.errors.empty()) {
     for(auto& e : context.errors)
@@ -152,15 +149,15 @@ node::wrapper load_optimized_doc() {
   return doc;
 }
 
-vector<node::wrapper> tests{load_doc(), load_optimized_doc()};
-struct Misc : TestWithParam<node::wrapper> {};
+vector<node::wrapper_s> tests{load_doc(), load_optimized_doc()};
+struct Misc : TestWithParam<node::wrapper_s> {};
 INSTANTIATE_TEST_SUITE_P(wrapper, Misc, ValuesIn(tests));
 
 // Set a key and check if it was successful
-void set_key(node::wrapper& doc, const string& key, const string& newval) {
+void set_key(node::wrapper_s& doc, const string& key, const string& newval) {
   auto last_count = get_test_part_count();
-  EXPECT_TRUE(doc.set(key, newval));
-  ASSERT_EQ(newval, doc.get_child(key)) << "Unexpected value after assignment";
+  EXPECT_TRUE(doc->set(key, newval));
+  ASSERT_EQ(newval, doc->get_child(key)) << "Unexpected value after assignment";
   if (last_count != get_test_part_count())
     cerr << "Key: " << key << endl;
 }
@@ -168,14 +165,14 @@ void set_key(node::wrapper& doc, const string& key, const string& newval) {
 TEST_P(Misc, wrapper) {
   auto doc = GetParam();
   // Test wrapper functionalities
-  EXPECT_FALSE(doc.get_child("nexist"_ts));
-  EXPECT_EQ(doc.get_child("nexist"_ts, "fallback"), "fallback");
-  EXPECT_EQ(doc.get_child_place("nexist"_ts), nullptr);
-  EXPECT_EQ(doc.get_child("key-a"_ts, "fallback"), "a");
-  EXPECT_EQ(doc.get(), "");
-  EXPECT_ANY_THROW(doc.get_child("ref-fail"_ts));
-  doc.add("manual"_ts, std::make_shared<node::plain>("hello"));
-  EXPECT_EQ(doc.get_child("manual"_ts, "fail"), "hello");
+  EXPECT_FALSE(doc->get_child("nexist"_ts));
+  EXPECT_EQ(doc->get_child("nexist"_ts, "fallback"), "fallback");
+  EXPECT_EQ(doc->get_child_place("nexist"_ts), nullptr);
+  EXPECT_EQ(doc->get_child("key-a"_ts, "fallback"), "a");
+  EXPECT_EQ(doc->get(), "");
+  EXPECT_ANY_THROW(doc->get_child("ref-fail"_ts));
+  doc->add("manual"_ts, std::make_shared<node::plain>("hello"));
+  EXPECT_EQ(doc->get_child("manual"_ts, "fail"), "hello");
 }
 
 TEST_P(Misc, parse_errors) {
@@ -187,41 +184,41 @@ TEST_P(Misc, parse_errors) {
   EXPECT_THROW({
     node::throwing_clone_context context;
     context.no_dependency = true;
-    doc.get_child_ptr("ref-a"_ts)->clone(context);
+    doc->get_child_ptr("ref-a"_ts)->clone(context);
   }, node::node_error);
 }
 
 TEST_P(Misc, save_cache) {
   auto doc = GetParam();
-  EXPECT_EQ(doc.get_child("appender.last"_ts, "fail"), "I");
-  EXPECT_EQ(doc.get_child("appender"_ts, "fail"), "I eat.");
-  EXPECT_EQ(doc.get_child("appender.last"_ts, "fail"), "I eat");
-  EXPECT_EQ(doc.get_child("appender"_ts, "fail"), "I eat eat.");
-  EXPECT_EQ(doc.get_child("appender.last"_ts, "fail"), "I eat eat");
- EXPECT_EQ(doc.get_child("cache"_ts, "fail"), "I eat eat eat.");
-  EXPECT_EQ(doc.get_child("cache"_ts, "fail"), "I eat eat eat.");
-  EXPECT_EQ(doc.get_child("cache"_ts, "fail"), "I eat eat eat.");
-  EXPECT_EQ(doc.get_child("cache_too_short"_ts, "fail"), "I eat eat eat eat.");
-  EXPECT_EQ(doc.get_child("cache_too_short"_ts, "fail"), "I eat eat eat eat eat.");
+  EXPECT_EQ(doc->get_child("appender.last"_ts, "fail"), "I");
+  EXPECT_EQ(doc->get_child("appender"_ts, "fail"), "I eat.");
+  EXPECT_EQ(doc->get_child("appender.last"_ts, "fail"), "I eat");
+  EXPECT_EQ(doc->get_child("appender"_ts, "fail"), "I eat eat.");
+  EXPECT_EQ(doc->get_child("appender.last"_ts, "fail"), "I eat eat");
+  EXPECT_EQ(doc->get_child("cache"_ts, "fail"), "I eat eat eat.");
+  EXPECT_EQ(doc->get_child("cache"_ts, "fail"), "I eat eat eat.");
+  EXPECT_EQ(doc->get_child("cache"_ts, "fail"), "I eat eat eat.");
+  EXPECT_EQ(doc->get_child("cache_too_short"_ts, "fail"), "I eat eat eat eat.");
+  EXPECT_EQ(doc->get_child("cache_too_short"_ts, "fail"), "I eat eat eat eat eat.");
 }
 
 TEST_P(Misc, array_cache) {
   auto doc = GetParam();
-  EXPECT_EQ(doc.get_child("multiplier"_ts, "fail"), "0 10");
-  EXPECT_EQ(doc.get_child("array_cache"_ts, "fail"), "0 10 10");
-  EXPECT_EQ(doc.get_child("array_cache"_ts, "fail"), "0 10 10");
+  EXPECT_EQ(doc->get_child("multiplier"_ts, "fail"), "0 10");
+  EXPECT_EQ(doc->get_child("array_cache"_ts, "fail"), "0 10 10");
+  EXPECT_EQ(doc->get_child("array_cache"_ts, "fail"), "0 10 10");
   set_key(doc, "multiplier.source", "2");
-  EXPECT_EQ(doc.get_child("array_cache"_ts, "fail"), "0 10 10 20");
-  EXPECT_EQ(doc.get_child("array_cache2"_ts, "fail"), "0 10 10 20");
+  EXPECT_EQ(doc->get_child("array_cache"_ts, "fail"), "0 10 10 20");
+  EXPECT_EQ(doc->get_child("array_cache2"_ts, "fail"), "0 10 10 20");
 }
 
 TEST_P(Misc, clock) {
   auto doc = GetParam();
-  auto clock = stoi(doc.get_child("clock"_ts, "fail"));
+  auto clock = stoi(doc->get_child("clock"_ts, "fail"));
   EXPECT_LT(clock, 1000);
   EXPECT_GE(clock, 0);
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  auto clock2 = stoi(doc.get_child("clock"_ts, "fail"));
+  auto clock2 = stoi(doc->get_child("clock"_ts, "fail"));
   EXPECT_NE(clock, clock2);
 }
 
@@ -232,12 +229,12 @@ TEST_P(Misc, assign_ref) {
   set_key(doc, "key-a", "a");
   set_key(doc, "ref-a", "foo");
   set_key(doc, "ref-ref-a", "bar");
-  EXPECT_EQ("bar", *doc.get_child("key-a"_ts));
+  EXPECT_EQ("bar", *doc->get_child("key-a"_ts));
 
   // Test fallback assignments
   set_key(doc, "ref-default-a", "foobar");
-  EXPECT_EQ("foobar", *doc.get_child("key-a"_ts));
-  EXPECT_FALSE(doc.set("cmd-ref"_ts, "hello"));
+  EXPECT_EQ("foobar", *doc->get_child("key-a"_ts));
+  EXPECT_FALSE(doc->set("cmd-ref"_ts, "hello"));
 }
 
 TEST_P(Misc, assign_file_env) {

@@ -12,6 +12,7 @@ namespace node {
   struct wrapper;
   using std::string;
   using base_s = std::shared_ptr<base>;
+  using wrapper_s = std::shared_ptr<wrapper>;
   struct node_error : std::logic_error { using logic_error::logic_error; };
 
   struct errorlist : std::vector<std::pair<std::string, std::string>> {

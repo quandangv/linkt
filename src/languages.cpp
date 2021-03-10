@@ -23,10 +23,11 @@ void write_key(std::ostream& os, const string& prefix, string&& value) {
     os << prefix << ' ' << value << endl;
 }
 
-void parse_ini(std::istream& is, node::wrapper& root, node::errorlist& err) {
+node::wrapper_s parse_ini(std::istream& is, node::errorlist& err) {
   string prefix;
   string raw;
-  node::parse_context context { &root, nullptr, nullptr, true };
+  auto root = std::make_shared<node::wrapper>();
+  node::parse_context context { root.get(), nullptr, nullptr, true };
   // Iterate through lines
   for (int linecount = 1; std::getline(is, raw); linecount++, raw.clear()) {
     tstring line(raw);
@@ -40,33 +41,35 @@ void parse_ini(std::istream& is, node::wrapper& root, node::errorlist& err) {
     } if (tstring key; err.extract_key(line, linecount, '=', key)) {
       // This is a key
       try {
-        root.add(prefix + key, raw, trim_quotes(line), context);
+        root->add(prefix + key, raw, trim_quotes(line), context);
       } catch (const std::exception& e) {
         err.report_error(linecount, e.what());
       }
     }
   }
+  return root;
 }
 
-void write_ini(std::ostream& os, const node::wrapper& root, const string& prefix) {
-  vector<std::pair<string, const node::wrapper*>> wrappers;
-  root.iterate_children([&](const string& name, const node::base& child) {
+void write_ini(std::ostream& os, const node::wrapper_s& root, const string& prefix) {
+  vector<std::pair<string, const node::wrapper_s>> wrappers;
+  root->iterate_children([&](const string& name, const node::base_s& child) {
+    if (!child) return;
     // The empty key is used as the value of the wrapper, skip it
     if (name.empty())
       return;
-    auto ctn = dynamic_cast<const node::wrapper*>(&child);
+    auto ctn = std::dynamic_pointer_cast<node::wrapper>(child);
     if(ctn) {
       // The keys with children will be written after the other keys
       // Otherwise, they will break the section
       wrappers.push_back(std::make_pair(name, ctn));
-      if (auto value = child.get(); !value.empty())
+      if (auto value = child->get(); !value.empty())
         write_key(os, name + " =", move(value));
     } else
-      write_key(os, name + " =", child.get());
+      write_key(os, name + " =", child->get());
   });
   for(auto pair : wrappers) {
     os << endl << '[' << prefix << pair.first << ']' << endl;
-    write_ini(os, *pair.second);
+    write_ini(os, pair.second);
   }
 }
 
@@ -75,8 +78,9 @@ struct indentpair {
   node::wrapper* node;
 };
 
-void parse_yml(std::istream& is, node::wrapper& root, node::errorlist& err) {
-  vector<indentpair> records{indentpair{-1, &root}};
+node::wrapper_s parse_yml(std::istream& is, node::errorlist& err) {
+  auto root = std::make_shared<node::wrapper>();
+  vector<indentpair> records{indentpair{-1, root.get()}};
   string raw;
   node::parse_context context;
 
@@ -127,19 +131,21 @@ void parse_yml(std::istream& is, node::wrapper& root, node::errorlist& err) {
       err.report_error(linecount, key, e.what());
     }
   }
+  return root;
 }
 
-void write_yml(std::ostream& os, const node::wrapper& root, int indent) {
-  root.iterate_children([&](const string& name, const node::base& child) {
+void write_yml(std::ostream& os, const node::wrapper_s& root, int indent) {
+  root->iterate_children([&](const string& name, const node::base_s& child) {
+    if (!child) return;
     // The empty key is used as the value of the wrapper, skip it
     if (name.empty())
       return;
     // Indent the line
     std::fill_n(std::ostream_iterator<char>(os), indent, ' ');
-    write_key(os, name + ":", child.get());
+    write_key(os, name + ":", child->get());
     
-    auto ctn = dynamic_cast<const node::wrapper*>(&child);
-    if(ctn)
-      write_yml(os, *ctn, indent + 2);
+    
+    if(auto ctn = std::dynamic_pointer_cast<node::wrapper>(child))
+      write_yml(os, ctn, indent + 2);
   });
 }
