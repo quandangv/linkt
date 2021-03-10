@@ -14,6 +14,8 @@ namespace node {
   using base_s = std::shared_ptr<base>;
   using wrapper_s = std::shared_ptr<wrapper>;
   using const_wrapper_s = std::shared_ptr<const wrapper>;
+  using wrapper_w = std::weak_ptr<wrapper>;
+
   struct node_error : std::logic_error { using logic_error::logic_error; };
 
   struct errorlist : std::vector<std::pair<std::string, std::string>> {
@@ -73,12 +75,14 @@ namespace node {
   };
 
   struct wrapper;
+  struct ancestor_destroyed_error : std::logic_error { using logic_error::logic_error; };
+
   struct address_ref : base, defaultable, settable {
-    wrapper& ancestor;
+    wrapper_w ancestor_w;
     string path;
 
-    address_ref  (wrapper& ancestor, string&& path, const base_s& fallback)
-        : defaultable(fallback), ancestor(ancestor), path(move(path)) {}
+    address_ref  (wrapper_w ancestor, string&& path, const base_s& fallback)
+        : defaultable(fallback), ancestor_w(ancestor), path(move(path)) {}
     string get  () const { return get_source()->get(); }
     bool set  (const string& value);
     base_s get_source  () const;

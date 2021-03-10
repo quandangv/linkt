@@ -53,22 +53,28 @@ string defaultable::use_fallback(const string& msg) const {
 
 // Returns the node that this reference points to
 base_s address_ref::get_source() const {
-  auto result = ancestor.get_child_place(path);
+  auto ancestor = ancestor_w.lock();
+  if (!ancestor) THROW_ERROR(ancestor_destroyed, "get_source");
+  auto result = ancestor->get_child_place(path);
   return result && *result ? *result : fallback ?:
       THROW_ERROR(node, "Can't find referenced key: " + path);
 }
 
 bool address_ref::set(const string& val) {
+  auto ancestor = ancestor_w.lock();
+  if (!ancestor) THROW_ERROR(ancestor_destroyed, "set");
   // Sets the value of the node pointed to
-  auto src = ancestor.get_child_ptr(path);
+  auto src = ancestor->get_child_ptr(path);
   // If the path doesn't point to a node, set the value of the fallback
   auto target = dynamic_cast<settable*>(src ? src.get() : fallback ? fallback.get() : nullptr);
   return target ? target->set(val) : false;
 }
 
 base_s address_ref::clone(clone_context& context) const {
+  auto ancestor = ancestor_w.lock();
+  if (!ancestor) THROW_ERROR(ancestor_destroyed, "clone");
   // Find the corresponding ancestor in the clone result tree
-  auto ancestor_it = find_if(context.ancestors.rbegin(), context.ancestors.rend(), [&](auto& pair) { return pair.first.get() == &ancestor; });
+  auto ancestor_it = find_if(context.ancestors.rbegin(), context.ancestors.rend(), [&](auto& pair) { return pair.first == ancestor; });
   wrapper_s cloned_ancestor;
   if (ancestor_it != context.ancestors.rend()) {
     cloned_ancestor = ancestor_it->second;
@@ -76,18 +82,20 @@ base_s address_ref::clone(clone_context& context) const {
     context.report_error("External dependency");
     return base_s();
   } else {
-    cloned_ancestor = ancestor.shared_from_this();
+    cloned_ancestor = ancestor_w.lock();
   }
+  if (!cloned_ancestor)
+    THROW_ERROR(node, "Unexpectedly empty cloned_ancestor");
 
   // Return a pointer to the referenced node
   if (context.optimize) {
     // If the referenced node already exists in the clone result, we don't have to clone it
     auto result = cloned_ancestor->get_child_ptr(path);
     if (!result) {
-      auto place = ancestor.get_child_place(path);
+      auto place = ancestor->get_child_place(path);
       if (place) {
         // Clone the referenced node, add it to the clone result, and return the pointer
-        auto src_ancestor = ancestor.shared_from_this();
+        auto src_ancestor = ancestor->shared_from_this();
         ancestor_processor record_ancestor = [&](tstring& path, wrapper_s inner_ancestor)->void {
           src_ancestor = std::dynamic_pointer_cast<wrapper>(src_ancestor->map.at(path));
           context.ancestors.emplace_back(src_ancestor, inner_ancestor);
@@ -111,7 +119,7 @@ base_s address_ref::clone(clone_context& context) const {
 
   // Return a reference to the corresponding path in the clone result
   return std::make_shared<address_ref>(
-    *cloned_ancestor,
+    cloned_ancestor,
     string(path),
     fallback ? fallback->clone(context) : base_s());
 }
@@ -226,17 +234,17 @@ base_s parse_escaped(string& raw, tstring& str, parse_context& context) {
   if (token_count == 0)
     THROW_ERROR(parse, "Empty reference string");
   if (token_count == 1) {
-    return std::make_shared<address_ref>(context.parent_based_ref ? *context.get_parent() : *context.get_current(), tokens[0], fallback);
+    return std::make_shared<address_ref>(context.parent_based_ref ? context.get_parent() : context.get_current(), tokens[0], fallback);
 
   } else if (tokens[0] == "dep"_ts) {
     if (token_count != 2)
       THROW_ERROR(parse, "env: Expected 1 components");
-    return std::make_shared<address_ref>(*context.get_parent(), tokens[1], fallback);
+    return std::make_shared<address_ref>(context.get_parent(), tokens[1], fallback);
 
   } else if (tokens[0] == "rel"_ts) {
     if (token_count != 2)
       THROW_ERROR(parse, "env: Expected 1 components");
-    return std::make_shared<address_ref>(*context.get_current(), tokens[1], fallback);
+    return std::make_shared<address_ref>(context.get_current(), tokens[1], fallback);
 
   } else if (tokens[0] == "file"_ts) {
     tokens[token_count - 1].merge(tokens[1]);
@@ -280,7 +288,7 @@ base_s parse_escaped(string& raw, tstring& str, parse_context& context) {
         for (size_t i = 0; i < size; i++)
           result->cache_arr->emplace_back();
       } else {
-        auto cache_base = address_ref(*context.get_parent(), tokens[1], base_s()).get_source();
+        auto cache_base = address_ref(context.get_parent(), tokens[1], base_s()).get_source();
         if (auto cache = dynamic_cast<array_cache*>(cache_base.get()))
           result->cache_arr = cache->cache_arr;
         else THROW_ERROR(parse, "1st argument must be the size of the cache or a parent path to another array_cache: " + str);
@@ -295,7 +303,7 @@ base_s parse_escaped(string& raw, tstring& str, parse_context& context) {
     if (token_count != 3)
       THROW_ERROR(parse, "save: Expected 2 components");
     auto result = std::make_shared<save>();
-    result->target = std::make_shared<address_ref>(*context.get_current(), tokens[1], base_s());
+    result->target = std::make_shared<address_ref>(context.get_current(), tokens[1], base_s());
     result->value = checked_parse_raw(raw, tokens[2], context);
     return result;
 
@@ -323,7 +331,7 @@ base_s parse_escaped(string& raw, tstring& str, parse_context& context) {
 
   } else if (tokens[0] == "clone"_ts) {
     for (int i = 1; i < token_count; i++) {
-      auto source = address_ref(*context.get_parent(), tokens[i], base_s()).get_source();
+      auto source = address_ref(context.get_parent(), tokens[i], base_s()).get_source();
       throwing_clone_context clone_context;
       if (auto wrp = std::dynamic_pointer_cast<wrapper>(source)) {
         context.get_current()->merge(wrp, clone_context);
