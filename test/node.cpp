@@ -11,7 +11,7 @@ using parse_test = vector<parse_test_single>;
 void test_nodes(parse_test testset, int repeat = base_repeat) {
   node::wrapper tmp_doc;
   auto doc = new node::wrapper();
-  auto base_doc = node::base_p(doc);
+  auto base_doc = node::base_s(doc);
 
   node::parse_context context{doc, nullptr, nullptr, true};
   // Add keys to doc
@@ -26,7 +26,7 @@ void test_nodes(parse_test testset, int repeat = base_repeat) {
       cerr << "Key: " << test.path << endl;
   }
   *doc = tmp_doc;
-  auto test_doc = [&](node::base_p node, node::errorlist& errs) {
+  auto test_doc = [&](node::base_s node, node::errorlist& errs) {
     auto doc = dynamic_cast<node::wrapper*>(node.get());
     for (auto test : testset) {
       // Skip key if it is expected to fail in the previous step

@@ -35,7 +35,7 @@ string string_interpolate::get() const {
   return interpolate(base, list<position_it>{spots}, list<replacement_it>{spots});
 }
 
-base_p string_interpolate::clone(clone_context& context) const {
+base_s string_interpolate::clone(clone_context& context) const {
   auto result = std::make_unique<string_interpolate>();
   result->base = base;
   result->spots.reserve(spots.size());

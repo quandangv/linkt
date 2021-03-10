@@ -47,7 +47,7 @@ void check_key(const node::wrapper& w, string path, string expected, bool except
     cerr << "Key: " << path << endl << endl;
 }
 
-void triple_node_test(node::base_p node, std::function<void(node::base_p, node::errorlist&)> tester, int repeat = base_repeat) {
+void triple_node_test(node::base_s node, std::function<void(node::base_s, node::errorlist&)> tester, int repeat = base_repeat) {
   if (repeat <= 0)
     repeat = 1;
   auto fail_count = get_test_part_count();

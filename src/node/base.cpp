@@ -9,7 +9,7 @@
 
 NAMESPACE(node)
 
-base_p base::checked_clone(clone_context& context) const {
+base_s base::checked_clone(clone_context& context) const {
   auto result = clone(context);
   return result ?: THROW_ERROR(node, "Unexpectedly empty clone result");
 }
@@ -33,13 +33,13 @@ bool errorlist::extract_key(tstring& line, int linecount, char separator, tstrin
   return true;
 }
 
-meta::meta(const base_p& value) : value(value) {
+meta::meta(const base_s& value) : value(value) {
   if (!value)
     THROW_ERROR(node, "meta: value can not be null");
 }
 
 // Checks if the value of a node come directly from a plain node, meaning it never changes
-bool is_fixed(base_p node) {
+bool is_fixed(base_s node) {
   if (auto doc = dynamic_cast<wrapper*>(node.get()))
     node = doc->get_child_ptr(""_ts);
   return dynamic_cast<plain*>(node.get());
@@ -51,7 +51,7 @@ string defaultable::use_fallback(const string& msg) const {
 }
 
 // Returns the node that this reference points to
-base_p address_ref::get_source() const {
+base_s address_ref::get_source() const {
   auto result = ancestor.get_child_place(path);
   return result && *result ? *result : fallback ?:
       THROW_ERROR(node, "Can't find referenced key: " + path);
@@ -65,7 +65,7 @@ bool address_ref::set(const string& val) {
   return target ? target->set(val) : false;
 }
 
-base_p address_ref::clone(clone_context& context) const {
+base_s address_ref::clone(clone_context& context) const {
   // Find the corresponding ancestor in the clone result tree
   auto ancestor_it = find_if(context.ancestors.rbegin(), context.ancestors.rend(), [&](auto& pair) { return pair.first == &ancestor; });
   wrapper* cloned_ancestor;
@@ -73,7 +73,7 @@ base_p address_ref::clone(clone_context& context) const {
     cloned_ancestor = ancestor_it->second;
   } else if (context.no_dependency) {
     context.report_error("External dependency");
-    return base_p();
+    return base_s();
   } else {
     cloned_ancestor = &ancestor;
   }
@@ -112,7 +112,7 @@ base_p address_ref::clone(clone_context& context) const {
   return std::make_shared<address_ref>(
     *cloned_ancestor,
     string(path),
-    fallback ? fallback->clone(context) : base_p());
+    fallback ? fallback->clone(context) : base_s());
 }
 
 wrapper& parse_context::get_current() {
@@ -133,7 +133,7 @@ wrapper& parse_context::get_parent() {
   THROW_ERROR(parse, "parent is null");
 }
 
-base_p& parse_context::get_place() {
+base_s& parse_context::get_place() {
   if (!place) {
     if (!current)
       THROW_ERROR(parse, "Get-place: Both current and place are null");
@@ -145,7 +145,7 @@ base_p& parse_context::get_place() {
 }
 
 // Parse an unescaped node string
-base_p parse_raw(string& raw, tstring& str, parse_context& context) {
+base_s parse_raw(string& raw, tstring& str, parse_context& context) {
   for (auto it = str.begin(); it < str.end() - 1; it++) {
     if (*it == '\\') {
       switch (*++it) {
@@ -192,18 +192,18 @@ int word_matcher(int c) {
   return c == '?' ? 2 : std::isspace(c) ? 0 : 1;
 }
 
-base_p checked_parse_raw(string& raw, tstring& str, parse_context& context) {
+base_s checked_parse_raw(string& raw, tstring& str, parse_context& context) {
   auto result = parse_raw(raw, str, context);
   return result ?: THROW_ERROR(parse, "Unexpected empty parse result");
 }
 
 // Parse an escaped node string
-base_p parse_escaped(string& raw, tstring& str, parse_context& context) {
+base_s parse_escaped(string& raw, tstring& str, parse_context& context) {
   std::array<tstring, 7> tokens;
   auto token_count = fill_tokens<word_matcher>(str, tokens);
 
   // Extract the fallback before anything
-  base_p fallback;
+  base_s fallback;
   for (int i = token_count; i--> 0;) {
     if (!tokens[i].empty() && tokens[i].front() == '?') {
       tokens[i].erase_front();
@@ -279,7 +279,7 @@ base_p parse_escaped(string& raw, tstring& str, parse_context& context) {
         for (size_t i = 0; i < size; i++)
           result->cache_arr->emplace_back();
       } else {
-        auto cache_base = address_ref(context.get_parent(), tokens[1], base_p()).get_source();
+        auto cache_base = address_ref(context.get_parent(), tokens[1], base_s()).get_source();
         if (auto cache = dynamic_cast<array_cache*>(cache_base.get()))
           result->cache_arr = cache->cache_arr;
         else THROW_ERROR(parse, "1st argument must be the size of the cache or a parent path to another array_cache");
@@ -294,7 +294,7 @@ base_p parse_escaped(string& raw, tstring& str, parse_context& context) {
     if (token_count != 3)
       THROW_ERROR(parse, "save: Expected 2 components");
     auto result = std::make_shared<save>();
-    result->target = std::make_shared<address_ref>(context.get_current(), tokens[1], base_p());
+    result->target = std::make_shared<address_ref>(context.get_current(), tokens[1], base_s());
     result->value = checked_parse_raw(raw, tokens[2], context);
     return result;
 
@@ -322,7 +322,7 @@ base_p parse_escaped(string& raw, tstring& str, parse_context& context) {
 
   } else if (tokens[0] == "clone"_ts) {
     for (int i = 1; i < token_count; i++) {
-      auto source = address_ref(context.get_parent(), tokens[i], base_p()).get_source();
+      auto source = address_ref(context.get_parent(), tokens[i], base_s()).get_source();
       throwing_clone_context clone_context;
       if (auto wrp = dynamic_cast<wrapper*>(source.get())) {
         context.get_current().merge(*wrp, clone_context);
@@ -331,7 +331,7 @@ base_p parse_escaped(string& raw, tstring& str, parse_context& context) {
       } else
         THROW_ERROR(parse, "Can't merge non-wrapper nodes");
     }
-    return base_p();
+    return base_s();
   } else
     THROW_ERROR(parse, "Unsupported operator type: " + tokens[0]);
 }

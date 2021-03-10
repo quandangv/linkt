@@ -11,7 +11,7 @@ namespace node {
   struct base;
   struct wrapper;
   using std::string;
-  using base_p = std::shared_ptr<base>;
+  using base_s = std::shared_ptr<base>;
   struct node_error : std::logic_error { using logic_error::logic_error; };
 
   struct errorlist : std::vector<std::pair<std::string, std::string>> {
@@ -45,8 +45,8 @@ namespace node {
     virtual ~base() {}
 
     virtual string get  () const = 0;
-    virtual base_p clone  (clone_context&) const = 0;
-    base_p checked_clone  (clone_context&) const;
+    virtual base_s clone  (clone_context&) const = 0;
+    base_s checked_clone  (clone_context&) const;
   };
 
   struct settable {
@@ -59,14 +59,14 @@ namespace node {
     explicit plain  (string&& val) : val(val) {}
     string get  () const { return val; }
     bool set  (const string& value) { val = value; return true; }
-    base_p clone  (clone_context&) const { return std::make_shared<plain>(string(val)); }
+    base_s clone  (clone_context&) const { return std::make_shared<plain>(string(val)); }
   };
 
   struct defaultable {
-    base_p fallback;
+    base_s fallback;
 
     defaultable  () {}
-    explicit defaultable  (const base_p& fallback) : fallback(fallback) {}
+    explicit defaultable  (const base_s& fallback) : fallback(fallback) {}
     [[nodiscard]] string use_fallback  (const string& error_message) const;
   };
 
@@ -75,18 +75,18 @@ namespace node {
     wrapper& ancestor;
     string path;
 
-    address_ref  (wrapper& ancestor, string&& path, const base_p& fallback)
+    address_ref  (wrapper& ancestor, string&& path, const base_s& fallback)
         : defaultable(fallback), ancestor(ancestor), path(move(path)) {}
     string get  () const { return get_source()->get(); }
     bool set  (const string& value);
-    base_p get_source  () const;
-    base_p clone  (clone_context&) const;
+    base_s get_source  () const;
+    base_s clone  (clone_context&) const;
   };
 
   struct meta : base, defaultable {
-    const base_p value;
+    const base_s value;
 
-    meta(const base_p& value);
+    meta(const base_s& value);
 
     template <typename T>
     std::shared_ptr<T> copy(clone_context& context) const {
@@ -97,20 +97,20 @@ namespace node {
     }
   };
 
-  bool is_fixed(base_p node);
+  bool is_fixed(base_s node);
 
   struct parse_context {
     wrapper* parent{nullptr}, *current{nullptr};
-    base_p* place{nullptr};
+    base_s* place{nullptr};
     bool parent_based_ref{false};
 
     wrapper& get_current();
     wrapper& get_parent();
-    base_p& get_place();
+    base_s& get_place();
     friend struct parse_context_base;
   };
-  using parse_func = std::function<base_p(string& raw, tstring& str, parse_context&)>;
+  using parse_func = std::function<base_s(string& raw, tstring& str, parse_context&)>;
   struct parse_error : std::logic_error { using logic_error::logic_error; };
-  base_p parse_raw  (string& raw, tstring& str, parse_context& context);
-  base_p parse_escaped  (string& raw, tstring& str, parse_context& context);
+  base_s parse_raw  (string& raw, tstring& str, parse_context& context);
+  base_s parse_escaped  (string& raw, tstring& str, parse_context& context);
 }

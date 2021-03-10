@@ -14,7 +14,7 @@ struct file_test_param {
 
 void test_language(file_test_param testset) {
   auto doc = new node::wrapper();
-  auto base_doc = node::base_p(doc);
+  auto base_doc = node::base_s(doc);
 
   std::ifstream ifs{testset.path + ".txt"};
   ASSERT_FALSE(ifs.fail());
@@ -38,7 +38,7 @@ void test_language(file_test_param testset) {
   }
 
   // Check the keys
-  auto test_doc = [&](node::base_p node, const node::errorlist& errs) {
+  auto test_doc = [&](node::base_s node, const node::errorlist& errs) {
     auto doc = dynamic_cast<node::wrapper*>(node.get());
     for(auto& err : errs)
       ADD_FAILURE() << "Error while cloning: " << err.first << ':' << err.second;

@@ -10,7 +10,7 @@ NAMESPACE(node)
 
 // Returns the pointer to the node at the specified path
 // This will return the inner node of a wrapper.
-base_p wrapper::get_child_ptr(tstring path) const {
+base_s wrapper::get_child_ptr(tstring path) const {
   if (auto immediate_path = cut_front(trim(path), '.'); !immediate_path.untouched()) {
     if (auto iterator = map.find(immediate_path); iterator != map.end())
       if (auto child = dynamic_cast<wrapper*>(iterator->second.get()))
@@ -25,7 +25,7 @@ base_p wrapper::get_child_ptr(tstring path) const {
 
 // Returns the pointer to the storage of the node or wrapper at the specified path
 // Returns null if it doesn't exist
-base_p* wrapper::get_child_place(tstring path) {
+base_s* wrapper::get_child_place(tstring path) {
   if (auto immediate_path = cut_front(trim(path), '.'); !immediate_path.untouched()) {
     if (auto iterator = map.find(immediate_path); iterator != map.end())
       if (auto child = dynamic_cast<wrapper*>(iterator->second.get()))
@@ -45,7 +45,7 @@ string wrapper::get_child(const tstring& path, string&& fallback) const {
   return result ? *result : move(fallback);
 }
 
-base_p& wrapper::add(tstring path, ancestor_processor* processor) {
+base_s& wrapper::add(tstring path, ancestor_processor* processor) {
   trim(path);
   for (char c : path)
     if (auto invalid = strchr(" #$\"'(){}[]", c))
@@ -69,12 +69,12 @@ base_p& wrapper::add(tstring path, ancestor_processor* processor) {
   }
 }
 
-base_p& wrapper::add(tstring path, const base_p& value) {
+base_s& wrapper::add(tstring path, const base_s& value) {
   auto& place = add(path);
   return !place ? (place = value) : !value ? place : THROW_ERROR(wrapper, "Add: Duplicate key");
 }
 
-base_p& wrapper::add(tstring path, string& raw, tstring value, parse_context& context) {
+base_s& wrapper::add(tstring path, string& raw, tstring value, parse_context& context) {
   add(path);
   context.parent = this;
   context.current = nullptr;
@@ -84,22 +84,22 @@ base_p& wrapper::add(tstring path, string& raw, tstring value, parse_context& co
   return *context.place;
 }
 
-void wrapper::iterate_children(std::function<void(const string&, const base_p&)> processor) const {
+void wrapper::iterate_children(std::function<void(const string&, const base_s&)> processor) const {
   for(auto& pair : map)
     processor(pair.first, pair.second);
 }
 
 void wrapper::iterate_children(std::function<void(const string&, const base&)> processor) const {
-  iterate_children([&](const string& name, const base_p& child) {
+  iterate_children([&](const string& name, const base_s& child) {
     if (child)
       processor(name, *child);
   });
 }
 
 
-wrapper& wrapper::wrap(base_p& place) {
+wrapper& wrapper::wrap(base_s& place) {
   auto wrp = new wrapper(place);
-  place = base_p(wrp);
+  place = base_s(wrp);
   return *wrp;
 }
 
@@ -145,7 +145,7 @@ void wrapper::merge(const wrapper& src, clone_context& context) {
   context.ancestors.pop_back();
 }
 
-base_p wrapper::clone(clone_context& context) const {
+base_s wrapper::clone(clone_context& context) const {
   auto result = std::make_shared<wrapper>();
   result->merge(*this, context);
   return result;

@@ -18,7 +18,7 @@ string color::get() const {
   }
 }
 
-base_p color::clone(clone_context& context) const {
+base_s color::clone(clone_context& context) const {
   auto result = meta::copy<color>(context);
   if (context.optimize && is_fixed(result->value))
     return std::make_shared<plain>(get());
@@ -36,7 +36,7 @@ bool env::set(const string& newval) {
   return true;
 }
 
-base_p env::clone(clone_context& context) const {
+base_s env::clone(clone_context& context) const {
   return meta::copy<env>(context);
 }
 
@@ -59,7 +59,7 @@ bool file::set(const string& content) {
   return true;
 }
 
-base_p file::clone(clone_context& context) const {
+base_s file::clone(clone_context& context) const {
   return meta::copy<file>(context);
 }
 
@@ -80,7 +80,7 @@ string cmd::get() const {
   return result;
 }
 
-base_p cmd::clone(clone_context& context) const {
+base_s cmd::clone(clone_context& context) const {
   return meta::copy<cmd>(context);
 }
 
@@ -100,7 +100,7 @@ string save::get() const {
   return result;
 }
 
-base_p save::clone(clone_context& context) const {
+base_s save::clone(clone_context& context) const {
   auto result = std::make_shared<save>();
   result->value = value->checked_clone(context);
   result->target = target->checked_clone(context);
@@ -115,7 +115,7 @@ string cache::get() const {
   return cache_str;
 }
 
-base_p cache::clone(clone_context& context) const {
+base_s cache::clone(clone_context& context) const {
   auto result = std::make_shared<cache>();
   result->source = source->checked_clone(context);
   result->duration_ms = duration_ms->checked_clone(context);
@@ -138,7 +138,7 @@ string array_cache::get(size_t index) const {
   } else return result;
 }
 
-base_p array_cache::clone(clone_context& context) const {
+base_s array_cache::clone(clone_context& context) const {
   auto result = std::make_shared<array_cache>();
   result->source = source->checked_clone(context);
   result->calculator = calculator->checked_clone(context);
@@ -158,7 +158,7 @@ string map::get() const {
   }
 }
 
-base_p map::clone(clone_context& context) const {
+base_s map::clone(clone_context& context) const {
   auto result = meta::copy<map>(context);
   if (context.optimize && is_fixed(result->value))
       return std::make_shared<plain>(get());
@@ -175,7 +175,7 @@ string clock::get() const {
   return std::to_string(unlooped % loop);
 }
 
-base_p clock::clone(clone_context&) const {
+base_s clock::clone(clone_context&) const {
   auto result = std::make_shared<clock>();
   result->tick_duration = tick_duration;
   result->loop = loop;
