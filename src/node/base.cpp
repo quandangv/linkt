@@ -73,8 +73,8 @@ base_p address_ref::clone(clone_context& context) const {
     cloned_ancestor = &ancestor;
   }
 
+  // Return a pointer to the referenced node
   if (context.optimize) {
-    // Return a pointer to the referenced node
     // If the referenced node already exists in the clone result, we don't have to clone it
     auto result = cloned_ancestor->get_child_ptr(path);
     if (!result) {
@@ -93,8 +93,8 @@ base_p address_ref::clone(clone_context& context) const {
         // Build the clone result tree up to the referenced node in case it's also a reference
         // So that the reference can find its corresponding ancestor
         auto& cloned_place = cloned_ancestor->add(path, &record_ancestor);
-        result = cloned_place = src->clone(context);
         context.ancestors.erase(context.ancestors.begin() + ancestors_mark, context.ancestors.end());
+        result = cloned_place = src->clone(context);
         *place = src;
         return result;
       } else if (fallback)

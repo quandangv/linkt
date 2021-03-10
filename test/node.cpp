@@ -9,6 +9,7 @@ struct parse_test_single {
 using parse_test = vector<parse_test_single>;
 
 void test_nodes(parse_test testset, int repeat = base_repeat) {
+  node::wrapper tmp_doc;
   auto doc = new node::wrapper();
   auto base_doc = node::base_p(doc);
 
@@ -18,12 +19,13 @@ void test_nodes(parse_test testset, int repeat = base_repeat) {
     tstring ts{test.value};
     auto last_count = get_test_part_count();
     if (test.fail)
-      EXPECT_ANY_THROW(doc->add(test.path, test.value, ts, context)) << "Expected error";
+      EXPECT_ANY_THROW(tmp_doc.add(test.path, test.value, ts, context)) << "Expected error";
     else
-      EXPECT_NO_THROW(doc->add(test.path, test.value, ts, context)) << "Unexpected error";
+      EXPECT_NO_THROW(tmp_doc.add(test.path, test.value, ts, context)) << "Unexpected error";
     if (last_count != get_test_part_count())
       cerr << "Key: " << test.path << endl;
   }
+  *doc = tmp_doc;
   auto test_doc = [&](node::base_p node, node::errorlist& errs) {
     auto doc = dynamic_cast<node::wrapper*>(node.get());
     for (auto test : testset) {

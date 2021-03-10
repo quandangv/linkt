@@ -18,6 +18,11 @@ namespace node {
 
     map_type map{};
 
+    wrapper& operator=(const wrapper&);
+    wrapper& operator=(wrapper&&);
+    wrapper(const wrapper& other) { operator=(other); }
+    wrapper(wrapper&& other) { operator=(std::move(other)); }
+
     explicit wrapper(const base_p& value) : map{{"", value}} {}
     wrapper() {}
 
@@ -36,7 +41,7 @@ namespace node {
     void iterate_children  (std::function<void(const string&, const base&)> processor) const;
 
     bool set  (const tstring& path, const string& value);
-    void optimize  (clone_context&);
+    wrapper& optimize  (clone_context&);
     void merge  (const wrapper& source, clone_context&);
     string get  () const;
     base_p clone  (clone_context&) const;

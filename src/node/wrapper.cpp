@@ -45,7 +45,6 @@ string wrapper::get_child(const tstring& path, string&& fallback) const {
   return result ? *result : move(fallback);
 }
 
-
 base_p& wrapper::add(tstring path, ancestor_processor* processor) {
   trim(path);
   for (char c : path)
@@ -114,11 +113,12 @@ string wrapper::get() const {
   return value ? value->get() : "";
 }
 
-void wrapper::optimize(clone_context& context) {
+wrapper& wrapper::optimize(clone_context& context) {
   context.optimize = true;
   wrapper tmp;
-  tmp.merge(*this, context);
-  map = move(tmp.map);
+  tmp.map.swap(map);
+  merge(tmp, context);
+  return *this;
 }
 
 void wrapper::merge(const wrapper& src, clone_context& context) {
@@ -130,8 +130,12 @@ void wrapper::merge(const wrapper& src, clone_context& context) {
     context.current_path += context.ancestors.size() == 1 ? pair.first : ("." + pair.first);
     if (auto& place = map[pair.first]; !place)
       place = pair.second->clone(context);
-    else if (auto wrp = dynamic_cast<wrapper*>(place.get()))
-      wrp->merge(dynamic_cast<wrapper&>(*pair.second), context);
+    else if (auto wrp = dynamic_cast<wrapper*>(place.get())) {
+      if (auto src_wrp = dynamic_cast<wrapper*>(pair.second.get()))
+        wrp->merge(*src_wrp, context);
+      else
+        wrp->map[""] = pair.second->clone(context);
+    }
     context.current_path = last_path;
   }
   context.ancestors.pop_back();
@@ -141,6 +145,18 @@ base_p wrapper::clone(clone_context& context) const {
   auto result = std::make_shared<wrapper>();
   result->merge(*this, context);
   return result;
+}
+
+wrapper& wrapper::operator=(const wrapper& other) {
+  clone_context context;
+  merge(other, context);
+  return *this;
+}
+
+wrapper& wrapper::operator=(wrapper&& other) {
+  map.swap(other.map);
+  other.map.clear();
+  return *this;
 }
 
 NAMESPACE_END
