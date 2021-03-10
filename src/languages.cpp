@@ -73,6 +73,7 @@ void write_ini(std::ostream& os, const node::wrapper& root, const string& prefix
 struct indentpair {
   int indent;
   node::wrapper* node;
+  indentpair(int indent, node::wrapper* node) : indent(indent), node(node) {}
 };
 
 void parse_yml(std::istream& is, node::wrapper& root, node::errorlist& err) {
@@ -113,7 +114,7 @@ void parse_yml(std::istream& is, node::wrapper& root, node::errorlist& err) {
       if (find(modes, '=') != tstring::npos && !context.parent->set(key, line)) {
         auto ptr = context.parent->get_child_place(key);
         err.report_error(linecount, key, !ptr || !*ptr ? "Key to be set doesn't exist." :
-            ("Can't set value of type: "s + typeid(**ptr).name()));
+            ("Can't set value of type: "s + typeid(*ptr).name()));
         continue;
       }
       context.parent->add(key);
