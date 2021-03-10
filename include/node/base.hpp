@@ -45,7 +45,8 @@ namespace node {
     virtual ~base() {}
 
     virtual string get  () const = 0;
-    virtual base_p clone  (clone_context& context) const = 0;
+    virtual base_p clone  (clone_context&) const = 0;
+    base_p checked_clone  (clone_context&) const;
   };
 
   struct settable {
@@ -89,7 +90,7 @@ namespace node {
 
     template <typename T>
     std::shared_ptr<T> copy(clone_context& context) const {
-      auto result = std::make_shared<T>(value->clone(context));
+      auto result = std::make_shared<T>(value->checked_clone(context));
       if (fallback)
         result->fallback = fallback->clone(context);
       return result;

@@ -123,7 +123,6 @@ TEST(Language, Yml) {
 }
 
 node::wrapper load_doc() {
-  cerr << "Load doc" << endl;
   node::wrapper doc;
   // Load the test file
   std::ifstream ifs{"misc_test.txt"};
@@ -138,7 +137,7 @@ node::wrapper load_doc() {
 node::wrapper load_optimized_doc() {
   auto doc = load_doc();
   node::clone_context context;
-  //context.no_dependency = true;
+  context.no_dependency = true;
   doc.optimize(context);
   for(auto& e : context.errors)
     ADD_FAILURE() << "At " << e.first << ": " << e.second << endl;

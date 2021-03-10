@@ -102,8 +102,8 @@ string save::get() const {
 
 base_p save::clone(clone_context& context) const {
   auto result = std::make_shared<save>();
-  result->value = value->clone(context);
-  result->target = target->clone(context);
+  result->value = value->checked_clone(context);
+  result->target = target->checked_clone(context);
   return result;
 }
 
@@ -117,8 +117,8 @@ string cache::get() const {
 
 base_p cache::clone(clone_context& context) const {
   auto result = std::make_shared<cache>();
-  result->source = source->clone(context);
-  result->duration_ms = duration_ms->clone(context);
+  result->source = source->checked_clone(context);
+  result->duration_ms = duration_ms->checked_clone(context);
   result->cache_str = cache_str;
   result->cache_expire = cache_expire;
   return result;
@@ -140,8 +140,8 @@ string array_cache::get(size_t index) const {
 
 base_p array_cache::clone(clone_context& context) const {
   auto result = std::make_shared<array_cache>();
-  result->source = source->clone(context);
-  result->calculator = calculator->clone(context);
+  result->source = source->checked_clone(context);
+  result->calculator = calculator->checked_clone(context);
   result->cache_arr = cache_arr;
   return result;
 }

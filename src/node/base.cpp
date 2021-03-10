@@ -9,6 +9,11 @@
 
 NAMESPACE(node)
 
+base_p base::checked_clone(clone_context& context) const {
+  auto result = clone(context);
+  return result ?: THROW_ERROR(node, "Unexpectedly empty clone result");
+}
+
 throwing_clone_context::~throwing_clone_context()  noexcept(false) {
   if (std::uncaught_exceptions() || errors.empty())
     return;
