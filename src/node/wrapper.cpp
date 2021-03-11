@@ -118,10 +118,12 @@ string wrapper::get() const {
 }
 
 void wrapper::optimize(clone_context& context) {
+  context.ancestors.emplace_back(shared_from_this(), shared_from_this());
   context.optimize = true;
   auto tmp = std::make_shared<wrapper>();
   tmp->map.swap(map);
   merge(tmp, context);
+  context.ancestors.pop_back();
 }
 
 void wrapper::merge(const const_wrapper_s& src, clone_context& context) {

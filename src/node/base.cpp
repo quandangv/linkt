@@ -95,7 +95,7 @@ base_s address_ref::clone(clone_context& context) const {
       auto place = ancestor->get_child_place(path);
       if (place) {
         // Clone the referenced node, add it to the clone result, and return the pointer
-        auto src_ancestor = ancestor->shared_from_this();
+        auto src_ancestor = ancestor;
         ancestor_processor record_ancestor = [&](tstring& path, wrapper_s inner_ancestor)->void {
           src_ancestor = std::dynamic_pointer_cast<wrapper>(src_ancestor->map.at(path));
           context.ancestors.emplace_back(src_ancestor, inner_ancestor);
@@ -107,8 +107,8 @@ base_s address_ref::clone(clone_context& context) const {
         // Build the clone result tree up to the referenced node in case it's also a reference
         // So that the reference can find its corresponding ancestor
         auto& cloned_place = cloned_ancestor->add(path, &record_ancestor);
-        context.ancestors.erase(context.ancestors.begin() + ancestors_mark, context.ancestors.end());
         result = cloned_place = src->clone(context);
+        context.ancestors.erase(context.ancestors.begin() + ancestors_mark, context.ancestors.end());
         *place = src;
         return result;
       } else if (fallback)

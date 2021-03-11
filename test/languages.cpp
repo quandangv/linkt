@@ -138,7 +138,7 @@ node::wrapper_s load_doc() {
 node::wrapper_s load_optimized_doc() {
   auto doc = load_doc();
   node::clone_context context;
-  //context.no_dependency = true;
+  context.no_dependency = true;
   doc->optimize(context);
 
   if (!context.errors.empty()) {
@@ -208,8 +208,9 @@ TEST_P(Misc, array_cache) {
   EXPECT_EQ(doc->get_child("array_cache"_ts, "fail"), "0 10 10");
   EXPECT_EQ(doc->get_child("array_cache"_ts, "fail"), "0 10 10");
   set_key(doc, "multiplier.source", "2");
-  //EXPECT_EQ(doc->get_child("array_cache"_ts, "fail"), "0 10 10 20");
-  //EXPECT_EQ(doc->get_child("array_cache2"_ts, "fail"), "0 10 10 20");
+  EXPECT_EQ(doc->get_child("array_cache"_ts, "fail"), "0 10 10 20");
+  EXPECT_EQ(doc->get_child("array_cache2"_ts, "fail"), "0 10 10 20");
+  EXPECT_EQ(doc->get_child("multiplier"_ts, "fail"), "0 10 10 20 20");
 }
 
 TEST_P(Misc, clock) {
