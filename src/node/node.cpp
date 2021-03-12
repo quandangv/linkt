@@ -94,7 +94,9 @@ string save::get() const {
     result = str.substr(sep + 1);
     str.erase(sep);
   }
-  if (auto conv_target = dynamic_cast<settable*>(target.get());
+  LG_DBUG("save save:   " << str);
+  LG_DBUG("save result: " << result);
+  if (auto conv_target = std::dynamic_pointer_cast<settable>(target);
       !conv_target || !conv_target->set(str))
     THROW_ERROR(node, "save: Can't set value to target");
   return result;
@@ -102,8 +104,8 @@ string save::get() const {
 
 base_s save::clone(clone_context& context) const {
   auto result = std::make_shared<save>();
-  result->value = value->checked_clone(context);
-  result->target = target->checked_clone(context);
+  result->value = value->checked_clone(context, "save::clone");
+  result->target = target->checked_clone(context, "save::clone");
   return result;
 }
 
@@ -117,8 +119,8 @@ string cache::get() const {
 
 base_s cache::clone(clone_context& context) const {
   auto result = std::make_shared<cache>();
-  result->source = source->checked_clone(context);
-  result->duration_ms = duration_ms->checked_clone(context);
+  result->source = source->checked_clone(context, "cache::clone");
+  result->duration_ms = duration_ms->checked_clone(context, "cache::clone");
   result->cache_str = cache_str;
   result->cache_expire = cache_expire;
   return result;
@@ -140,8 +142,8 @@ string array_cache::get(size_t index) const {
 
 base_s array_cache::clone(clone_context& context) const {
   auto result = std::make_shared<array_cache>();
-  result->source = source->checked_clone(context);
-  result->calculator = calculator->checked_clone(context);
+  result->source = source->checked_clone(context, "array_cache::clone");
+  result->calculator = calculator->checked_clone(context, "array_cache::clone");
   result->cache_arr = cache_arr;
   return result;
 }

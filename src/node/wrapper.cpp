@@ -28,7 +28,7 @@ base_s wrapper::get_child_ptr(tstring path) const {
 base_s* wrapper::get_child_place(tstring path) {
   if (auto immediate_path = cut_front(trim(path), '.'); !immediate_path.untouched()) {
     if (auto iterator = map.find(immediate_path); iterator != map.end())
-      if (auto child = dynamic_cast<wrapper*>(iterator->second.get()))
+      if (auto child = std::dynamic_pointer_cast<wrapper>(iterator->second))
         return child->get_child_place(path);
   } else if (auto iterator = map.find(path); iterator != map.end())
     return &iterator->second;
@@ -56,8 +56,7 @@ base_s& wrapper::add(tstring path, ancestor_processor* processor) {
     auto& ptr = map[immediate_path];
     wrapper_s ancestor;
     if (!ptr) {
-      ancestor = std::make_shared<wrapper>();
-      ptr = ancestor;
+      ptr = ancestor = std::make_shared<wrapper>();
     } else if (!(ancestor = std::dynamic_pointer_cast<wrapper>(ptr)))
       ancestor = wrap(ptr);
     if (processor)
@@ -68,8 +67,8 @@ base_s& wrapper::add(tstring path, ancestor_processor* processor) {
     auto& place = map[path];
     if (!place)
       return place;
-    wrapper* wrpr = dynamic_cast<wrapper*>(place.get());
-    return wrpr ? wrpr->map[""] : place;
+    auto wrp = std::dynamic_pointer_cast<wrapper>(place);
+    return wrp ? wrp->map[""] : place;
   }
 }
 
@@ -117,15 +116,6 @@ string wrapper::get() const {
   return value ? value->get() : "";
 }
 
-void wrapper::optimize(clone_context& context) {
-  context.ancestors.emplace_back(shared_from_this(), shared_from_this());
-  context.optimize = true;
-  auto tmp = std::make_shared<wrapper>();
-  tmp->map.swap(map);
-  merge(tmp, context);
-  context.ancestors.pop_back();
-}
-
 void wrapper::merge(const const_wrapper_s& src, clone_context& context) {
   context.ancestors.emplace_back(src, shared_from_this());
   for(auto& pair : src->map) {
@@ -134,14 +124,16 @@ void wrapper::merge(const const_wrapper_s& src, clone_context& context) {
     auto last_path = context.current_path;
     context.current_path += context.ancestors.size() == 1 ? pair.first : ("." + pair.first);
     try {
-      if (auto& place = map[pair.first]; !place)
-        place = pair.second->clone(context);
-      else if (auto wrp = dynamic_cast<wrapper*>(place.get())) {
-        if (auto src_wrp = std::dynamic_pointer_cast<wrapper>(pair.second))
-          wrp->merge(src_wrp, context);
-        else
-          wrp->map[""] = pair.second->clone(context);
-      }
+      auto& place = map[pair.first];
+      if (auto src_wrp = std::dynamic_pointer_cast<wrapper>(pair.second)) {
+        wrapper_s wrp;
+        if (!place)
+          place = wrp = std::make_shared<wrapper>();
+        else if (!(wrp = std::dynamic_pointer_cast<wrapper>(place)))
+          wrp = wrap(place);
+        wrp->merge(src_wrp, context);
+      } else if (!place)
+        place = pair.second->checked_clone(context, "wrapper::merge");
     } catch (const std::exception& e) {
       context.report_error("Exception while cloning " + context.current_path + ": " + e.what());
     }

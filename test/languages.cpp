@@ -120,6 +120,7 @@ TEST(Language, Yml) {
   });
 }
 
+vector<string> expected_clone_errors = {"ref-fail"};
 node::wrapper_s load_doc() {
   // Load the test file
   std::ifstream ifs{"misc_test.txt"};
@@ -138,13 +139,20 @@ node::wrapper_s load_doc() {
 node::wrapper_s load_optimized_doc() {
   auto doc = load_doc();
   node::clone_context context;
-  context.no_dependency = true;
-  doc->optimize(context);
+  context.optimize = context.no_dependency = true;
+  doc = std::dynamic_pointer_cast<node::wrapper>(doc->clone(context));
 
   if (!context.errors.empty()) {
-    for(auto& e : context.errors)
-      ADD_FAILURE() << "At " << e.first << ": " << e.second << endl;
-    throw std::logic_error("Failed loading document");
+    auto fail = false;
+    for(auto& e : context.errors) {
+      auto find_result = std::find(expected_clone_errors.begin(), expected_clone_errors.end(), e.first);
+      EXPECT_NE(find_result, expected_clone_errors.end())
+          << "At " << e.first << ": " << e.second << endl;
+      if (find_result == expected_clone_errors.end())
+        fail = true;
+    }
+    if (fail)
+      throw std::logic_error("Failed loading document");
   }
   return doc;
 }
@@ -204,13 +212,15 @@ TEST_P(Misc, save_cache) {
 
 TEST_P(Misc, array_cache) {
   auto doc = GetParam();
-  EXPECT_EQ(doc->get_child("multiplier"_ts, "fail"), "0 10");
-  EXPECT_EQ(doc->get_child("array_cache"_ts, "fail"), "0 10 10");
-  EXPECT_EQ(doc->get_child("array_cache"_ts, "fail"), "0 10 10");
+  EXPECT_EQ(doc->get_child("multiplier"_ts, "fail"), "0 1");
+  EXPECT_EQ(doc->get_child("array_cache"_ts, "fail"), "0 1 1");
+  EXPECT_EQ(doc->get_child("array_cache"_ts, "fail"), "0 1 1");
   set_key(doc, "multiplier.source", "2");
-  EXPECT_EQ(doc->get_child("array_cache"_ts, "fail"), "0 10 10 20");
-  EXPECT_EQ(doc->get_child("array_cache2"_ts, "fail"), "0 10 10 20");
-  EXPECT_EQ(doc->get_child("multiplier"_ts, "fail"), "0 10 10 20 20");
+  EXPECT_EQ(doc->get_child("array_cache"_ts, "fail"), "0 1 1 2");
+  EXPECT_EQ(doc->get_child("array_cache2"_ts, "fail"), "0 1 1 2");
+  EXPECT_EQ(doc->get_child("multiplier.last"_ts, "fail"), "0 1 1 2");
+  EXPECT_EQ(doc->get_child("multiplier"_ts, "fail"), "0 1 1 2 2");
+  EXPECT_EQ(doc->get_child("multiplier.last"_ts, "fail"), "0 1 1 2 2");
 }
 
 TEST_P(Misc, clock) {
@@ -236,6 +246,7 @@ TEST_P(Misc, assign_ref) {
   set_key(doc, "ref-default-a", "foobar");
   EXPECT_EQ("foobar", *doc->get_child("key-a"_ts));
   EXPECT_FALSE(doc->set("cmd-ref"_ts, "hello"));
+  EXPECT_EQ("Hello quan", *doc->get_child("greeting"_ts));
 }
 
 TEST_P(Misc, assign_file_env) {

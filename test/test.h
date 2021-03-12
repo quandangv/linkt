@@ -77,6 +77,7 @@ void triple_node_test(node::base_s node, std::function<void(node::base_s, node::
   if (test())
     GTEST_SKIP() << "Optimize test failed.";
   auto optimize_time = get_time_milli() - time;
+
   if (print_time)
     cout << "Test time: normal " << std::setw(3) << normal_time << ", optimized " << std::setw(3) << optimize_time << endl;
 }

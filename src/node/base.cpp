@@ -10,11 +10,6 @@
 
 NAMESPACE(node)
 
-base_s base::checked_clone(clone_context& context) const {
-  auto result = clone(context);
-  return result ?: THROW_ERROR(node, "Unexpectedly empty clone result");
-}
-
 throwing_clone_context::~throwing_clone_context()  noexcept(false) {
   if (std::uncaught_exceptions() || errors.empty())
     return;
@@ -51,13 +46,47 @@ string defaultable::use_fallback(const string& msg) const {
   return (fallback ?: THROW_ERROR(node, "Failure: " + msg + ". No fallback was found"))->get();
 }
 
-// Returns the node that this reference points to
+ref::ref(base_w v) : value(v) {
+start:
+  auto val = value.lock();
+  if (!val) THROW_ERROR(ancestor_destroyed, "ref::ref");
+  if (auto meta = std::dynamic_pointer_cast<ref>(val)) {
+    value = meta->value;
+    goto start;
+  }
+}
+
+string ref::get() const {
+  auto val = value.lock();
+  if (!val) THROW_ERROR(ancestor_destroyed, "ref::get");
+  return val->get();
+}
+
+bool ref::set(const string& v) {
+  auto val = value.lock();
+  if (!val) THROW_ERROR(ancestor_destroyed, "ref::set");
+  if (auto s = std::dynamic_pointer_cast<settable>(val))
+    return s->set(v);
+  return false;
+}
+
+base_s ref::clone(clone_context& context) const {
+  context.report_error("node::ref can't be cloned");
+  return base_s();
+}
+
 base_s address_ref::get_source() const {
   auto ancestor = ancestor_w.lock();
   if (!ancestor) THROW_ERROR(ancestor_destroyed, "get_source");
+  auto result = ancestor->get_child_ptr(path);
+  return result ?: fallback ?: THROW_ERROR(node, "Can't find referenced key: " + path);
+}
+
+base_s address_ref::get_source_direct() const {
+  auto ancestor = ancestor_w.lock();
+  if (!ancestor) THROW_ERROR(ancestor_destroyed, "get_source_direct");
   auto result = ancestor->get_child_place(path);
-  return result && *result ? *result : fallback ?:
-      THROW_ERROR(node, "Can't find referenced key: " + path);
+  return result && *result ? *result : THROW_ERROR(node, "Can't find referenced key: " + path);
 }
 
 bool address_ref::set(const string& val) {
@@ -71,7 +100,7 @@ bool address_ref::set(const string& val) {
 }
 
 base_s address_ref::clone(clone_context& context) const {
-  auto ancestor = ancestor_w.lock();
+  const auto ancestor = ancestor_w.lock();
   if (!ancestor) THROW_ERROR(ancestor_destroyed, "clone");
   // Find the corresponding ancestor in the clone result tree
   auto ancestor_it = find_if(context.ancestors.rbegin(), context.ancestors.rend(), [&](auto& pair) { return pair.first == ancestor; });
@@ -82,10 +111,8 @@ base_s address_ref::clone(clone_context& context) const {
     context.report_error("External dependency");
     return base_s();
   } else {
-    cloned_ancestor = ancestor_w.lock();
+    cloned_ancestor = ancestor;
   }
-  if (!cloned_ancestor)
-    THROW_ERROR(node, "Unexpectedly empty cloned_ancestor");
 
   // Return a pointer to the referenced node
   if (context.optimize) {
@@ -93,6 +120,7 @@ base_s address_ref::clone(clone_context& context) const {
     auto result = cloned_ancestor->get_child_ptr(path);
     if (!result) {
       auto place = ancestor->get_child_place(path);
+      LG_DBUG("making new: " << path);
       if (place) {
         // Clone the referenced node, add it to the clone result, and return the pointer
         auto src_ancestor = ancestor;
@@ -101,27 +129,32 @@ base_s address_ref::clone(clone_context& context) const {
           context.ancestors.emplace_back(src_ancestor, inner_ancestor);
         };
         // Detach the object from its place while cloning to avoid cyclical references
-        auto src = move(*place);
+        auto tmp_place = move(*place);
         // Track the added ancestors to be removed after its done
         auto ancestors_mark = context.ancestors.size();
         // Build the clone result tree up to the referenced node in case it's also a reference
         // So that the reference can find its corresponding ancestor
         auto& cloned_place = cloned_ancestor->add(path, &record_ancestor);
-        result = cloned_place = src->clone(context);
+        result = cloned_place = tmp_place->clone(context);
         context.ancestors.erase(context.ancestors.begin() + ancestors_mark, context.ancestors.end());
-        *place = src;
-        return result;
+        *place = tmp_place;
+        LG_DBUG("make new: " << path);
       } else if (fallback)
         // If the referenced node can't be found, return a clone of the fallback
-        return result = fallback->clone(context);
+        return fallback->clone(context);
+      else {
+        context.report_error("address_ref::clone: Can't find referenced node at: " + path);
+        return base_s();
+      }
     }
-  }
-
-  // Return a reference to the corresponding path in the clone result
-  return std::make_shared<address_ref>(
-    cloned_ancestor,
-    string(path),
-    fallback ? fallback->clone(context) : base_s());
+    LG_DBUG("return: " << path);
+    return std::make_shared<ref>(result);
+  } else
+    // Return a reference to the corresponding path in the clone result
+    return std::make_shared<address_ref>(
+      cloned_ancestor,
+      string(path),
+      fallback ? fallback->clone(context) : base_s());
 }
 
 wrapper_s parse_context::get_current() {
@@ -211,7 +244,7 @@ base_s parse_escaped(string& raw, tstring& str, parse_context& context) {
   std::array<tstring, 7> tokens;
   auto token_count = fill_tokens<word_matcher>(str, tokens);
 
-  // Extract the fallback before anything
+  // Extract the fallback before anything else
   base_s fallback;
   for (int i = token_count; i--> 0;) {
     if (!tokens[i].empty() && tokens[i].front() == '?') {
@@ -228,7 +261,7 @@ base_s parse_escaped(string& raw, tstring& str, parse_context& context) {
   // Finalize nodes that derive from node::meta
   auto make_meta = [&]<typename T>() {
     auto result = std::make_shared<T>(checked_parse_raw(raw, tokens[token_count - 1], context));
-    result->fallback = move(fallback);
+    result->fallback = fallback;
     return result;
   };
   if (token_count == 0)
@@ -289,7 +322,7 @@ base_s parse_escaped(string& raw, tstring& str, parse_context& context) {
           result->cache_arr->emplace_back();
       } else {
         auto cache_base = address_ref(context.get_parent(), tokens[1], base_s()).get_source();
-        if (auto cache = dynamic_cast<array_cache*>(cache_base.get()))
+        if (auto cache = std::dynamic_pointer_cast<array_cache>(cache_base))
           result->cache_arr = cache->cache_arr;
         else THROW_ERROR(parse, "1st argument must be the size of the cache or a parent path to another array_cache: " + str);
       }
@@ -331,7 +364,7 @@ base_s parse_escaped(string& raw, tstring& str, parse_context& context) {
 
   } else if (tokens[0] == "clone"_ts) {
     for (int i = 1; i < token_count; i++) {
-      auto source = address_ref(context.get_parent(), tokens[i], base_s()).get_source();
+      auto source = address_ref(context.get_parent(), tokens[i], base_s()).get_source_direct();
       throwing_clone_context clone_context;
       if (auto wrp = std::dynamic_pointer_cast<wrapper>(source)) {
         context.get_current()->merge(wrp, clone_context);

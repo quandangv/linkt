@@ -58,6 +58,10 @@ TEST(Node, Cmd) {
   test_nodes({{"cmd3", "${cmd nexist}", "", false, true}}, base_repeat / 100);
   test_nodes({{"cmd4", "${cmd nexist ? fail}", "fail"}}, base_repeat / 100);
   test_nodes({{"cmd4", "${cmd nexist ?}", ""}}, base_repeat / 100);
+  test_nodes({
+    {"greeting", "${cmd echo Hello ${rel name}}", "Hello quan"},
+    {"greeting.name", "quan", "quan"},
+  }, base_repeat / 100);
 }
 
 TEST(Node, Ref) {
@@ -136,7 +140,7 @@ TEST(Node, Clone) {
   test_nodes({{"clone2", "${clone nexist nexist2 }", "", true}});
   test_nodes({{"clone3", "${clone nexist}", "", true}});
   test_nodes({
-    {"base", "${map 100 1 ${rel stat}}", "", false, true},
+    {"base", "${map 100 1 ${rel stat}}", "", false, true, true},
     {"clone4.stat", "60", "60"},
     {"clone4", "${clone base}", "0.600000"},
     {"clone4.stat", "60", "60", true},

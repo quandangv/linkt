@@ -12,6 +12,7 @@ namespace node {
   struct wrapper;
   using std::string;
   using base_s = std::shared_ptr<base>;
+  using base_w = std::weak_ptr<base>;
   using wrapper_s = std::shared_ptr<wrapper>;
   using const_wrapper_s = std::shared_ptr<const wrapper>;
   using wrapper_w = std::weak_ptr<wrapper>;
@@ -50,7 +51,11 @@ namespace node {
 
     virtual string get  () const = 0;
     virtual base_s clone  (clone_context&) const = 0;
-    base_s checked_clone  (clone_context&) const;
+
+    inline base_s checked_clone  (clone_context& context, const string& msg) const {
+      auto result = clone(context);
+      return result ?: throw node_error("node_error: Unexpectedly empty clone result in: " + msg);
+    }
   };
 
   struct settable {
@@ -85,7 +90,17 @@ namespace node {
         : defaultable(fallback), ancestor_w(ancestor), path(move(path)) {}
     string get  () const { return get_source()->get(); }
     bool set  (const string& value);
+    base_s clone  (clone_context&) const;
     base_s get_source  () const;
+    base_s get_source_direct  () const;
+  };
+
+  struct ref : base, settable {
+    base_w value;
+
+    ref  (base_w value);
+    string get  () const;
+    bool set  (const string& value);
     base_s clone  (clone_context&) const;
   };
 
@@ -96,7 +111,7 @@ namespace node {
 
     template <typename T>
     std::shared_ptr<T> copy(clone_context& context) const {
-      auto result = std::make_shared<T>(value->checked_clone(context));
+      auto result = std::make_shared<T>(value->checked_clone(context, "meta::copy"));
       if (fallback)
         result->fallback = fallback->clone(context);
       return result;

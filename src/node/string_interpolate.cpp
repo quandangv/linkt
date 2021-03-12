@@ -39,15 +39,12 @@ base_s string_interpolate::clone(clone_context& context) const {
   auto result = std::make_unique<string_interpolate>();
   result->base = base;
   result->spots.reserve(spots.size());
-  for(auto& spot : spots) {
-    result->spots.emplace_back(spot.position, spot.replacement->clone(context));
-  }
+  for(auto& spot : spots)
+    result->spots.emplace_back(spot.position, spot.replacement->checked_clone(context, "string_interpolate::clone"));
   if (context.optimize) {
-    for(auto& spot : result->spots) {
-      if (!is_fixed(spot.replacement)) {
+    for(auto& spot : result->spots)
+      if (!is_fixed(spot.replacement))
         return result;
-      }
-    }
     return std::make_shared<plain>(get());
   }
   return result;
