@@ -55,7 +55,7 @@ void triple_node_test(node::base_s node, std::function<void(node::base_s, node::
   node::clone_context context;
   auto test = [&] {
     for (int i = 0; i < repeat; i++) {
-      tester(node, context.errors);
+      EXPECT_NO_THROW(tester(node, context.errors));
       if (fail_count != get_test_part_count())
         return true;
     }
@@ -66,13 +66,13 @@ void triple_node_test(node::base_s node, std::function<void(node::base_s, node::
     GTEST_SKIP() << "First test failed. Skipping clone test";
   auto normal_time = get_time_milli() - time;
 
-  node = node->clone(context);
+  EXPECT_NO_THROW(node = node->clone(context));
   time = get_time_milli();
   if (test())
     GTEST_SKIP() << "Clone test failed. Skipping optimize test";
 
   context.optimize = context.no_dependency = true;
-  node = node->clone(context);
+  EXPECT_NO_THROW(node = node->clone(context));
   time = get_time_milli();
   if (test())
     GTEST_SKIP() << "Optimize test failed.";

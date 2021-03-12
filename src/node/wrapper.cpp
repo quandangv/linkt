@@ -128,7 +128,7 @@ string wrapper::get() const {
 void wrapper::merge(const const_wrapper_s& src, clone_context& context) {
   context.ancestors.emplace_back(src, shared_from_this());
   for(auto& pair : src->map) {
-    if (!pair.second)
+    if (!pair.second || (!pair.first.empty() && pair.first.front() == '.'))
       continue;
     auto last_path = context.current_path;
     context.current_path += context.ancestors.size() == 1 ? pair.first : ("." + pair.first);

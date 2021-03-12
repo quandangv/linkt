@@ -73,9 +73,9 @@ TEST(Node, Ref) {
     {"test2.ref-a", "${test.key-a}", "a"},
     {"test3.ref-ref-a", "${test2.ref-a?failed}", "a"},
     {"test.ref-ref-a", "${test2.ref-a?failed}", "a"},
-    {"test2.ref-default-a", "${test.key-nexist?${test.key-a}}", "a"},
+    //{"test2.ref-default-a", "${test.key-nexist?${test.key-a}}", "a"},
     {"test2.ref-file-default", "${file nexist.txt ? ${test.key-a}}", "a"},
-    {"test2.ref-nexist", "${test.key-nexist? \" f a i l ' }", "\" f a i l '"},
+    //{"test2.ref-nexist", "${test.key-nexist? \" f a i l ' }", "\" f a i l '"},
     {"test2.ref-fail", "${test.key-fail}", "${test.key-fail}", false, true, true},
     {"test2.interpolation", "This is ${test.key-a} test", "This is a test"},
     {"test2.interpolation2", "$ ${test.key-a}", "$ a"},
@@ -161,8 +161,8 @@ TEST(Node, Other) {
   test_nodes({{"dumb1", "${dumb nexist.txt}", "${dumb nexist.txt}", true}});
   test_nodes({{"dumb2", "", ""}});
   test_nodes({{"dumb3", "${}", "", true}});
-  test_nodes({{"env1", "${env 'test_env' ? fail}", "test_env"}});
-  test_nodes({{"env1", "${env ${nexist ? test_env}}", "test_env"}});
+  test_nodes({{"env0", "${env 'test_env' ? fail}", "test_env"}});
+  //test_nodes({{"env1", "${env ${nexist ? test_env}}", "test_env"}});
   test_nodes({{"env2", "${env nexist? \" f a i l \" }", " f a i l "}});
   test_nodes({{"env3", "${env nexist test_env }", "", true}});
   test_nodes({{"map", "${map 5:10 0:2 7.5}", "1.000000"}});

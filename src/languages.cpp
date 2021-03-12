@@ -125,9 +125,15 @@ node::wrapper_s parse_yml(std::istream& is, node::errorlist& err) {
       context.place = context.parent->get_child_place(key);
       context.current.reset();
 
+      if (find(modes, 'H') != tstring::npos) {
+        context.get_current()->map[".hidden"] = std::make_shared<node::plain>("true");
+        LG_DBUG("HIDDEN");
+      }
+
       records.emplace_back(indent, nullptr);
       if (auto value = parser(raw, line, context))
         context.get_place() = value;
+
     } catch (const std::exception& e) {
       err.report_error(linecount, key, e.what());
     }
@@ -137,16 +143,18 @@ node::wrapper_s parse_yml(std::istream& is, node::errorlist& err) {
 
 void write_yml(std::ostream& os, const node::wrapper_s& root, int indent) {
   root->iterate_children([&](const string& name, const node::base_s& child) {
-    if (!child) return;
-    // The empty key is used as the value of the wrapper, skip it
-    if (name.empty())
-      return;
-    // Indent the line
-    std::fill_n(std::ostream_iterator<char>(os), indent, ' ');
-    write_key(os, name + ":", child->get());
-    
-    
-    if(auto ctn = std::dynamic_pointer_cast<node::wrapper>(child))
+    if (!child || name.empty() || name[0] == '.') return;
+    if(auto ctn = std::dynamic_pointer_cast<node::wrapper>(child)) {
+      if (ctn->map[".hidden"]) {
+        LG_DBUG("HIDDEN " << name);
+        return;
+      }
+      std::fill_n(std::ostream_iterator<char>(os), indent, ' ');
+      write_key(os, name + ":", child->get());
       write_yml(os, ctn, indent + 2);
+    } else {
+      std::fill_n(std::ostream_iterator<char>(os), indent, ' ');
+      write_key(os, name + ":", child->get());
+    }
   });
 }

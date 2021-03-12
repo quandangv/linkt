@@ -82,13 +82,12 @@ namespace node {
   struct wrapper;
   struct ancestor_destroyed_error : std::logic_error { using logic_error::logic_error; };
 
-  struct address_ref : base, defaultable, settable {
+  struct address_ref : base, settable {
     wrapper_w ancestor_w;
     std::vector<string> indirect_paths;
     string direct_path;
 
-    address_ref  (wrapper_w ancestor, tstring path, const base_s& fallback);
-    address_ref  (wrapper_w ancestor, const std::vector<string>& indirect_paths, const string& direct_path, const base_s& fallback) : defaultable(fallback), ancestor_w(ancestor), indirect_paths(indirect_paths), direct_path(direct_path) {}
+    address_ref  (wrapper_w ancestor, tstring path);
     string get  () const;
     bool set  (const string& value);
     base_s clone  (clone_context&) const;

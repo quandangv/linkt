@@ -47,10 +47,11 @@ void test_language(file_test_param testset) {
 
   // Export the result
   std::ofstream ofs{testset.path + "_export.txt"};
-  if (testset.language == "ini")
-    write_ini(ofs, doc);
-  else if (testset.language == "yml")
-    write_yml(ofs, doc);
+  if (testset.language == "ini") {
+    ASSERT_NO_THROW(write_ini(ofs, doc));
+  } else if (testset.language == "yml") {
+    ASSERT_NO_THROW(write_yml(ofs, doc));
+  }
 
   // Check the export result
   auto command = "diff '" + testset.path + "_output.txt' '" + testset.path + "_export.txt' 2>&1";
@@ -176,7 +177,7 @@ TEST_P(Misc, wrapper) {
   EXPECT_FALSE(doc->get_child("nexist"_ts));
   EXPECT_EQ(doc->get_child("nexist"_ts, "fallback"), "fallback");
   EXPECT_EQ(doc->get_child_place("nexist"_ts), nullptr);
-  EXPECT_EQ(doc->get_child("key-a"_ts, "fallback"), "a");
+  EXPECT_EQ(doc->get_child("key-a"_ts, "fail"), "a");
   EXPECT_EQ(doc->get(), "");
   EXPECT_ANY_THROW(doc->get_child("ref-fail"_ts));
   doc->add("manual"_ts, std::make_shared<node::plain>("hello"));
@@ -241,18 +242,15 @@ TEST_P(Misc, assign_ref) {
   set_key(doc, "ref-a", "foo");
   set_key(doc, "ref-ref-a", "bar");
   EXPECT_EQ("bar", *doc->get_child("key-a"_ts));
+  EXPECT_EQ("Hello quan", *doc->get_child("greeting"_ts));
 
   // Test fallback assignments
-  set_key(doc, "ref-default-a", "foobar");
-  EXPECT_EQ("foobar", *doc->get_child("key-a"_ts));
   EXPECT_FALSE(doc->set("cmd-ref"_ts, "hello"));
-  EXPECT_EQ("Hello quan", *doc->get_child("greeting"_ts));
 }
 
 TEST_P(Misc, assign_file_env) {
   auto doc = GetParam();
   // Test file_ref assignments
-  set_key(doc, "ref-nexist", "barfoo");
   set_key(doc, "env-nexist", "barbar");
   set_key(doc, "file-parse", "foo");
   std::ifstream ifs("key_file.txt");

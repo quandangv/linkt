@@ -1,5 +1,5 @@
 bar: '%{F${F}}${bat} '
-  base: %{B${B}} ${label?} ${stat?}${unit?}
+  base:H %{B${B}} ${label} ${stat}${unit}
     B.L.value:$ dep stat ? 0
     B:$ color cielch(${L}, 1, ${H}) ?
       dumb: hello
