@@ -5,6 +5,7 @@
 #include <iostream>
 #include <vector>
 #include <memory>
+#include <optional>
 
 using namespace std::literals;
 using std::vector, std::endl, std::string, std::move;

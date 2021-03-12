@@ -212,15 +212,15 @@ TEST_P(Misc, save_cache) {
 
 TEST_P(Misc, array_cache) {
   auto doc = GetParam();
-  EXPECT_EQ(doc->get_child("multiplier"_ts, "fail"), "0 1");
-  EXPECT_EQ(doc->get_child("array_cache"_ts, "fail"), "0 1 1");
-  EXPECT_EQ(doc->get_child("array_cache"_ts, "fail"), "0 1 1");
+  EXPECT_EQ(doc->get_child("multiplier"_ts, "fail"), "0 10");
+  EXPECT_EQ(doc->get_child("array_cache"_ts, "fail"), "0 10 10");
+  EXPECT_EQ(doc->get_child("array_cache"_ts, "fail"), "0 10 10");
   set_key(doc, "multiplier.source", "2");
-  EXPECT_EQ(doc->get_child("array_cache"_ts, "fail"), "0 1 1 2");
-  EXPECT_EQ(doc->get_child("array_cache2"_ts, "fail"), "0 1 1 2");
-  EXPECT_EQ(doc->get_child("multiplier.last"_ts, "fail"), "0 1 1 2");
-  EXPECT_EQ(doc->get_child("multiplier"_ts, "fail"), "0 1 1 2 2");
-  EXPECT_EQ(doc->get_child("multiplier.last"_ts, "fail"), "0 1 1 2 2");
+  EXPECT_EQ(doc->get_child("array_cache"_ts, "fail"), "0 10 10 20");
+  EXPECT_EQ(doc->get_child("array_cache2"_ts, "fail"), "0 10 10 20");
+  EXPECT_EQ(doc->get_child("multiplier.last"_ts, "fail"), "0 10 10 20");
+  EXPECT_EQ(doc->get_child("multiplier"_ts, "fail"), "0 10 10 20 20");
+  EXPECT_EQ(doc->get_child("multiplier.last"_ts, "fail"), "0 10 10 20 20");
 }
 
 TEST_P(Misc, clock) {

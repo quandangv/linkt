@@ -84,15 +84,17 @@ namespace node {
 
   struct address_ref : base, defaultable, settable {
     wrapper_w ancestor_w;
-    string path;
+    std::vector<string> indirect_paths;
+    string direct_path;
 
-    address_ref  (wrapper_w ancestor, string&& path, const base_s& fallback)
-        : defaultable(fallback), ancestor_w(ancestor), path(move(path)) {}
-    string get  () const { return get_source()->get(); }
+    address_ref  (wrapper_w ancestor, tstring path, const base_s& fallback);
+    address_ref  (wrapper_w ancestor, const std::vector<string>& indirect_paths, const string& direct_path, const base_s& fallback) : defaultable(fallback), ancestor_w(ancestor), indirect_paths(indirect_paths), direct_path(direct_path) {}
+    string get  () const;
     bool set  (const string& value);
     base_s clone  (clone_context&) const;
     base_s get_source  () const;
-    base_s get_source_direct  () const;
+    base_s* get_source_direct  () const;
+    string get_path() const;
   };
 
   struct ref : base, settable {

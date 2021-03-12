@@ -27,11 +27,13 @@ namespace node {
     base_s& add  (tstring path, ancestor_processor* processor = nullptr);
     base_s& add  (tstring path, const base_s& value);
     base_s& add  (tstring path, string& raw, tstring value, parse_context& context);
+    wrapper_s add_wrapper  (const string& path);
 
     base_s get_child_ptr  (tstring path) const;
     base_s* get_child_place  (tstring path);
     string get_child  (const tstring& path, string&& fallback) const;
     std::optional<string> get_child  (const tstring& path) const;
+    wrapper_s get_wrapper  (const string& path) const;
 
     void iterate_children  (std::function<void(const string&, const base_s&)> processor) const;
     void iterate_children  (std::function<void(const string&, const base&)> processor) const;

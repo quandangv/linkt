@@ -75,32 +75,71 @@ base_s ref::clone(clone_context& context) const {
   return base_s();
 }
 
-base_s address_ref::get_source() const {
-  auto ancestor = ancestor_w.lock();
-  if (!ancestor) THROW_ERROR(ancestor_destroyed, "get_source");
-  auto result = ancestor->get_child_ptr(path);
-  return result ?: fallback ?: THROW_ERROR(node, "Can't find referenced key: " + path);
+address_ref::address_ref(wrapper_w ancestor, tstring path, const base_s& fallback)
+    : defaultable(fallback), ancestor_w(ancestor), indirect_paths() {
+  trim(path);
+  for (tstring indirect; !(indirect = cut_front(path, '.')).untouched();)
+    indirect_paths.emplace_back(indirect);
+  direct_path = path;
 }
 
-base_s address_ref::get_source_direct() const {
+string address_ref::get_path() const {
+  std::stringstream ss;
+  for (auto& path : indirect_paths)
+    ss << path << '.';
+  ss << direct_path;
+  return ss.str();
+}
+
+base_s address_ref::get_source() const {
+  auto direct = get_source_direct();
+  if (!direct || !*direct) {
+    return fallback;
+  }
+  if (auto direct_wrapper = std::dynamic_pointer_cast<wrapper>(*direct)) {
+    return direct_wrapper->map[""];
+  }
+  return *direct;
+}
+
+base_s* address_ref::get_source_direct() const {
   auto ancestor = ancestor_w.lock();
   if (!ancestor) THROW_ERROR(ancestor_destroyed, "get_source_direct");
-  auto result = ancestor->get_child_place(path);
-  return result && *result ? *result : THROW_ERROR(node, "Can't find referenced key: " + path);
+  for (auto& path : indirect_paths) {
+    if (!(ancestor = ancestor->get_wrapper(path))) {
+      return nullptr;
+    }
+  }
+  if (auto it = ancestor->map.find(direct_path); it != ancestor->map.end()) {
+    return &it->second;
+  }
+  return nullptr;
+}
+
+string address_ref::get() const {
+  auto src = get_source();
+  if (!src) {
+    THROW_ERROR(node, "Referenced key not found");
+  }
+  return src->get();
 }
 
 bool address_ref::set(const string& val) {
   auto ancestor = ancestor_w.lock();
-  if (!ancestor) THROW_ERROR(ancestor_destroyed, "set");
-  // Sets the value of the node pointed to
-  auto src = ancestor->get_child_ptr(path);
+  if (!ancestor) {
+    THROW_ERROR(ancestor_destroyed, "set");
+  }
+  auto src = get_source();
+  if (!src) {
+    return false;
+  }
   // If the path doesn't point to a node, set the value of the fallback
-  auto target = dynamic_cast<settable*>(src ? src.get() : fallback ? fallback.get() : nullptr);
+  auto target = std::dynamic_pointer_cast<settable>(src ?: fallback ?: base_s());
   return target ? target->set(val) : false;
 }
 
 base_s address_ref::clone(clone_context& context) const {
-  const auto ancestor = ancestor_w.lock();
+  auto ancestor = ancestor_w.lock();
   if (!ancestor) THROW_ERROR(ancestor_destroyed, "clone");
   // Find the corresponding ancestor in the clone result tree
   auto ancestor_it = find_if(context.ancestors.rbegin(), context.ancestors.rend(), [&](auto& pair) { return pair.first == ancestor; });
@@ -117,44 +156,48 @@ base_s address_ref::clone(clone_context& context) const {
   // Return a pointer to the referenced node
   if (context.optimize) {
     // If the referenced node already exists in the clone result, we don't have to clone it
-    auto result = cloned_ancestor->get_child_ptr(path);
+    base_s result;
+    auto tmp_ancestor = cloned_ancestor;
+    for (auto& path : indirect_paths)
+      if (!(tmp_ancestor = tmp_ancestor->get_wrapper(path)))
+        goto no_existing;
+    if (auto it = tmp_ancestor->map.find(direct_path); it != tmp_ancestor->map.end())
+      result = it->second;
+    if (auto result_wrapper = std::dynamic_pointer_cast<wrapper>(result))
+      result = result_wrapper->map[""];
     if (!result) {
-      auto place = ancestor->get_child_place(path);
-      LG_DBUG("making new: " << path);
-      if (place) {
-        // Clone the referenced node, add it to the clone result, and return the pointer
-        auto src_ancestor = ancestor;
-        ancestor_processor record_ancestor = [&](tstring& path, wrapper_s inner_ancestor)->void {
-          src_ancestor = std::dynamic_pointer_cast<wrapper>(src_ancestor->map.at(path));
-          context.ancestors.emplace_back(src_ancestor, inner_ancestor);
-        };
-        // Detach the object from its place while cloning to avoid cyclical references
+      no_existing:
+      auto place = get_source_direct();
+      if (place && *place) {
         auto tmp_place = move(*place);
         // Track the added ancestors to be removed after its done
         auto ancestors_mark = context.ancestors.size();
-        // Build the clone result tree up to the referenced node in case it's also a reference
-        // So that the reference can find its corresponding ancestor
-        auto& cloned_place = cloned_ancestor->add(path, &record_ancestor);
-        result = cloned_place = tmp_place->clone(context);
+        for (auto& path : indirect_paths) {
+          cloned_ancestor = cloned_ancestor->add_wrapper(path);
+          if (!(ancestor = ancestor->get_wrapper(path)))
+            THROW_ERROR(node, "Can't track source tree");
+          context.ancestors.emplace_back(ancestor, cloned_ancestor);
+        }
+        auto& cloned_place = cloned_ancestor->map[direct_path];
+        if (auto cloned_place_wrapper = std::dynamic_pointer_cast<wrapper>(cloned_place)) {
+          if (auto place_wrapper = std::dynamic_pointer_cast<wrapper>(tmp_place)) {
+            cloned_place_wrapper->merge(place_wrapper, context);
+            result = cloned_place;
+          } else result = cloned_place_wrapper->map[""] = tmp_place->clone(context);
+        } else result = cloned_place = tmp_place->clone(context);
         context.ancestors.erase(context.ancestors.begin() + ancestors_mark, context.ancestors.end());
         *place = tmp_place;
-        LG_DBUG("make new: " << path);
+        return std::make_shared<ref>(result);
       } else if (fallback)
         // If the referenced node can't be found, return a clone of the fallback
         return fallback->clone(context);
-      else {
-        context.report_error("address_ref::clone: Can't find referenced node at: " + path);
-        return base_s();
-      }
-    }
-    LG_DBUG("return: " << path);
-    return std::make_shared<ref>(result);
-  } else
-    // Return a reference to the corresponding path in the clone result
-    return std::make_shared<address_ref>(
-      cloned_ancestor,
-      string(path),
-      fallback ? fallback->clone(context) : base_s());
+    } else
+      return std::make_shared<ref>(result);
+  }
+  return std::make_shared<address_ref>(
+    cloned_ancestor,
+    string(get_path()),
+    fallback ? fallback->clone(context) : base_s());
 }
 
 wrapper_s parse_context::get_current() {
@@ -366,10 +409,12 @@ base_s parse_escaped(string& raw, tstring& str, parse_context& context) {
     for (int i = 1; i < token_count; i++) {
       auto source = address_ref(context.get_parent(), tokens[i], base_s()).get_source_direct();
       throwing_clone_context clone_context;
-      if (auto wrp = std::dynamic_pointer_cast<wrapper>(source)) {
+      if (!source || !*source)
+        THROW_ERROR(parse, "Can't find node to clone");
+      if (auto wrp = std::dynamic_pointer_cast<wrapper>(*source)) {
         context.get_current()->merge(wrp, clone_context);
       } else if (i == token_count -1) {
-        return source->clone(clone_context);
+        return (*source)->clone(clone_context);
       } else
         THROW_ERROR(parse, "Can't merge non-wrapper nodes");
     }

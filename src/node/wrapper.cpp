@@ -12,11 +12,10 @@ NAMESPACE(node)
 // This will return the inner node of a wrapper.
 base_s wrapper::get_child_ptr(tstring path) const {
   if (auto immediate_path = cut_front(trim(path), '.'); !immediate_path.untouched()) {
-    if (auto iterator = map.find(immediate_path); iterator != map.end())
-      if (auto child = dynamic_cast<wrapper*>(iterator->second.get()))
-        return child->get_child_ptr(path);
+    if (auto child = get_wrapper(immediate_path))
+      return child->get_child_ptr(path);
   } else if (auto iterator = map.find(path); iterator != map.end()) {
-    if (auto child = dynamic_cast<wrapper*>(iterator->second.get()))
+    if (auto child = std::dynamic_pointer_cast<wrapper>(iterator->second))
       return child->map[""];
     return iterator->second;
   }
@@ -27,9 +26,8 @@ base_s wrapper::get_child_ptr(tstring path) const {
 // Returns null if it doesn't exist
 base_s* wrapper::get_child_place(tstring path) {
   if (auto immediate_path = cut_front(trim(path), '.'); !immediate_path.untouched()) {
-    if (auto iterator = map.find(immediate_path); iterator != map.end())
-      if (auto child = std::dynamic_pointer_cast<wrapper>(iterator->second))
-        return child->get_child_place(path);
+    if (auto child = get_wrapper(immediate_path))
+      return child->get_child_place(path);
   } else if (auto iterator = map.find(path); iterator != map.end())
     return &iterator->second;
   return nullptr;
@@ -45,6 +43,12 @@ string wrapper::get_child(const tstring& path, string&& fallback) const {
   return result ? *result : move(fallback);
 }
 
+wrapper_s wrapper::get_wrapper(const string& path) const {
+  if (auto it = map.find(path); it != map.end())
+    return std::dynamic_pointer_cast<wrapper>(it->second);
+  return wrapper_s();
+}
+
 base_s& wrapper::add(tstring path, ancestor_processor* processor) {
   trim(path);
   for (char c : path)
@@ -53,12 +57,7 @@ base_s& wrapper::add(tstring path, ancestor_processor* processor) {
 
   if (auto immediate_path = cut_front(path, '.'); !immediate_path.untouched()) {
     // This isn't the final part of the path
-    auto& ptr = map[immediate_path];
-    wrapper_s ancestor;
-    if (!ptr) {
-      ptr = ancestor = std::make_shared<wrapper>();
-    } else if (!(ancestor = std::dynamic_pointer_cast<wrapper>(ptr)))
-      ancestor = wrap(ptr);
+    auto ancestor = add_wrapper(immediate_path);
     if (processor)
       processor->operator()(immediate_path, ancestor);
     return ancestor->add(path);
@@ -85,6 +84,16 @@ base_s& wrapper::add(tstring path, string& raw, tstring value, parse_context& co
   if (auto node = parse_raw(raw, value, context))
     return context.get_place() = node;
   return *context.place;
+}
+
+wrapper_s wrapper::add_wrapper(const string& path) {
+  auto& child = map[path];
+  wrapper_s result;
+  if (!child)
+    child = result = std::make_shared<wrapper>();
+  else if (!(result = std::dynamic_pointer_cast<wrapper>(child)))
+    result = wrap(child);
+  return result;
 }
 
 void wrapper::iterate_children(std::function<void(const string&, const base_s&)> processor) const {
