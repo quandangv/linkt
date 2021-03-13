@@ -1,10 +1,10 @@
 key-a = a
-ref-ref-a = ${ref-a}
+ref-ref-a = ${ref-a ? ${ref-a}}
 ref-a = ${key-a}
 ref-fail = ${key-nexist}
-# ref-default-a = ${key-nexist?${key-a}}
-# ref-fallback-a = ${ .key-a ? fail }
-# ref-nexist = ${key-nexist? " f a i l ' }
+ref-default-a = ${key-nexist?${key-a}}
+ref-fallback-a = ${ .key-a ? fail }
+ref-nexist = ${key-nexist? " f a i l ' }
 
 file-parse = ${file key_file.txt }
 

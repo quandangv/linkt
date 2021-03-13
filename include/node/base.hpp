@@ -18,6 +18,7 @@ namespace node {
   using wrapper_w = std::weak_ptr<wrapper>;
 
   struct node_error : std::logic_error { using logic_error::logic_error; };
+  struct required_field_null_error : std::logic_error { using logic_error::logic_error; };
 
   struct errorlist : std::vector<std::pair<std::string, std::string>> {
     void report_error  (int line, const std::string& msg)
@@ -77,6 +78,15 @@ namespace node {
     defaultable  () {}
     explicit defaultable  (const base_s& fallback) : fallback(fallback) {}
     [[nodiscard]] string use_fallback  (const string& error_message) const;
+  };
+
+  struct fallback_wrapper : base, settable, defaultable {
+    base_s value;
+
+    fallback_wrapper(base_s value, base_s fallback);
+    string get  () const;
+    bool set  (const string& value);
+    base_s clone  (clone_context&) const;
   };
 
   struct wrapper;

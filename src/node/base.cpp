@@ -46,6 +46,33 @@ string defaultable::use_fallback(const string& msg) const {
   return (fallback ?: THROW_ERROR(node, "Failure: " + msg + ". No fallback was found"))->get();
 }
 
+fallback_wrapper::fallback_wrapper(base_s value, base_s fallback) :
+    defaultable(fallback), value(value) {
+  if (!fallback || !value)
+    THROW_ERROR(required_field_null, "fallback_wrapper::fallback_wrapper");
+}
+
+string fallback_wrapper::get() const {
+  try {
+    return value->get();
+  } catch (const std::exception& e) {
+    return fallback->get();
+  }
+}
+
+bool fallback_wrapper::set(const string& str) {
+  if (auto value_settable = std::dynamic_pointer_cast<settable>(value))
+    if (value_settable->set(str))
+      return true;
+  if (auto fallback_settable = std::dynamic_pointer_cast<settable>(fallback))
+    return fallback_settable->set(str);
+  return false;
+}
+
+base_s fallback_wrapper::clone(clone_context& context) const {
+  return std::make_shared<fallback_wrapper>(value->clone(context), fallback->clone(context));
+}
+
 ref::ref(base_w v) : value(v) {
 start:
   auto val = value.lock();
@@ -294,124 +321,130 @@ base_s parse_escaped(string& raw, tstring& str, parse_context& context) {
 
   // Finalize nodes that derive from node::meta
   auto make_meta = [&]<typename T>() {
-    auto result = std::make_shared<T>(checked_parse_raw(raw, tokens[token_count - 1], context));
-    result->fallback = fallback;
+    std::shared_ptr<T> result = std::make_shared<T>(checked_parse_raw(raw, tokens[token_count - 1], context));
+    result->fallback = move(fallback);
     return result;
   };
-  if (token_count == 0)
-    THROW_ERROR(parse, "Empty reference string");
-  if (token_count == 1) {
-    return std::make_shared<address_ref>(context.parent_based_ref ? context.get_parent() : context.get_current(), tokens[0]);
+  auto make_operator = [&]()->base_s {
+    if (token_count == 0)
+      THROW_ERROR(parse, "Empty reference string");
+    if (token_count == 1) {
+      return std::make_shared<address_ref>(context.parent_based_ref ? context.get_parent() : context.get_current(), tokens[0]);
 
-  } else if (tokens[0] == "dep"_ts) {
-    if (token_count != 2)
-      THROW_ERROR(parse, "env: Expected 1 components");
-    return std::make_shared<address_ref>(context.get_parent(), tokens[1]);
+    } else if (tokens[0] == "dep"_ts) {
+      if (token_count != 2)
+        THROW_ERROR(parse, "env: Expected 1 components");
+      return std::make_shared<address_ref>(context.get_parent(), tokens[1]);
 
-  } else if (tokens[0] == "rel"_ts) {
-    if (token_count != 2)
-      THROW_ERROR(parse, "env: Expected 1 components");
-    return std::make_shared<address_ref>(context.get_current(), tokens[1]);
+    } else if (tokens[0] == "rel"_ts) {
+      if (token_count != 2)
+        THROW_ERROR(parse, "env: Expected 1 components");
+      return std::make_shared<address_ref>(context.get_current(), tokens[1]);
 
-  } else if (tokens[0] == "file"_ts) {
-    tokens[token_count - 1].merge(tokens[1]);
-    return make_meta.operator()<file>();
-    
-  } else if (tokens[0] == "cmd"_ts) {
-    tokens[token_count - 1].merge(tokens[1]);
-    return make_meta.operator()<cmd>();
+    } else if (tokens[0] == "file"_ts) {
+      tokens[token_count - 1].merge(tokens[1]);
+      return make_meta.operator()<file>();
+      
+    } else if (tokens[0] == "cmd"_ts) {
+      tokens[token_count - 1].merge(tokens[1]);
+      return make_meta.operator()<cmd>();
 
-  } else if (tokens[0] == "env"_ts) {
-    if (token_count != 2)
-      THROW_ERROR(parse, "env: Expected 1 components");
-    return make_meta.operator()<env>();
+    } else if (tokens[0] == "env"_ts) {
+      if (token_count != 2)
+        THROW_ERROR(parse, "env: Expected 1 components");
+      return make_meta.operator()<env>();
 
-  } else if (tokens[0] == "cache"_ts) {
-    if (token_count != 3)
-      THROW_ERROR(parse, "cache: Expected 2 components");
-    auto result = std::make_shared<cache>();
-    result->duration_ms = checked_parse_raw(raw, tokens[1], context);
-    result->source = checked_parse_raw(raw, tokens[2], context);
-    return result;
-
-  } else if (tokens[0] == "clock"_ts) {
-    if (token_count != 4)
-      THROW_ERROR(parse, "cache: Expected 2 components");
-    auto result = std::make_shared<clock>();
-    auto tmp = force_parse_ulong(tokens[1].begin(), tokens[1].size());
-    result->tick_duration = std::chrono::milliseconds(tmp);
-    tmp = force_parse_ulong(tokens[2].begin(), tokens[2].size());
-    result->loop = tmp;
-    tmp = force_parse_ulong(tokens[3].begin(), tokens[3].size());
-    result->zero_point = steady_time(result->tick_duration * tmp);
-    return result;
-
-  } else if (tokens[0] == "array_cache"_ts) {
-    if (token_count == 4) {
-      auto result = std::make_shared<array_cache>();
-      auto size = parse_ulong(tokens[1].begin(), tokens[1].size());
-      if (size) {
-        result->cache_arr = std::make_shared<std::vector<string>>(*size + 1);
-        for (size_t i = 0; i < size; i++)
-          result->cache_arr->emplace_back();
-      } else {
-        auto cache_base = address_ref(context.get_parent(), tokens[1]).get_source();
-        if (auto cache = std::dynamic_pointer_cast<array_cache>(cache_base))
-          result->cache_arr = cache->cache_arr;
-        else THROW_ERROR(parse, "1st argument must be the size of the cache or a parent path to another array_cache: " + str);
-      }
+    } else if (tokens[0] == "cache"_ts) {
+      if (token_count != 3)
+        THROW_ERROR(parse, "cache: Expected 2 components");
+      auto result = std::make_shared<cache>();
+      result->duration_ms = checked_parse_raw(raw, tokens[1], context);
       result->source = checked_parse_raw(raw, tokens[2], context);
-      result->calculator = checked_parse_raw(raw, tokens[3], context);
       return result;
-    } else
-      THROW_ERROR(parse, "array_cache: Expected 3 components");
 
-  } else if (tokens[0] == "save"_ts) {
-    if (token_count != 3)
-      THROW_ERROR(parse, "save: Expected 2 components");
-    auto result = std::make_shared<save>();
-    result->target = std::make_shared<address_ref>(context.get_current(), tokens[1]);
-    result->value = checked_parse_raw(raw, tokens[2], context);
-    return result;
+    } else if (tokens[0] == "clock"_ts) {
+      if (token_count != 4)
+        THROW_ERROR(parse, "cache: Expected 2 components");
+      auto result = std::make_shared<clock>();
+      auto tmp = force_parse_ulong(tokens[1].begin(), tokens[1].size());
+      result->tick_duration = std::chrono::milliseconds(tmp);
+      tmp = force_parse_ulong(tokens[2].begin(), tokens[2].size());
+      result->loop = tmp;
+      tmp = force_parse_ulong(tokens[3].begin(), tokens[3].size());
+      result->zero_point = steady_time(result->tick_duration * tmp);
+      return result;
 
-  } else if (tokens[0] == "map"_ts) {
-    if (token_count != 4)
-      THROW_ERROR(parse, "map: Expected 3 components");
-    auto result = make_meta.operator()<map>();
-    if (auto min = cut_front(tokens[1], ':'); !min.untouched())
-      result->from_min = convert<float, strtof>(min);
-    result->from_range = convert<float, strtof>(tokens[1]) - result->from_min;
-
-    if (auto min = cut_front(tokens[2], ':'); !min.untouched())
-      result->to_min = convert<float, strtof>(min);
-    result->to_range = convert<float, strtof>(tokens[2]) - result->to_min;
-    return result;
-
-  } else if (tokens[0] == "color"_ts) {
-    auto result = make_meta.operator()<color>();
-    if (token_count > 2) {
-      if (token_count > 3)
-        result->processor.inter = cspace::stospace(tokens[1]);
-      result->processor.add_modification(tokens[token_count - 2]);
-    }
-    return result;
-
-  } else if (tokens[0] == "clone"_ts) {
-    for (int i = 1; i < token_count; i++) {
-      auto source = address_ref(context.get_parent(), tokens[i]).get_source_direct();
-      throwing_clone_context clone_context;
-      if (!source || !*source)
-        THROW_ERROR(parse, "Can't find node to clone");
-      if (auto wrp = std::dynamic_pointer_cast<wrapper>(*source)) {
-        context.get_current()->merge(wrp, clone_context);
-      } else if (i == token_count -1) {
-        return (*source)->clone(clone_context);
+    } else if (tokens[0] == "array_cache"_ts) {
+      if (token_count == 4) {
+        auto result = std::make_shared<array_cache>();
+        auto size = parse_ulong(tokens[1].begin(), tokens[1].size());
+        if (size) {
+          result->cache_arr = std::make_shared<std::vector<string>>(*size + 1);
+          for (size_t i = 0; i < size; i++)
+            result->cache_arr->emplace_back();
+        } else {
+          auto cache_base = address_ref(context.get_parent(), tokens[1]).get_source();
+          if (auto cache = std::dynamic_pointer_cast<array_cache>(cache_base))
+            result->cache_arr = cache->cache_arr;
+          else THROW_ERROR(parse, "1st argument must be the size of the cache or a parent path to another array_cache: " + str);
+        }
+        result->source = checked_parse_raw(raw, tokens[2], context);
+        result->calculator = checked_parse_raw(raw, tokens[3], context);
+        return result;
       } else
-        THROW_ERROR(parse, "Can't merge non-wrapper nodes");
-    }
-    return base_s();
-  } else
-    THROW_ERROR(parse, "Unsupported operator type: " + tokens[0]);
+        THROW_ERROR(parse, "array_cache: Expected 3 components");
+
+    } else if (tokens[0] == "save"_ts) {
+      if (token_count != 3)
+        THROW_ERROR(parse, "save: Expected 2 components");
+      auto result = std::make_shared<save>();
+      result->target = std::make_shared<address_ref>(context.get_current(), tokens[1]);
+      result->value = checked_parse_raw(raw, tokens[2], context);
+      return result;
+
+    } else if (tokens[0] == "map"_ts) {
+      if (token_count != 4)
+        THROW_ERROR(parse, "map: Expected 3 components");
+      auto result = make_meta.operator()<map>();
+      if (auto min = cut_front(tokens[1], ':'); !min.untouched())
+        result->from_min = convert<float, strtof>(min);
+      result->from_range = convert<float, strtof>(tokens[1]) - result->from_min;
+
+      if (auto min = cut_front(tokens[2], ':'); !min.untouched())
+        result->to_min = convert<float, strtof>(min);
+      result->to_range = convert<float, strtof>(tokens[2]) - result->to_min;
+      return result;
+
+    } else if (tokens[0] == "color"_ts) {
+      auto result = make_meta.operator()<color>();
+      if (token_count > 2) {
+        if (token_count > 3)
+          result->processor.inter = cspace::stospace(tokens[1]);
+        result->processor.add_modification(tokens[token_count - 2]);
+      }
+      return result;
+
+    } else if (tokens[0] == "clone"_ts) {
+      for (int i = 1; i < token_count; i++) {
+        auto source = address_ref(context.get_parent(), tokens[i]).get_source_direct();
+        throwing_clone_context clone_context;
+        if (!source || !*source)
+          THROW_ERROR(parse, "Can't find node to clone");
+        if (auto wrp = std::dynamic_pointer_cast<wrapper>(*source)) {
+          context.get_current()->merge(wrp, clone_context);
+        } else if (i == token_count -1) {
+          return (*source)->clone(clone_context);
+        } else
+          THROW_ERROR(parse, "Can't merge non-wrapper nodes");
+      }
+      return base_s();
+    } else
+      THROW_ERROR(parse, "Unsupported operator type: " + tokens[0]);
+  };
+  auto op = make_operator();
+  if (op && fallback)
+    return std::make_shared<fallback_wrapper>(op, fallback);
+  return op;
 }
 
 NAMESPACE_END

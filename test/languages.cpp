@@ -166,9 +166,9 @@ INSTANTIATE_TEST_SUITE_P(wrapper, Misc, ValuesIn(tests));
 void set_key(node::wrapper_s& doc, const string& key, const string& newval) {
   auto last_count = get_test_part_count();
   EXPECT_TRUE(doc->set(key, newval));
-  ASSERT_EQ(newval, doc->get_child(key)) << "Unexpected value after assignment";
+  EXPECT_EQ(newval, doc->get_child(key)) << "Unexpected value after assignment";
   if (last_count != get_test_part_count())
-    cerr << "Key: " << key << endl;
+    cerr << "Key: " << key << endl << endl;
 }
 
 TEST_P(Misc, wrapper) {
@@ -245,12 +245,16 @@ TEST_P(Misc, assign_ref) {
   EXPECT_EQ("Hello quan", *doc->get_child("greeting"_ts));
 
   // Test fallback assignments
+  set_key(doc, "ref-default-a", "foobar");
+  EXPECT_EQ("foobar", *doc->get_child("key-a"_ts));
   EXPECT_FALSE(doc->set("cmd-ref"_ts, "hello"));
+  EXPECT_EQ("Hello quan", *doc->get_child("greeting"_ts));
 }
 
 TEST_P(Misc, assign_file_env) {
   auto doc = GetParam();
   // Test file_ref assignments
+  set_key(doc, "ref-nexist", "barfoo");
   set_key(doc, "env-nexist", "barbar");
   set_key(doc, "file-parse", "foo");
   std::ifstream ifs("key_file.txt");
