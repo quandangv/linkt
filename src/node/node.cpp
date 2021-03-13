@@ -11,7 +11,7 @@ NAMESPACE(node)
 
 meta::meta(const base_s& value) : value(value) {
   if (!value)
-    THROW_ERROR(node, "meta: value can not be null");
+    THROW_ERROR(required_field_null, "meta::meta");
 }
 
 string color::get() const {

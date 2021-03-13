@@ -194,7 +194,7 @@ TEST_P(Misc, parse_errors) {
     node::throwing_clone_context context;
     context.no_dependency = true;
     doc->get_child_ptr("ref-a"_ts)->clone(context);
-  }, node::node_error);
+  }, node::clone_error);
 }
 
 TEST_P(Misc, save_cache) {

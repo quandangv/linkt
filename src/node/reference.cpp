@@ -70,8 +70,7 @@ base_s address_ref::clone(clone_context& context) const {
   if (ancestor_it != context.ancestors.rend()) {
     cloned_ancestor = ancestor_it->second;
   } else if (context.no_dependency) {
-    context.report_error("External dependency");
-    return base_s();
+    THROW_ERROR(clone, "Address_ref: External dependency");
   } else {
     cloned_ancestor = ancestor;
   }
@@ -79,51 +78,38 @@ base_s address_ref::clone(clone_context& context) const {
   // Return a pointer to the referenced node
   if (context.optimize) {
     // If the referenced node already exists in the clone result, we don't have to clone it
-    base_s result;
-    auto tmp_ancestor = cloned_ancestor;
-    for (auto& path : indirect_paths)
-      if (!(tmp_ancestor = tmp_ancestor->get_wrapper(path)))
-        goto no_existing;
+    for (auto& path : indirect_paths) {
+      cloned_ancestor = cloned_ancestor->add_wrapper(path);
+      if (!(ancestor = ancestor->get_wrapper(path)))
+        return std::make_shared<address_ref>(cloned_ancestor, string(get_path()));
+      context.ancestors.emplace_back(ancestor, cloned_ancestor);
+    }
 
-    if (auto it = tmp_ancestor->map.find(direct_path); it != tmp_ancestor->map.end())
-      result = it->second;
-    if (auto result_wrapper = std::dynamic_pointer_cast<wrapper>(result))
-      result = result_wrapper->map[""];
-
-    if (!result) {
-      no_existing:
-      auto place = get_source_direct();
-      if (place && *place) {
-        auto tmp_place = move(*place);
-        // Track the added ancestors to be removed after its done
-        auto ancestors_mark = context.ancestors.size();
-        for (auto& path : indirect_paths) {
-          cloned_ancestor = cloned_ancestor->add_wrapper(path);
-          if (!(ancestor = ancestor->get_wrapper(path)))
-            THROW_ERROR(node, "Can't track source tree");
-          context.ancestors.emplace_back(ancestor, cloned_ancestor);
-        }
-        auto& cloned_place = cloned_ancestor->map[direct_path];
-        if (auto cloned_place_wrapper = std::dynamic_pointer_cast<wrapper>(cloned_place)) {
-          if (auto place_wrapper = std::dynamic_pointer_cast<wrapper>(tmp_place)) {
-            cloned_place_wrapper->merge(place_wrapper, context);
-            result = cloned_place;
-          } else result = cloned_place_wrapper->map[""] = tmp_place->clone(context);
-        } else result = cloned_place = tmp_place->clone(context);
-        context.ancestors.erase(context.ancestors.begin() + ancestors_mark, context.ancestors.end());
-        *place = tmp_place;
-        return std::make_shared<ref>(result);
-      }
-    } else
+    auto& result = cloned_ancestor->map[direct_path];
+    auto result_wrapper = std::dynamic_pointer_cast<wrapper>(result);
+    if (result_wrapper) {
+      if (result_wrapper->map[""])
+        return std::make_shared<ref>(result_wrapper->map[""]);
+    } else if (result)
       return std::make_shared<ref>(result);
+
+    auto src_it = ancestor->map.find(direct_path);
+    if (src_it == ancestor->map.end() || !src_it->second)
+      return std::make_shared<address_ref>(cloned_ancestor, string(get_path()));
+    auto tmp_src = move(src_it->second);
+    if (result_wrapper) {
+      if (auto src_wrapper = std::dynamic_pointer_cast<wrapper>(tmp_src)) {
+        result_wrapper->merge(src_wrapper, context);
+      } else result = result_wrapper->map[""] = tmp_src->clone(context);
+    } else result = tmp_src->clone(context);
+    src_it->second = tmp_src;
+    return std::make_shared<ref>(result);
   }
-  return std::make_shared<address_ref>(
-    cloned_ancestor,
-    string(get_path()));
+  return std::make_shared<address_ref>(cloned_ancestor, string(get_path()));
 }
 
 ref::ref(base_w v) : value(v) {
-start:
+  start:
   auto val = value.lock();
   if (!val) THROW_ERROR(ancestor_destroyed, "ref::ref");
   if (auto meta = std::dynamic_pointer_cast<ref>(val)) {
@@ -146,9 +132,8 @@ bool ref::set(const string& v) {
   return false;
 }
 
-base_s ref::clone(clone_context& context) const {
-  context.report_error("node::ref can't be cloned");
-  return base_s();
+base_s ref::clone(clone_context&) const {
+  THROW_ERROR(clone, "node::ref can't be cloned");
 }
 
 NAMESPACE_END

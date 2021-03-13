@@ -126,6 +126,7 @@ string wrapper::get() const {
 }
 
 void wrapper::merge(const const_wrapper_s& src, clone_context& context) {
+  auto ancestors_mark = context.ancestors.size();
   context.ancestors.emplace_back(src, shared_from_this());
   for(auto& pair : src->map) {
     if (!pair.second || (!pair.first.empty() && pair.first.front() == '.'))
@@ -148,7 +149,7 @@ void wrapper::merge(const const_wrapper_s& src, clone_context& context) {
     }
     context.current_path = last_path;
   }
-  context.ancestors.pop_back();
+  context.ancestors.erase(context.ancestors.begin() + ancestors_mark, context.ancestors.end());
 }
 
 base_s wrapper::clone(clone_context& context) const {

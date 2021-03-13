@@ -19,6 +19,7 @@ namespace node {
 
   struct node_error : std::logic_error { using logic_error::logic_error; };
   struct required_field_null_error : std::logic_error { using logic_error::logic_error; };
+  struct clone_error : std::logic_error { using logic_error::logic_error; };
 
   struct errorlist : std::vector<std::pair<std::string, std::string>> {
     void report_error  (int line, const std::string& msg)
