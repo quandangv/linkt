@@ -9,7 +9,7 @@
 namespace node {
   using steady_time = std::chrono::time_point<std::chrono::steady_clock>;
 
-  struct meta : base, defaultable {
+  struct meta : base, with_fallback {
     const base_s value;
 
     meta(const base_s& value);

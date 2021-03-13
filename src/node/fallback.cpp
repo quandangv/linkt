@@ -4,12 +4,12 @@
 NAMESPACE(node)
 
 // Returns the value of the fallback if available. Otherwise throws an error
-string defaultable::use_fallback(const string& msg) const {
+string with_fallback::use_fallback(const string& msg) const {
   return (fallback ?: THROW_ERROR(node, "Failure: " + msg + ". No fallback was found"))->get();
 }
 
 fallback_wrapper::fallback_wrapper(base_s value, base_s fallback) :
-    defaultable(fallback), value(value) {
+    with_fallback(fallback), value(value) {
   if (!fallback || !value)
     THROW_ERROR(required_field_null, "fallback_wrapper::fallback_wrapper");
 }
