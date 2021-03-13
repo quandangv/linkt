@@ -9,6 +9,11 @@
 
 NAMESPACE(node)
 
+meta::meta(const base_s& value) : value(value) {
+  if (!value)
+    THROW_ERROR(node, "meta: value can not be null");
+}
+
 string color::get() const {
   try {
     auto result = processor.operate(value->get());

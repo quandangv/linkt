@@ -1,12 +1,27 @@
 #pragma once
 
 #include "base.hpp"
+#include "fallback.hpp"
 
 #include <chrono>
 #include <cspace/processor.hpp>
 
 namespace node {
   using steady_time = std::chrono::time_point<std::chrono::steady_clock>;
+
+  struct meta : base, defaultable {
+    const base_s value;
+
+    meta(const base_s& value);
+
+    template <typename T>
+    std::shared_ptr<T> copy(clone_context& context) const {
+      auto result = std::make_shared<T>(value->checked_clone(context, "meta::copy"));
+      if (fallback)
+        result->fallback = fallback->clone(context);
+      return result;
+    }
+  };
 
   struct color : public meta {
     using meta::meta;

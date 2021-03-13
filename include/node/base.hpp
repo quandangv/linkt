@@ -72,23 +72,6 @@ namespace node {
     base_s clone  (clone_context&) const { return std::make_shared<plain>(string(val)); }
   };
 
-  struct defaultable {
-    base_s fallback;
-
-    defaultable  () {}
-    explicit defaultable  (const base_s& fallback) : fallback(fallback) {}
-    [[nodiscard]] string use_fallback  (const string& error_message) const;
-  };
-
-  struct fallback_wrapper : base, settable, defaultable {
-    base_s value;
-
-    fallback_wrapper(base_s value, base_s fallback);
-    string get  () const;
-    bool set  (const string& value);
-    base_s clone  (clone_context&) const;
-  };
-
   struct wrapper;
   struct ancestor_destroyed_error : std::logic_error { using logic_error::logic_error; };
 
@@ -113,20 +96,6 @@ namespace node {
     string get  () const;
     bool set  (const string& value);
     base_s clone  (clone_context&) const;
-  };
-
-  struct meta : base, defaultable {
-    const base_s value;
-
-    meta(const base_s& value);
-
-    template <typename T>
-    std::shared_ptr<T> copy(clone_context& context) const {
-      auto result = std::make_shared<T>(value->checked_clone(context, "meta::copy"));
-      if (fallback)
-        result->fallback = fallback->clone(context);
-      return result;
-    }
   };
 
   bool is_fixed(base_s node);

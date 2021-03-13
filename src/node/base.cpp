@@ -1,6 +1,6 @@
 #include "base.hpp"
-#include "node.hpp"
 #include "common.hpp"
+#include "node.hpp"
 #include "wrapper.hpp"
 #include "token_iterator.hpp"
 
@@ -29,48 +29,11 @@ bool errorlist::extract_key(tstring& line, int linecount, char separator, tstrin
   return true;
 }
 
-meta::meta(const base_s& value) : value(value) {
-  if (!value)
-    THROW_ERROR(node, "meta: value can not be null");
-}
-
 // Checks if the value of a node come directly from a plain node, meaning it never changes
 bool is_fixed(base_s node) {
   if (auto doc = dynamic_cast<wrapper*>(node.get()))
     node = doc->get_child_ptr(""_ts);
   return dynamic_cast<plain*>(node.get());
-}
-
-// Returns the value of the fallback if available. Otherwise throws an error
-string defaultable::use_fallback(const string& msg) const {
-  return (fallback ?: THROW_ERROR(node, "Failure: " + msg + ". No fallback was found"))->get();
-}
-
-fallback_wrapper::fallback_wrapper(base_s value, base_s fallback) :
-    defaultable(fallback), value(value) {
-  if (!fallback || !value)
-    THROW_ERROR(required_field_null, "fallback_wrapper::fallback_wrapper");
-}
-
-string fallback_wrapper::get() const {
-  try {
-    return value->get();
-  } catch (const std::exception& e) {
-    return fallback->get();
-  }
-}
-
-bool fallback_wrapper::set(const string& str) {
-  if (auto value_settable = std::dynamic_pointer_cast<settable>(value))
-    if (value_settable->set(str))
-      return true;
-  if (auto fallback_settable = std::dynamic_pointer_cast<settable>(fallback))
-    return fallback_settable->set(str);
-  return false;
-}
-
-base_s fallback_wrapper::clone(clone_context& context) const {
-  return std::make_shared<fallback_wrapper>(value->clone(context), fallback->clone(context));
 }
 
 ref::ref(base_w v) : value(v) {
