@@ -40,6 +40,7 @@ base_s& parse_context::get_place() {
 
 // Parse an unescaped node string
 base_s parse_raw(string& raw, tstring& str, parse_context& context) {
+  trim_quotes(str);
   for (auto it = str.begin(); it < str.end() - 1; it++) {
     if (*it == '\\') {
       switch (*++it) {
@@ -107,7 +108,8 @@ base_s parse_escaped(string& raw, tstring& str, parse_context& context) {
         i++;
       tokens[i].merge(tokens[last_element]);
       fallback = parse_raw(raw, tokens[i], context);
-    } else trim_quotes(tokens[i]);
+      break;
+    }
   }
 
   // Finalize nodes that derive from node::meta
@@ -211,7 +213,7 @@ base_s parse_escaped(string& raw, tstring& str, parse_context& context) {
       if (token_count > 2) {
         if (token_count > 3)
           result->processor.inter = cspace::stospace(tokens[1]);
-        result->processor.add_modification(tokens[token_count - 2]);
+        result->processor.add_modification(trim_quotes(tokens[token_count - 2]));
       }
       return result;
 

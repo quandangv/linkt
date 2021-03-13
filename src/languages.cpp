@@ -42,7 +42,7 @@ node::wrapper_s parse_ini(std::istream& is, node::errorlist& err) {
     } if (tstring key; err.extract_key(line, linecount, '=', key)) {
       // This is a key
       try {
-        root->add(prefix + key, raw, trim_quotes(line), context);
+        root->add(prefix + key, raw, line, context);
       } catch (const std::exception& e) {
         err.report_error(linecount, e.what());
       }
@@ -110,8 +110,6 @@ node::wrapper_s parse_yml(std::istream& is, node::errorlist& err) {
         continue;
       }
       auto modes = cut_front(line, ' ');
-      trim_quotes(line);
-      //indentpair* record = nullptr;
       
       node::parse_func parser = find(modes, '$') != tstring::npos ?
           node::parse_escaped : node::parse_raw;
