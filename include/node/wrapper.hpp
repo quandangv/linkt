@@ -2,6 +2,7 @@
 
 #include "base.hpp"
 #include "tstring.hpp"
+#include "parse.hpp"
 
 #include <map>
 #include <vector>

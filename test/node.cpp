@@ -54,6 +54,7 @@ TEST(Node, Cmd) {
     {"cmd-ref", "${map 1 2 ${cmd}}", "2.000000"},
     {"cmd-msg", "result is ${cmd-ref}", "result is 2.000000"},
   }, base_repeat / 100);
+  //test_nodes({{"cmd1", "${cmd echo 'hello   world'}", "hello   world"}}, base_repeat / 100);
   test_nodes({{"cmd2", "${cmd echo hello world}", "hello world"}}, base_repeat / 100);
   test_nodes({{"cmd3", "${cmd nexist}", "", false, true}}, base_repeat / 100);
   test_nodes({{"cmd4", "${cmd nexist ? fail}", "fail"}}, base_repeat / 100);

@@ -1,6 +1,7 @@
 #include "languages.hpp"
 #include "common.hpp"
 #include "tstring.hpp"
+#include "node/parse.hpp"
 
 #include <vector>
 #include <cstring>
