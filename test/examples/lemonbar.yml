@@ -1,26 +1,31 @@
 lemonbar: '${greeting} ${cpu} ${memory} ${battery} ${date} ${sep}%{B-}'
   sep: '%{B#fff} '
   base: ${dep sep}%{B${B}} ${text}
-    raw:$ cache ${dep cache_time ? 1000} ${dep calculation}
+    text:$ cache ${dep cache_time ? 1000} ${dep raw}
     B:$ array_cache 240 ${H.raw} ${color cielch(${L}, 1, ${H})}
       L: 0.7
       H:$ cmd echo $((${raw}*3/2))
 
   greeting:$ clone base
-    text: Hello ${dep raw}
+    raw: Hello ${dep calculation}
     cache_time: 100000
     B.H.raw:$ clock 10 240 0
+
   cpu:$ clone base
-    text: CPU ${dep raw}
+    raw: CPU ${dep calculation}
     B.H.raw:$ clock 10 240 30
+
   memory:$ clone base
-    text: RAM ${dep raw}
+    raw: RAM ${dep calculation}
     B.H.raw:$ clock 10 240 60
+
   battery:$ clone base
-    text: BAT ${dep raw}
+    raw: BAT ${dep calculation}
     B.H.raw:$ clock 10 240 90
+    cache_time: 10000
+
   date:$ clone base
-    text: ${dep raw}
+    raw: ${dep calculation}
     cache_time: 30000
     B.H.raw:$ clock 10 240 120
 
