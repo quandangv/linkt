@@ -35,7 +35,7 @@ base_s address_ref::get_source() const {
 
 base_s* address_ref::get_source_direct() const {
   auto ancestor = ancestor_w.lock();
-  if (!ancestor) THROW_ERROR(ancestor_destroyed, "get_source_direct");
+  if (!ancestor) THROW_ERROR(ancestor_destroyed, "address_ref(" + get_path() + ")::get_source_direct");
   for (auto& path : indirect_paths)
     if (!(ancestor = ancestor->get_wrapper(path)))
       return nullptr;

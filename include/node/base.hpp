@@ -54,14 +54,25 @@ namespace node {
     virtual string get  () const = 0;
     virtual base_s clone  (clone_context&) const = 0;
 
-    inline base_s checked_clone  (clone_context& context, const string& msg) const {
+    base_s checked_clone  (clone_context& context, const string& msg) const {
       auto result = clone(context);
-      return result ?: throw node_error("node_error: Unexpectedly empty clone result in: " + msg);
+      return result ?: throw clone_error("clone_error: Empty clone result in: " + msg);
     }
   };
 
   struct settable {
     virtual bool set  (const string&) = 0;
+  };
+
+  struct float_value : base {
+    virtual float get_float  () const = 0;
+    string get  () const;
+  };
+
+  struct int_value : float_value {
+    virtual int get_int  () const = 0;
+    float get_float  () const { return get_int(); }
+    string get  () const { return std::to_string(get_int()); }
   };
 
   struct plain : base, settable {
@@ -71,6 +82,13 @@ namespace node {
     string get  () const { return val; }
     bool set  (const string& value) { val = value; return true; }
     base_s clone  (clone_context&) const { return std::make_shared<plain>(string(val)); }
+  };
+
+  struct plain_int : int_value {
+    int value;
+
+    explicit plain_int  (int value) : value(value) {}
+    int get_int  () const { return value; }
   };
 
   bool is_fixed(base_s node);

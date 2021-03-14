@@ -10,8 +10,7 @@
 NAMESPACE(node)
 
 meta::meta(const base_s& value) : value(value) {
-  if (!value)
-    THROW_ERROR(required_field_null, "meta::meta");
+  if (!value) THROW_ERROR(required_field_null, "meta::meta");
 }
 
 string color::get() const {
@@ -153,20 +152,20 @@ base_s array_cache::clone(clone_context& context) const {
   return result;
 }
 
-string map::get() const {
-  try {
-    auto str = value ? value->get() : use_fallback("Value key doesn't exist");
-    size_t remaining;
-    auto num =  std::stof(str, &remaining);
-    return remaining != str.size() ? use_fallback("value is not a number") :
-        std::to_string(to_min + to_range/from_range*(num - from_min));
-  } catch (const std::exception& e) {
-    return use_fallback("Linear mapping failed, due to: "s + e.what());
-  }
+map::map(base_s value) : value(value) {
+  if (!value) THROW_ERROR(required_field_null, "meta::meta");
+}
+
+float map::get_float() const {
+  auto str = value->get();
+  size_t remaining;
+  auto num =  std::stof(str, &remaining);
+  return remaining != str.size() ? THROW_ERROR(node, "value is not a number") :
+      to_min + to_range/from_range*(num - from_min);
 }
 
 base_s map::clone(clone_context& context) const {
-  auto result = meta::copy<map>(context);
+  auto result = std::make_shared<map>(value->clone(context));
   if (context.optimize && is_fixed(result->value))
       return std::make_shared<plain>(get());
 
@@ -177,9 +176,9 @@ base_s map::clone(clone_context& context) const {
   return result;
 }
 
-string clock::get() const {
+int clock::get_int() const {
   auto unlooped = (std::chrono::steady_clock::now() - zero_point) / tick_duration;
-  return std::to_string(unlooped % loop);
+  return unlooped % loop;
 }
 
 base_s clock::clone(clone_context&) const {

@@ -1,35 +1,28 @@
 lemonbar: '${greeting} ${cpu} ${memory} ${battery} ${date} ${sep}%{B-}'
   sep: '%{B#fff} '
   base: ${dep sep}%{B${B}} ${text}
-  cached_base:$ clone base
     raw:$ cache ${dep cache_time ? 1000} ${dep calculation}
+    B:$ array_cache 240 ${H.raw} ${color cielch(${L}, 1, ${H})}
+      L: 0.7
+      H:$ cmd echo $((${raw}*3/2))
 
-  B-base:$ array_cache 240 ${h_raw} ${color cielch(${L}, 1, ${H})}
-    L: 0.7
-    H:$ cmd echo $((${dep h_raw}*3/2))
-  greeting.B:$ clone B-base
-    h_raw:$ clock 10 240 0
-  cpu.B:$ clone B-base
-    h_raw:$ clock 10 240 30
-  memory.B:$ clone B-base
-    h_raw:$ clock 10 240 60
-  battery.B:$ clone B-base
-    h_raw:$ clock 10 240 90
-  date.B:$ clone B-base
-    h_raw:$ clock 10 240 120
-
-  greeting:$ clone cached_base
+  greeting:$ clone base
     text: Hello ${dep raw}
     cache_time: 100000
-  cpu:$ clone cached_base
+    B.H.raw:$ clock 10 240 0
+  cpu:$ clone base
     text: CPU ${dep raw}
-  memory:$ clone cached_base
+    B.H.raw:$ clock 10 240 30
+  memory:$ clone base
     text: RAM ${dep raw}
-  battery:$ clone cached_base
+    B.H.raw:$ clock 10 240 60
+  battery:$ clone base
     text: BAT ${dep raw}
-  date:$ clone cached_base
+    B.H.raw:$ clock 10 240 90
+  date:$ clone base
     text: ${dep raw}
     cache_time: 30000
+    B.H.raw:$ clock 10 240 120
 
 lemonbar.greeting.calculation:$ env USER
 lemonbar.cpu.calculation:$ save last_status ${cmd ./scripts/cpu.sh ${last_status} ? N/A}

@@ -114,7 +114,7 @@ base_s parse_escaped(string& raw, tstring& str, parse_context& context) {
 
   // Finalize nodes that derive from node::meta
   auto make_meta = [&]<typename T>() {
-    std::shared_ptr<T> result = std::make_shared<T>(checked_parse_raw(raw, tokens[token_count - 1], context));
+    std::shared_ptr<T> result = std::make_shared<T>(parse_raw(raw, tokens[token_count - 1], context));
     result->fallback = move(fallback);
     return result;
   };
@@ -157,14 +157,13 @@ base_s parse_escaped(string& raw, tstring& str, parse_context& context) {
 
     } else if (tokens[0] == "clock"_ts) {
       if (token_count != 4)
-        THROW_ERROR(parse, "cache: Expected 2 components");
+        THROW_ERROR(parse, "cache: Expected 3 components");
       auto result = std::make_shared<clock>();
-      auto tmp = force_parse_ulong(tokens[1].begin(), tokens[1].size());
-      result->tick_duration = std::chrono::milliseconds(tmp);
-      tmp = force_parse_ulong(tokens[2].begin(), tokens[2].size());
-      result->loop = tmp;
-      tmp = force_parse_ulong(tokens[3].begin(), tokens[3].size());
-      result->zero_point = steady_time(result->tick_duration * tmp);
+      result->tick_duration = std::chrono::milliseconds(
+          force_parse_ulong(tokens[1].begin(), tokens[1].size()));
+      result->loop = force_parse_ulong(tokens[2].begin(), tokens[2].size());
+      result->zero_point = steady_time(
+          result->tick_duration * force_parse_ulong(tokens[3].begin(), tokens[3].size()));
       return result;
 
     } else if (tokens[0] == "array_cache"_ts) {
@@ -198,7 +197,7 @@ base_s parse_escaped(string& raw, tstring& str, parse_context& context) {
     } else if (tokens[0] == "map"_ts) {
       if (token_count != 4)
         THROW_ERROR(parse, "map: Expected 3 components");
-      auto result = make_meta.operator()<map>();
+      auto result = std::make_shared<map>(parse_raw(raw, tokens[token_count - 1], context));
       if (auto min = cut_front(tokens[1], ':'); !min.untouched())
         result->from_min = convert<float, strtof>(min);
       result->from_range = convert<float, strtof>(tokens[1]) - result->from_min;

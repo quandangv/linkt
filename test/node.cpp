@@ -51,8 +51,8 @@ TEST(Node, Cmd) {
   test_nodes({
     {"msg", "1.000", "1.000"},
     {"cmd", "${cmd echo ${msg}}", "1.000"},
-    {"cmd-ref", "${map 1 2 ${cmd}}", "2.000000"},
-    {"cmd-msg", "result is ${cmd-ref}", "result is 2.000000"},
+    {"cmd-ref", "${map 1 2 ${cmd}}", "2"},
+    {"cmd-msg", "result is ${cmd-ref}", "result is 2"},
   }, base_repeat / 100);
   test_nodes({{"cmd1", "${cmd echo 'hello  world'}", "hello  world"}}, base_repeat / 100);
   test_nodes({{"cmd2", "${cmd echo hello world}", "hello world"}}, base_repeat / 100);
@@ -143,7 +143,7 @@ TEST(Node, Clone) {
   test_nodes({
     {"base", "${map 100 1 ${rel stat}}", "", false, true, true},
     {"clone4.stat", "60", "60"},
-    {"clone4", "${clone base}", "0.600000"},
+    {"clone4", "${clone base}", "0.6"},
     {"clone4.stat", "60", "60", true},
   });
   test_nodes({
@@ -166,7 +166,7 @@ TEST(Node, Other) {
   test_nodes({{"env1", "${env ${nexist ? test_env}}", "test_env"}});
   test_nodes({{"env2", "${env nexist? \" f a i l \" }", " f a i l "}});
   test_nodes({{"env3", "${env nexist test_env }", "", true}});
-  test_nodes({{"map", "${map 5:10 0:2 7.5}", "1.000000"}});
-  test_nodes({{"map", "${map 5:10 2 7.5 ? -1}", "1.000000"}});
-  test_nodes({{"map", "${map 5:10 7.5}", "1.000000", true}});
+  test_nodes({{"map", "${map 5:10 0:2 7.5}", "1"}});
+  test_nodes({{"map", "${map 5:10 2 7.5 ? -1}", "1"}});
+  test_nodes({{"map", "${map 5:10 7.5}", "1", true}});
 }

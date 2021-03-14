@@ -10,8 +10,7 @@ int main() {
     return 1;
   }
   node::errorlist err;
-  node::wrapper wrapper;
-  parse_yml(file, wrapper, err);
+  auto wrapper = parse_yml(file, err);
   file.close();
 
   if (!err.empty()) {
@@ -33,7 +32,7 @@ int main() {
     std::string path;
     std::getline(std::cin, path);
     try {
-      auto result = wrapper.get_child(path);
+      auto result = wrapper->get_child(path);
       if (!result)
         std::cout << "Path '" << path << "' have no value." << std::endl;
       else

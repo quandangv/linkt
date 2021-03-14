@@ -32,4 +32,10 @@ bool is_fixed(base_s node) {
   return dynamic_cast<plain*>(node.get());
 }
 
+string float_value::get() const {
+  std::string str = std::to_string (get_float());
+  auto erase = str.find_last_not_of('0');
+  return str.erase (str[erase] == '.' ? erase : (erase + 1), std::string::npos );
+}
+
 NAMESPACE_END

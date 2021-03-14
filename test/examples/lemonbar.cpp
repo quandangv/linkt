@@ -12,8 +12,7 @@ int main() {
     return 1;
   }
   node::errorlist err;
-  node::wrapper wrapper;
-  parse_yml(file, wrapper, err);
+  auto wrapper = parse_yml(file, err);
   file.close();
 
   if (!err.empty()) {
@@ -23,7 +22,7 @@ int main() {
   }
 
   node::clone_context context;
-  wrapper.optimize(context);
+  wrapper->optimize(context);
   if (!context.errors.empty()) {
     std::cout << "Error while optimizing:\n";
     for (auto& e : context.errors)
@@ -38,7 +37,7 @@ int main() {
     auto next_frame = std::chrono::steady_clock::now() + std::chrono::milliseconds(50);
     try {
       clock_t start_retrieve = clock();
-      auto result = wrapper.get_child("lemonbar"_ts);
+      auto result = wrapper->get_child("lemonbar"_ts);
       double elapsed = double(clock() - start_retrieve) / CLOCKS_PER_SEC * 1000;
       avg_time = elapsed * recent_weight + avg_time * (1 - recent_weight);
       if (!result)

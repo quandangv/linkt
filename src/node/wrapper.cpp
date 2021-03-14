@@ -152,6 +152,13 @@ void wrapper::merge(const const_wrapper_s& src, clone_context& context) {
   context.ancestors.erase(context.ancestors.begin() + ancestors_mark, context.ancestors.end());
 }
 
+void wrapper::optimize(clone_context& context) {
+  context.optimize = true;
+  auto result = std::make_shared<wrapper>();
+  result->merge(shared_from_this(), context);
+  result->map.swap(map);
+}
+
 base_s wrapper::clone(clone_context& context) const {
   auto result = std::make_shared<wrapper>();
   result->merge(shared_from_this(), context);

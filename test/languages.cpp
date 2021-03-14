@@ -108,7 +108,7 @@ TEST(Language, Yml) {
     {
       {"bar.base.B.dumb", "hello"},
       {"bar.bat.B.L.value", "60"},
-      {"bar.bat.B.L", "0.800000"},
+      {"bar.bat.B.L", "0.8"},
       {"bar.bat.stat", "60"},
       {"bar.bat.unit", "%"},
       {"bar.bat.B.dumb", "hello"},
@@ -229,9 +229,9 @@ TEST_P(Misc, clock) {
   auto clock = stoi(doc->get_child("clock"_ts, "fail"));
   EXPECT_LT(clock, 1000);
   EXPECT_GE(clock, 0);
-  std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  auto clock2 = stoi(doc->get_child("clock"_ts, "fail"));
-  EXPECT_NE(clock, clock2);
+  std::this_thread::sleep_for(std::chrono::milliseconds(53));
+  auto clock_after = stoi(doc->get_child("clock"_ts, "fail"));
+  EXPECT_NE(clock, clock_after);
 }
 
 TEST_P(Misc, assign_ref) {

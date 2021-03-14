@@ -78,20 +78,21 @@ namespace node {
     base_s clone  (clone_context&) const;
   };
 
-  struct map : meta {
-    using meta::meta;
+  struct map : float_value {
+    const base_s value;
     float from_min{0}, from_range{0}, to_min{0}, to_range{0};
 
-    string get  () const;
+    map  (base_s value);
+    float get_float  () const;
     base_s clone  (clone_context&) const;
   };
 
-  struct clock : base {
+  struct clock : int_value {
     std::chrono::milliseconds tick_duration;
-    size_t loop;
+    unsigned int loop;
     mutable steady_time zero_point;
 
-    string get  () const;
+    int get_int  () const;
     base_s clone  (clone_context&) const;
   };
 
