@@ -156,7 +156,7 @@ map::map(base_s value) : value(value) {
   if (!value) THROW_ERROR(required_field_null, "meta::meta");
 }
 
-float map::get_float() const {
+map::operator float() const {
   auto str = value->get();
   size_t remaining;
   auto num =  std::stof(str, &remaining);
@@ -176,7 +176,7 @@ base_s map::clone(clone_context& context) const {
   return result;
 }
 
-int clock::get_int() const {
+clock::operator int() const {
   auto unlooped = (std::chrono::steady_clock::now() - zero_point) / tick_duration;
   return unlooped % loop;
 }

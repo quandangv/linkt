@@ -5,7 +5,7 @@
 namespace node {
   struct ancestor_destroyed_error : std::logic_error { using logic_error::logic_error; };
 
-  struct address_ref : base, settable {
+  struct address_ref : base<string>, settable {
     wrapper_w ancestor_w;
     std::vector<string> indirect_paths;
     string direct_path;
@@ -19,7 +19,7 @@ namespace node {
     string get_path() const;
   };
 
-  struct ref : base, settable {
+  struct ref : base<string>, settable {
     base_w value;
 
     ref  (base_w value);

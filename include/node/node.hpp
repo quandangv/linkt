@@ -9,7 +9,7 @@
 namespace node {
   using steady_time = std::chrono::time_point<std::chrono::steady_clock>;
 
-  struct meta : base, with_fallback {
+  struct meta : base<string>, with_fallback {
     const base_s value;
 
     meta(const base_s& value);
@@ -51,7 +51,7 @@ namespace node {
     base_s clone  (clone_context&) const;
   };
 
-  struct save : base {
+  struct save : base<string> {
     base_s value;
     base_s target;
 
@@ -59,7 +59,7 @@ namespace node {
     base_s clone  (clone_context&) const;
   };
 
-  struct cache : base {
+  struct cache : base<string> {
     base_s source;
     base_s duration_ms;
     mutable string cache_str;
@@ -69,7 +69,7 @@ namespace node {
     base_s clone  (clone_context&) const;
   };
 
-  struct array_cache : base {
+  struct array_cache : base<string> {
     base_s source, calculator;
     mutable std::shared_ptr<std::vector<string>> cache_arr;
 
@@ -78,25 +78,25 @@ namespace node {
     base_s clone  (clone_context&) const;
   };
 
-  struct map : float_value {
+  struct map : base<float> {
     const base_s value;
     float from_min{0}, from_range{0}, to_min{0}, to_range{0};
 
     map  (base_s value);
-    float get_float  () const;
+    operator float  () const;
     base_s clone  (clone_context&) const;
   };
 
-  struct clock : int_value {
+  struct clock : base<int> {
     std::chrono::milliseconds tick_duration;
     unsigned int loop;
     mutable steady_time zero_point;
 
-    int get_int  () const;
+    operator int  () const;
     base_s clone  (clone_context&) const;
   };
 
-  struct string_interpolate : public base {
+  struct string_interpolate : base<string> {
     struct replace_spot {
       int position;
       base_s replacement;

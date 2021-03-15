@@ -8,11 +8,12 @@
 #include <vector>
 
 namespace node {
-  struct base;
+  template<class T> struct base;
+  template<> struct base<string>;
   struct wrapper;
   using std::string;
-  using base_s = std::shared_ptr<base>;
-  using base_w = std::weak_ptr<base>;
+  using base_s = std::shared_ptr<base<string>>;
+  using base_w = std::weak_ptr<base<string>>;
   using wrapper_s = std::shared_ptr<wrapper>;
   using const_wrapper_s = std::shared_ptr<const wrapper>;
   using wrapper_w = std::weak_ptr<wrapper>;
@@ -48,7 +49,8 @@ namespace node {
     ~throwing_clone_context() noexcept(false);
   };
 
-  struct base {
+  template<>
+  struct base<string> {
     virtual ~base() {}
 
     virtual string get  () const = 0;
@@ -64,18 +66,30 @@ namespace node {
     virtual bool set  (const string&) = 0;
   };
 
-  struct float_value : base {
-    virtual float get_float  () const = 0;
-    string get  () const;
+  template<class T>
+  struct base : base<string> {
+    virtual explicit operator T() const = 0;
   };
 
-  struct int_value : float_value {
-    virtual int get_int  () const = 0;
-    float get_float  () const { return get_int(); }
-    string get  () const { return std::to_string(get_int()); }
+  template<>
+  struct base<int> : base<string> {
+    virtual explicit operator int() const = 0;
+    string get  () const { return std::to_string((int)*this); }
   };
 
-  struct plain : base, settable {
+  template<>
+  struct base<float> : base<string> {
+    virtual explicit operator float() const = 0;
+    string get  () const {
+      std::string str = std::to_string ((float)*this);
+      auto erase = str.find_last_not_of('0');
+      return str.erase (str[erase] == '.' ? erase : (erase + 1), std::string::npos );
+    }
+  };
+
+  struct fixed {};
+
+  struct plain : base<string>, settable, fixed {
     string val;
 
     explicit plain  (string&& val) : val(val) {}
@@ -84,12 +98,11 @@ namespace node {
     base_s clone  (clone_context&) const { return std::make_shared<plain>(string(val)); }
   };
 
-  struct plain_int : int_value {
-    int value;
-
-    explicit plain_int  (int value) : value(value) {}
-    int get_int  () const { return value; }
-  };
+  //template<class T>
+  //struct custom_plain : base<T>, fixed {
+  //  T value;
+  //  explicit operator T  () const { return value; }
+  //};
 
   bool is_fixed(base_s node);
 }

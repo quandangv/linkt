@@ -29,13 +29,7 @@ bool errorlist::extract_key(tstring& line, int linecount, char separator, tstrin
 bool is_fixed(base_s node) {
   if (auto doc = dynamic_cast<wrapper*>(node.get()))
     node = doc->get_child_ptr(""_ts);
-  return dynamic_cast<plain*>(node.get());
-}
-
-string float_value::get() const {
-  std::string str = std::to_string (get_float());
-  auto erase = str.find_last_not_of('0');
-  return str.erase (str[erase] == '.' ? erase : (erase + 1), std::string::npos );
+  return dynamic_cast<fixed*>(node.get());
 }
 
 NAMESPACE_END

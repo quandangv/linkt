@@ -15,7 +15,7 @@ namespace node {
   using ancestor_processor = std::function<void(tstring& path, wrapper_s ancestor)>;
   struct wrapper_error : std::logic_error { using logic_error::logic_error; };
 
-  struct wrapper : base, std::enable_shared_from_this<wrapper> {
+  struct wrapper : base<string>, std::enable_shared_from_this<wrapper> {
     using map_type = std::map<string, base_s>;
 
     map_type map{};
