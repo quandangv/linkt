@@ -31,6 +31,16 @@ base_s color::clone(clone_context& context) const {
   return result;
 }
 
+std::shared_ptr<color> color::parse(parse_context& context, parse_preprocessed& prep) {
+  auto result = std::make_shared<color>(parse_raw<string>(context, prep.tokens[prep.token_count - 1]), move(prep.fallback));
+  if (prep.token_count > 2) {
+    if (prep.token_count > 3)
+      result->processor.inter = cspace::stospace(prep.tokens[1]);
+    result->processor.add_modification(trim_quotes(prep.tokens[prep.token_count - 2]));
+  }
+  return result;
+}
+
 env::operator string() const {
   auto result = getenv(value->get().data());
   return string(result ?: use_fallback("Environment variable not found: " + value->get()));
@@ -112,6 +122,15 @@ base_s save::clone(clone_context& context) const {
   return result;
 }
 
+std::shared_ptr<save> save::parse(parse_context& context, parse_preprocessed& prep) {
+  if (prep.token_count != 3)
+    THROW_ERROR(parse, "save: Expected 2 components");
+  auto result = std::make_shared<save>();
+  result->target = std::make_shared<address_ref<string>>(context.get_current(), prep.tokens[1]);
+  result->value = checked_parse_raw<string>(context, prep.tokens[2]);
+  return result;
+}
+
 cache::operator string() const {
   if (auto now = std::chrono::steady_clock::now(); now > cache_expire) {
     cache_str = source->get();
@@ -126,6 +145,15 @@ base_s cache::clone(clone_context& context) const {
   result->duration_ms = duration_ms->checked_clone(context, "cache::clone");
   result->cache_str = cache_str;
   result->cache_expire = cache_expire;
+  return result;
+}
+
+std::shared_ptr<cache> cache::parse(parse_context& context, parse_preprocessed& prep) {
+  if (prep.token_count != 3)
+    THROW_ERROR(parse, "cache: Expected 2 components");
+  auto result = std::make_shared<cache>();
+  result->duration_ms = checked_parse_raw<string>(context, prep.tokens[1]);
+  result->source = checked_parse_raw<string>(context, prep.tokens[2]);
   return result;
 }
 
@@ -149,6 +177,27 @@ base_s array_cache::clone(clone_context& context) const {
   result->calculator = calculator->checked_clone(context, "array_cache::clone");
   result->cache_arr = cache_arr;
   return result;
+}
+
+std::shared_ptr<array_cache> array_cache::parse(parse_context& context, parse_preprocessed& prep) {
+  if (prep.token_count == 4) {
+    auto result = std::make_shared<array_cache>();
+    auto size = parse_ulong(prep.tokens[1].begin(), prep.tokens[1].size());
+    if (size) {
+      result->cache_arr = std::make_shared<std::vector<string>>(*size + 1);
+      for (size_t i = 0; i < size; i++)
+        result->cache_arr->emplace_back();
+    } else {
+      auto cache_base = address_ref<string>(context.get_parent(), prep.tokens[1]).get_source();
+      if (auto cache = std::dynamic_pointer_cast<array_cache>(cache_base))
+        result->cache_arr = cache->cache_arr;
+      else THROW_ERROR(parse, "1st argument must be the size of the cache or a parent path to another array_cache: " + context.raw);
+    }
+    result->source = checked_parse_raw<string>(context, prep.tokens[2]);
+    result->calculator = checked_parse_raw<string>(context, prep.tokens[3]);
+    return result;
+  } else
+    THROW_ERROR(parse, "array_cache: Expected 3 components");
 }
 
 map::map(base_s value) : value(value) {
@@ -175,6 +224,20 @@ base_s map::clone(clone_context& context) const {
   return result;
 }
 
+std::shared_ptr<map> map::parse(parse_context& context, parse_preprocessed& prep) {
+  if (prep.token_count != 4)
+    THROW_ERROR(parse, "map: Expected 3 components");
+  auto result = std::make_shared<map>(parse_raw<string>(context, prep.tokens[prep.token_count - 1]));
+  if (auto min = cut_front(prep.tokens[1], ':'); !min.untouched())
+    result->from_min = convert<float, strtof>(min);
+  result->from_range = convert<float, strtof>(prep.tokens[1]) - result->from_min;
+
+  if (auto min = cut_front(prep.tokens[2], ':'); !min.untouched())
+    result->to_min = convert<float, strtof>(min);
+  result->to_range = convert<float, strtof>(prep.tokens[2]) - result->to_min;
+  return result;
+}
+
 clock::operator int() const {
   auto unlooped = (std::chrono::steady_clock::now() - zero_point) / tick_duration;
   return unlooped % loop;
@@ -185,6 +248,18 @@ base_s clock::clone(clone_context&) const {
   result->tick_duration = tick_duration;
   result->loop = loop;
   result->zero_point = zero_point;
+  return result;
+}
+
+std::shared_ptr<clock> clock::parse(parse_context&, parse_preprocessed& prep) {
+  if (prep.token_count != 4)
+    THROW_ERROR(parse, "cache: Expected 3 components");
+  auto result = std::make_shared<clock>();
+  result->tick_duration = std::chrono::milliseconds(
+      force_parse_ulong(prep.tokens[1].begin(), prep.tokens[1].size()));
+  result->loop = force_parse_ulong(prep.tokens[2].begin(), prep.tokens[2].size());
+  result->zero_point = steady_time(
+      result->tick_duration * force_parse_ulong(prep.tokens[3].begin(), prep.tokens[3].size()));
   return result;
 }
 

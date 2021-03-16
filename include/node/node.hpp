@@ -25,6 +25,7 @@ namespace node {
 
     explicit operator string() const;
     base_s clone  (clone_context&) const;
+    static std::shared_ptr<color> parse(parse_context&, parse_preprocessed&);
   };
 
   struct env : public meta, settable<string> {
@@ -53,6 +54,7 @@ namespace node {
 
     explicit operator string() const;
     base_s clone  (clone_context&) const;
+    static std::shared_ptr<save> parse(parse_context&, parse_preprocessed&);
   };
 
   struct cache : base<string> {
@@ -63,6 +65,7 @@ namespace node {
 
     explicit operator string() const;
     base_s clone  (clone_context&) const;
+    static std::shared_ptr<cache> parse(parse_context&, parse_preprocessed&);
   };
 
   struct array_cache : base<string> {
@@ -72,6 +75,7 @@ namespace node {
     explicit operator string() const;
     string get  (size_t index) const;
     base_s clone  (clone_context&) const;
+    static std::shared_ptr<array_cache> parse(parse_context&, parse_preprocessed&);
   };
 
   struct map : base<float> {
@@ -81,6 +85,7 @@ namespace node {
     map  (base_s value);
     explicit operator float  () const;
     base_s clone  (clone_context&) const;
+    static std::shared_ptr<map> parse(parse_context&, parse_preprocessed&);
   };
 
   struct clock : base<int> {
@@ -90,6 +95,7 @@ namespace node {
 
     explicit operator int  () const;
     base_s clone  (clone_context&) const;
+    static std::shared_ptr<clock> parse(parse_context&, parse_preprocessed&);
   };
 
   struct string_interpolate : base<string> {
