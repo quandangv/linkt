@@ -25,6 +25,35 @@ bool errorlist::extract_key(tstring& line, int linecount, char separator, tstrin
   return true;
 }
 
+wrapper_s parse_context::get_current() {
+  if (current)
+    return current;
+  if (!place)
+    THROW_ERROR(parse, "Get-current: Both current and place are null");
+  if ((current = std::dynamic_pointer_cast<wrapper>(*place)))
+    return current;
+  current = wrapper::wrap(*place);
+  place = nullptr;
+  return current;
+}
+
+wrapper_s parse_context::get_parent() {
+  if (parent)
+    return parent;
+  THROW_ERROR(parse, "parent is null");
+}
+
+base_s& parse_context::get_place() {
+  if (!place) {
+    if (!current)
+      THROW_ERROR(parse, "Get-place: Both current and place are null");
+    place = &current->map[""];
+  }
+  if (auto wrp = dynamic_cast<wrapper*>(place->get()))
+    place = &wrp->map[""];
+  return *place ? THROW_ERROR(parse, "get_place: Duplicate key") : *place;
+}
+
 // Checks if the value of a node come directly from a plain node, meaning it never changes
 bool is_fixed(base_s node) {
   if (auto doc = dynamic_cast<wrapper*>(node.get()))

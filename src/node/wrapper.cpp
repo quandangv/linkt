@@ -1,4 +1,5 @@
 #include "wrapper.hpp"
+#include "parse.hpp"
 #include "common.hpp"
 #include "tstring.hpp"
 #include "token_iterator.hpp"
@@ -81,7 +82,7 @@ base_s& wrapper::add(tstring path, string& raw, tstring value, parse_context& co
   context.parent = shared_from_this();
   context.current.reset();
   context.place = get_child_place(path);
-  if (auto node = parse_raw(raw, value, context))
+  if (auto node = parse_raw<string>(raw, value, context))
     return context.get_place() = node;
   return *context.place;
 }

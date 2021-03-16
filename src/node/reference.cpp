@@ -6,7 +6,7 @@
 
 NAMESPACE(node)
 
-address_ref::address_ref(wrapper_w ancestor, tstring path)
+template<class T> address_ref<T>::address_ref(wrapper_w ancestor, tstring path)
     : ancestor_w(ancestor), indirect_paths() {
   trim(path);
   for (tstring indirect; !(indirect = cut_front(path, '.')).untouched();)
@@ -14,7 +14,7 @@ address_ref::address_ref(wrapper_w ancestor, tstring path)
   direct_path = path;
 }
 
-string address_ref::get_path() const {
+template<class T> string address_ref<T>::get_path() const {
   std::stringstream ss;
   for (auto& path : indirect_paths)
     ss << path << '.';
@@ -22,7 +22,7 @@ string address_ref::get_path() const {
   return ss.str();
 }
 
-base_s address_ref::get_source() const {
+template<class T> base_s address_ref<T>::get_source() const {
   auto direct = get_source_direct();
   if (!direct || !*direct) {
     return {};
@@ -33,7 +33,7 @@ base_s address_ref::get_source() const {
   return *direct;
 }
 
-base_s* address_ref::get_source_direct() const {
+template<class T> base_s* address_ref<T>::get_source_direct() const {
   auto ancestor = ancestor_w.lock();
   if (!ancestor) THROW_ERROR(ancestor_destroyed, "address_ref(" + get_path() + ")::get_source_direct");
   for (auto& path : indirect_paths)
@@ -45,23 +45,23 @@ base_s* address_ref::get_source_direct() const {
   return nullptr;
 }
 
-address_ref::operator string() const {
+template<class T> address_ref<T>::operator T() const {
   auto src = get_source();
   if (!src) THROW_ERROR(node, "Referenced key not found: " + get_path());
-  return src->get();
+  return src->operator T();
 }
 
-bool address_ref::set(const string& val) {
+template<class T> bool address_ref<T>::set(const T& val) {
   auto ancestor = ancestor_w.lock();
   if (!ancestor) THROW_ERROR(ancestor_destroyed, "set");
   auto src = get_source();
   if (!src)
     return false;
-  auto target = std::dynamic_pointer_cast<settable>(src);
+  auto target = std::dynamic_pointer_cast<settable<T>>(src);
   return target ? target->set(val) : false;
 }
 
-base_s address_ref::clone(clone_context& context) const {
+template<class T> base_s address_ref<T>::clone(clone_context& context) const {
   auto ancestor = ancestor_w.lock();
   if (!ancestor) THROW_ERROR(ancestor_destroyed, "clone");
   // Find the corresponding ancestor in the clone result tree
@@ -89,9 +89,9 @@ base_s address_ref::clone(clone_context& context) const {
     auto result_wrapper = std::dynamic_pointer_cast<wrapper>(result);
     if (result_wrapper) {
       if (result_wrapper->map[""])
-        return std::make_shared<ref>(result_wrapper->map[""]);
+        return std::make_shared<ref<string>>(result_wrapper->map[""]);
     } else if (result)
-      return std::make_shared<ref>(result);
+      return std::make_shared<ref<string>>(result);
 
     auto src_it = ancestor->map.find(direct_path);
     if (src_it == ancestor->map.end() || !src_it->second)
@@ -103,37 +103,34 @@ base_s address_ref::clone(clone_context& context) const {
       } else result = result_wrapper->map[""] = tmp_src->clone(context);
     } else result = tmp_src->clone(context);
     src_it->second = tmp_src;
-    return std::make_shared<ref>(result);
+    return std::make_shared<ref<string>>(result);
   }
   return std::make_shared<address_ref>(cloned_ancestor, string(get_path()));
 }
 
-ref::ref(base_w v) : value(v) {
+template<class T> ref<T>::ref(std::weak_ptr<base<T>> value) : value(value) {
   start:
   auto val = value.lock();
-  if (!val) THROW_ERROR(ancestor_destroyed, "ref::ref");
-  if (auto meta = std::dynamic_pointer_cast<ref>(val)) {
+  if (!val) throw ancestor_destroyed_error("ancestor_destroyed_error: ref::ref");
+  if (auto meta = std::dynamic_pointer_cast<ref<T>>(val)) {
     value = meta->value;
     goto start;
   }
 }
-
-ref::operator string() const {
+template<class T> ref<T>::operator T() const {
   auto val = value.lock();
-  if (!val) THROW_ERROR(ancestor_destroyed, "ref::get");
-  return val->get();
+  if (!val) throw ancestor_destroyed_error("ancestor_destroyed_error: ref::get");
+  return val->operator T();
 }
-
-bool ref::set(const string& v) {
-  auto val = value.lock();
-  if (!val) THROW_ERROR(ancestor_destroyed, "ref::set");
-  if (auto s = std::dynamic_pointer_cast<settable>(val))
-    return s->set(v);
+template<class T> bool ref<T>::set  (const T& value) {
+  auto val = this->value.lock();
+  if (!val) throw ancestor_destroyed_error("ancestor_destroyed_error: ref::set");
+  if (auto s = std::dynamic_pointer_cast<settable<T>>(val))
+    return s->set(value);
   return false;
 }
-
-base_s ref::clone(clone_context&) const {
-  THROW_ERROR(clone, "node::ref can't be cloned");
+template<class T> base_s ref<T>::clone  (clone_context&) const {
+  throw clone_error("clone_error: node::ref can't be cloned");
 }
 
 NAMESPACE_END

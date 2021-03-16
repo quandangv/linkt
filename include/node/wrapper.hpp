@@ -2,7 +2,6 @@
 
 #include "base.hpp"
 #include "tstring.hpp"
-#include "parse.hpp"
 
 #include <map>
 #include <vector>
@@ -11,6 +10,7 @@
 #include <memory>
 
 namespace node {
+  struct parse_context;
   using std::string;
   using ancestor_processor = std::function<void(tstring& path, wrapper_s ancestor)>;
   struct wrapper_error : std::logic_error { using logic_error::logic_error; };

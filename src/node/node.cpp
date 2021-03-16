@@ -1,5 +1,6 @@
 #include "node.hpp"
 #include "wrapper.hpp"
+#include "parse.hpp"
 #include "common.hpp"
 #include "token_iterator.hpp"
 
@@ -9,7 +10,7 @@
 
 NAMESPACE(node)
 
-meta::meta(const base_s& value) : value(value) {
+meta::meta(const base_s& value, const base_s& fallback) : with_fallback(fallback), value(value) {
   if (!value) THROW_ERROR(required_field_null, "meta::meta");
 }
 

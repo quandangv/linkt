@@ -112,7 +112,7 @@ node::wrapper_s parse_yml(std::istream& is, node::errorlist& err) {
       auto modes = cut_front(line, ' ');
       
       node::parse_func parser = find(modes, '$') != tstring::npos ?
-          node::parse_escaped : node::parse_raw;
+          node::parse_escaped<string> : node::parse_raw<string>;
       // Assign a new value to an existing node
       if (find(modes, '=') != tstring::npos && !context.parent->set(key, line)) {
         auto ptr = context.parent->get_child_place(key);

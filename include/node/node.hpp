@@ -12,14 +12,11 @@ namespace node {
   struct meta : base<string>, with_fallback {
     const base_s value;
 
-    meta(const base_s& value);
+    meta(const base_s& value, const base_s& fallback);
 
     template <typename T>
     std::shared_ptr<T> copy(clone_context& context) const {
-      auto result = std::make_shared<T>(value->checked_clone(context, "meta::copy"));
-      if (fallback)
-        result->fallback = fallback->clone(context);
-      return result;
+      return std::make_shared<T>(value->checked_clone(context, "meta::copy"), fallback ? fallback->clone(context) : base_s());
     }
   };
 
