@@ -11,13 +11,16 @@ using parse_test = vector<parse_test_single>;
 void test_nodes(parse_test testset, int repeat = base_repeat) {
   auto doc = std::make_shared<node::wrapper>();
 
-  node::parse_context context{doc, nullptr, nullptr, true};
+  node::parse_context context;
+  context.parent = doc;
+  context.parent_based_ref = true;
   // Add keys to doc
   for(auto test : testset) {
     auto last_count = get_test_part_count();
-    tstring ts{test.value};
+    context.raw = test.value;
+    context.value.set(context.raw);
     try {
-      doc->add(test.path, test.value, ts, context);
+      doc->add(test.path, context);
     } catch (const std::exception& e) {
       EXPECT_TRUE(test.fail);
     }

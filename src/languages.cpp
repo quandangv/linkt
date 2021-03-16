@@ -28,21 +28,23 @@ node::wrapper_s parse_ini(std::istream& is, node::errorlist& err) {
   string prefix;
   string raw;
   auto root = std::make_shared<node::wrapper>();
-  node::parse_context context { root, nullptr, nullptr, true };
+  node::parse_context context;
+  context.parent = root;
+  context.parent_based_ref = true;
   // Iterate through lines
-  for (int linecount = 1; std::getline(is, raw); linecount++, raw.clear()) {
-    tstring line(raw);
+  for (int linecount = 1; std::getline(is, context.raw); linecount++, raw.clear()) {
+    context.value.set(context.raw);
     // skip empty and comment lines
-    if (trim(line).empty() || strchr(comment_chars, line.front()))
+    if (trim(context.value).empty() || strchr(comment_chars, context.value.front()))
       continue;
-    if (cut_front_back(line, "["_ts, "]"_ts)) {
+    if (cut_front_back(context.value, "["_ts, "]"_ts)) {
       // This is a section
-      prefix = line + ".";
+      prefix = context.value + ".";
       continue;
-    } if (tstring key; err.extract_key(line, linecount, '=', key)) {
+    } if (tstring key; err.extract_key(context.value, linecount, '=', key)) {
       // This is a key
       try {
-        root->add(prefix + key, raw, line, context);
+        root->add(prefix + key, context);
       } catch (const std::exception& e) {
         err.report_error(linecount, e.what());
       }
@@ -87,34 +89,32 @@ node::wrapper_s parse_yml(std::istream& is, node::errorlist& err) {
   node::parse_context context;
 
   // Iterate the lines
-  for (int linecount = 1; std::getline(is, raw); linecount++, raw.clear()) {
-    tstring line(raw);
-    int indent = ltrim(line);
+  for (int linecount = 1; std::getline(is, context.raw); linecount++, raw.clear()) {
+    context.value.set(context.raw);
+    int indent = ltrim(context.value);
     // Skip empty and comment lines
-    if (line.empty() || strchr(comment_chars, line.front()))
+    if (context.value.empty() || strchr(comment_chars, context.value.front()))
       continue;
     // The nodes with larger indentation will be closed
     while (records.back().indent >= indent)
       records.pop_back();
     // Separate the key and the content
     tstring key;
-    if (!err.extract_key(line, linecount, ':', key))
+    if (!err.extract_key(context.value, linecount, ':', key))
       continue;
 
     try {
       context.parent = records.back().node ?: (records.back().node = context.get_current());
-      if (line.empty()) {
+      if (context.value.empty()) {
         // Add an empty node and record it as a possible parent
         records.emplace_back(indent, node::wrapper_s());
         context.place = &context.parent->add(key);
         continue;
       }
-      auto modes = cut_front(line, ' ');
+      auto modes = cut_front(context.value, ' ');
       
-      node::parse_func parser = find(modes, '$') != tstring::npos ?
-          node::parse_escaped<string> : node::parse_raw<string>;
       // Assign a new value to an existing node
-      if (find(modes, '=') != tstring::npos && !context.parent->set(key, line)) {
+      if (find(modes, '=') != tstring::npos && !context.parent->set(key, context.value)) {
         auto ptr = context.parent->get_child_place(key);
         err.report_error(linecount, key, !ptr || !*ptr ? "Key to be set doesn't exist." :
             ("Can't set value of type: "s + typeid(*ptr).name()));
@@ -130,7 +130,9 @@ node::wrapper_s parse_yml(std::istream& is, node::errorlist& err) {
       }
 
       records.emplace_back(indent, nullptr);
-      if (auto value = parser(raw, line, context))
+      auto value = find(modes, '$') != tstring::npos ?
+          node::parse_escaped<string>(context) : node::parse_raw<string>(context);
+      if (value)
         context.get_place() = value;
 
     } catch (const std::exception& e) {

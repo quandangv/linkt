@@ -186,7 +186,7 @@ TEST_P(Misc, wrapper) {
 
 TEST_P(Misc, parse_errors) {
   auto doc = GetParam();
-  node::parse_context test_context{nullptr, nullptr, nullptr};
+  node::parse_context test_context;
   EXPECT_THROW(test_context.get_current(), node::parse_error);
   EXPECT_THROW(test_context.get_place(), node::parse_error);
   EXPECT_THROW(test_context.get_parent(), node::parse_error);
