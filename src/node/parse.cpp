@@ -55,7 +55,7 @@ base_s parse_raw(string& raw, tstring& str, parse_context& context) {
   size_t start, end;
   if (!find_enclosed(str, raw, "${", "{", "}", start, end)) {
     // There is no node inside the string, it's a plain string
-    return std::make_shared<plain>(str);
+    return std::make_shared<plain<string>>(str);
   } else if (start == 0 && end == str.size()) {
     // There is a single node inside, interpolation is unecessary
     str.erase_front(2);

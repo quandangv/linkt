@@ -14,7 +14,7 @@ fallback_wrapper::fallback_wrapper(base_s value, base_s fallback) :
     THROW_ERROR(required_field_null, "fallback_wrapper::fallback_wrapper");
 }
 
-string fallback_wrapper::get() const {
+fallback_wrapper::operator string() const {
   try {
     return value->get();
   } catch (const std::exception& e) {

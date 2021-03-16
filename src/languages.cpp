@@ -125,7 +125,7 @@ node::wrapper_s parse_yml(std::istream& is, node::errorlist& err) {
       context.current.reset();
 
       if (find(modes, 'H') != tstring::npos) {
-        context.get_current()->map[".hidden"] = std::make_shared<node::plain>("true");
+        context.get_current()->map[".hidden"] = std::make_shared<node::plain<string>>("true");
         LG_DBUG("HIDDEN");
       }
 

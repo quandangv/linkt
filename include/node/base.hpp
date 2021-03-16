@@ -53,17 +53,19 @@ namespace node {
   struct base<string> {
     virtual ~base() {}
 
-    virtual string get  () const = 0;
+    virtual explicit operator string() const = 0;
     virtual base_s clone  (clone_context&) const = 0;
 
+    string get() const { return operator string(); }
     base_s checked_clone  (clone_context& context, const string& msg) const {
       auto result = clone(context);
       return result ?: throw clone_error("clone_error: Empty clone result in: " + msg);
     }
   };
 
+  template<class T>
   struct settable {
-    virtual bool set  (const string&) = 0;
+    virtual bool set  (const T&) = 0;
   };
 
   template<class T>
@@ -74,13 +76,13 @@ namespace node {
   template<>
   struct base<int> : base<string> {
     virtual explicit operator int() const = 0;
-    string get  () const { return std::to_string((int)*this); }
+    explicit operator string() const { return std::to_string((int)*this); }
   };
 
   template<>
   struct base<float> : base<string> {
     virtual explicit operator float() const = 0;
-    string get  () const {
+    explicit operator string() const {
       std::string str = std::to_string ((float)*this);
       auto erase = str.find_last_not_of('0');
       return str.erase (str[erase] == '.' ? erase : (erase + 1), std::string::npos );
@@ -89,20 +91,14 @@ namespace node {
 
   struct fixed {};
 
-  struct plain : base<string>, settable, fixed {
-    string val;
-
-    explicit plain  (string&& val) : val(val) {}
-    string get  () const { return val; }
-    bool set  (const string& value) { val = value; return true; }
-    base_s clone  (clone_context&) const { return std::make_shared<plain>(string(val)); }
+  template<class T>
+  struct plain : base<T>, fixed, settable<T> {
+    T value;
+    plain  (T&& value) : value(value) {}
+    explicit operator T  () const { return value; }
+    base_s clone  (clone_context&) const { return std::make_shared<plain<T>>(T(value)); }
+    bool set(const T& newval) { value = newval; return true; }
   };
-
-  //template<class T>
-  //struct custom_plain : base<T>, fixed {
-  //  T value;
-  //  explicit operator T  () const { return value; }
-  //};
 
   bool is_fixed(base_s node);
 }

@@ -45,7 +45,7 @@ base_s* address_ref::get_source_direct() const {
   return nullptr;
 }
 
-string address_ref::get() const {
+address_ref::operator string() const {
   auto src = get_source();
   if (!src) THROW_ERROR(node, "Referenced key not found: " + get_path());
   return src->get();
@@ -118,7 +118,7 @@ ref::ref(base_w v) : value(v) {
   }
 }
 
-string ref::get() const {
+ref::operator string() const {
   auto val = value.lock();
   if (!val) THROW_ERROR(ancestor_destroyed, "ref::get");
   return val->get();

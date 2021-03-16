@@ -180,7 +180,7 @@ TEST_P(Misc, wrapper) {
   EXPECT_EQ(doc->get_child("key-a"_ts, "fail"), "a");
   EXPECT_EQ(doc->get(), "");
   EXPECT_ANY_THROW(doc->get_child("ref-fail"_ts));
-  doc->add("manual"_ts, std::make_shared<node::plain>("hello"));
+  doc->add("manual"_ts, std::make_shared<node::plain<string>>("hello"));
   EXPECT_EQ(doc->get_child("manual"_ts, "fail"), "hello");
 }
 

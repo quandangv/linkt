@@ -116,11 +116,11 @@ wrapper_s wrapper::wrap(base_s& place) {
 }
 
 bool wrapper::set(const tstring& path, const string& value) {
-  auto target = dynamic_cast<settable*>(get_child_ptr(path).get());
+  auto target = std::dynamic_pointer_cast<settable<string>>(get_child_ptr(path));
   return target ? target->set(value) : false;
 }
 
-string wrapper::get() const {
+wrapper::operator string() const {
   const auto& value = get_child_ptr(""_ts);
   return value ? value->get() : "";
 }

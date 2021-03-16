@@ -11,11 +11,11 @@ namespace node {
     [[nodiscard]] string use_fallback  (const string& error_message) const;
   };
 
-  struct fallback_wrapper : base<string>, settable, private with_fallback {
+  struct fallback_wrapper : base<string>, settable<string>, private with_fallback {
     const base_s value;
 
     fallback_wrapper(base_s value, base_s fallback);
-    string get  () const;
+    operator string() const;
     bool set  (const string& value);
     base_s clone  (clone_context&) const;
   };

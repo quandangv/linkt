@@ -31,7 +31,7 @@ struct list {
   }
 };
 
-string string_interpolate::get() const {
+string_interpolate::operator string() const {
   return interpolate(base, list<position_it>{spots}, list<replacement_it>{spots});
 }
 
@@ -45,7 +45,7 @@ base_s string_interpolate::clone(clone_context& context) const {
     for(auto& spot : result->spots)
       if (!is_fixed(spot.replacement))
         return result;
-    return std::make_shared<plain>(get());
+    return std::make_shared<plain<string>>(get());
   }
   return result;
 }

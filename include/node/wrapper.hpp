@@ -42,7 +42,7 @@ namespace node {
     bool set  (const tstring& path, const string& value);
     void merge  (const const_wrapper_s& source, clone_context&);
     void optimize  (clone_context&);
-    string get  () const;
+    operator string() const;
     base_s clone  (clone_context&) const;
   };
 }

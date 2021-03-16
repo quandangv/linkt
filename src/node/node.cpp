@@ -13,7 +13,7 @@ meta::meta(const base_s& value) : value(value) {
   if (!value) THROW_ERROR(required_field_null, "meta::meta");
 }
 
-string color::get() const {
+color::operator string() const {
   try {
     auto result = processor.operate(value->get());
     return result.empty() && fallback ? fallback->get() : result;
@@ -25,12 +25,12 @@ string color::get() const {
 base_s color::clone(clone_context& context) const {
   auto result = meta::copy<color>(context);
   if (context.optimize && is_fixed(result->value))
-    return std::make_shared<plain>(get());
+    return std::make_shared<plain<string>>(operator string());
   result->processor = processor;
   return result;
 }
 
-string env::get() const {
+env::operator string() const {
   auto result = getenv(value->get().data());
   return string(result ?: use_fallback("Environment variable not found: " + value->get()));
 }
@@ -44,7 +44,7 @@ base_s env::clone(clone_context& context) const {
   return meta::copy<env>(context);
 }
 
-string file::get() const {
+file::operator string() const {
   std::ifstream ifs(value->get().data());
   if (ifs.fail())
     return use_fallback("Can't read file: " + value->get());
@@ -67,7 +67,7 @@ base_s file::clone(clone_context& context) const {
   return meta::copy<file>(context);
 }
 
-string cmd::get() const {
+cmd::operator string() const {
   string result;
   try {
     auto file = popen((value->get() + string(" 2>/dev/null")).data(), "r");
@@ -88,7 +88,7 @@ base_s cmd::clone(clone_context& context) const {
   return meta::copy<cmd>(context);
 }
 
-string save::get() const {
+save::operator string() const {
   auto str = value->get();
   auto sep = str.rfind('\n');
   string result;
@@ -98,9 +98,7 @@ string save::get() const {
     result = str.substr(sep + 1);
     str.erase(sep);
   }
-  LG_DBUG("save save:   " << str);
-  LG_DBUG("save result: " << result);
-  if (auto conv_target = std::dynamic_pointer_cast<settable>(target);
+  if (auto conv_target = std::dynamic_pointer_cast<settable<string>>(target);
       !conv_target || !conv_target->set(str))
     THROW_ERROR(node, "save: Can't set value to target");
   return result;
@@ -113,7 +111,7 @@ base_s save::clone(clone_context& context) const {
   return result;
 }
 
-string cache::get() const {
+cache::operator string() const {
   if (auto now = std::chrono::steady_clock::now(); now > cache_expire) {
     cache_str = source->get();
     cache_expire = now + std::chrono::milliseconds(force_parse_ulong(duration_ms->get()));
@@ -130,7 +128,7 @@ base_s cache::clone(clone_context& context) const {
   return result;
 }
 
-string array_cache::get() const {
+array_cache::operator string() const {
   auto str = source->get();
   auto index = *(parse_ulong(str.data(), str.size()) ?: THROW_ERROR(parse, "Expected numeric value: " + str));
   return get(index);
@@ -167,7 +165,7 @@ map::operator float() const {
 base_s map::clone(clone_context& context) const {
   auto result = std::make_shared<map>(value->clone(context));
   if (context.optimize && is_fixed(result->value))
-      return std::make_shared<plain>(get());
+      return std::make_shared<plain<string>>(operator string());
 
   result->from_min = from_min;
   result->from_range = from_range;

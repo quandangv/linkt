@@ -5,13 +5,13 @@
 namespace node {
   struct ancestor_destroyed_error : std::logic_error { using logic_error::logic_error; };
 
-  struct address_ref : base<string>, settable {
+  struct address_ref : base<string>, settable<string> {
     wrapper_w ancestor_w;
     std::vector<string> indirect_paths;
     string direct_path;
 
     address_ref  (wrapper_w ancestor, tstring path);
-    string get  () const;
+    operator string() const;
     bool set  (const string& value);
     base_s clone  (clone_context&) const;
     base_s get_source  () const;
@@ -19,11 +19,11 @@ namespace node {
     string get_path() const;
   };
 
-  struct ref : base<string>, settable {
+  struct ref : base<string>, settable<string> {
     base_w value;
 
     ref  (base_w value);
-    string get  () const;
+    operator string() const;
     bool set  (const string& value);
     base_s clone  (clone_context&) const;
   };

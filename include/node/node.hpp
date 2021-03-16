@@ -27,26 +27,26 @@ namespace node {
     using meta::meta;
     cspace::processor processor;
 
-    string get  () const;
+    explicit operator string() const;
     base_s clone  (clone_context&) const;
   };
 
-  struct env : public meta, settable {
+  struct env : public meta, settable<string> {
     using meta::meta;
-    string get  () const;
+    explicit operator string() const;
     bool set  (const string& value);
     base_s clone  (clone_context&) const;
   };
 
-  struct cmd : public meta {
+  struct cmd : meta {
     using meta::meta;
-    string get  () const;
+    explicit operator string() const;
     base_s clone  (clone_context&) const;
   };
 
-  struct file : public meta, settable {
+  struct file : public meta, settable<string> {
     using meta::meta;
-    string get  () const;
+    explicit operator string() const;
     bool set  (const string& value);
     base_s clone  (clone_context&) const;
   };
@@ -55,7 +55,7 @@ namespace node {
     base_s value;
     base_s target;
 
-    string get  () const;
+    explicit operator string() const;
     base_s clone  (clone_context&) const;
   };
 
@@ -65,7 +65,7 @@ namespace node {
     mutable string cache_str;
     mutable steady_time cache_expire;
 
-    string get  () const;
+    explicit operator string() const;
     base_s clone  (clone_context&) const;
   };
 
@@ -73,7 +73,7 @@ namespace node {
     base_s source, calculator;
     mutable std::shared_ptr<std::vector<string>> cache_arr;
 
-    string get  () const;
+    explicit operator string() const;
     string get  (size_t index) const;
     base_s clone  (clone_context&) const;
   };
@@ -83,7 +83,7 @@ namespace node {
     float from_min{0}, from_range{0}, to_min{0}, to_range{0};
 
     map  (base_s value);
-    operator float  () const;
+    explicit operator float  () const;
     base_s clone  (clone_context&) const;
   };
 
@@ -92,7 +92,7 @@ namespace node {
     unsigned int loop;
     mutable steady_time zero_point;
 
-    operator int  () const;
+    explicit operator int  () const;
     base_s clone  (clone_context&) const;
   };
 
@@ -105,7 +105,7 @@ namespace node {
     string base;
     std::vector<replace_spot> spots;
 
-    string get  () const;
+    explicit operator string() const;
     base_s clone  (clone_context&) const;
   };
 }
