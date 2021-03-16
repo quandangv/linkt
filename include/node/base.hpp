@@ -101,19 +101,21 @@ namespace node {
   };
 
   struct parse_context {
-    string raw;
-    tstring value;
-    wrapper_s parent, current;
-    base_s* place{nullptr};
     bool parent_based_ref{false};
 
-    std::array<tstring, 7> escaped_tokens;
-    base_s fallback;
+    string raw;
+    wrapper_s parent, current;
+    base_s* place{nullptr};
 
     wrapper_s get_current();
     wrapper_s get_parent();
     base_s& get_place();
     friend struct parse_context_base;
+  };
+  struct parse_preprocessed {
+    std::array<tstring, 7> tokens;
+    unsigned char token_count{0};
+    base_s fallback;
   };
   using parse_func = std::function<base_s(parse_context&)>;
   struct parse_error : std::logic_error { using logic_error::logic_error; };

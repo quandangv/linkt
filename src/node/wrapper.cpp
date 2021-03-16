@@ -77,12 +77,12 @@ base_s& wrapper::add(tstring path, const base_s& value) {
   return !place ? (place = value) : !value ? place : THROW_ERROR(wrapper, "Add: Duplicate key");
 }
 
-base_s& wrapper::add(tstring path, parse_context& context) {
+base_s& wrapper::add(tstring path, parse_context& context, tstring& value) {
   add(path);
   context.parent = shared_from_this();
   context.current.reset();
   context.place = get_child_place(path);
-  if (auto node = parse_raw<string>(context))
+  if (auto node = parse_raw<string>(context, value))
     return context.get_place() = node;
   return *context.place;
 }

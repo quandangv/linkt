@@ -18,9 +18,9 @@ void test_nodes(parse_test testset, int repeat = base_repeat) {
   for(auto test : testset) {
     auto last_count = get_test_part_count();
     context.raw = test.value;
-    context.value.set(context.raw);
+    tstring ts(context.raw);
     try {
-      doc->add(test.path, context);
+      doc->add(test.path, context, ts);
     } catch (const std::exception& e) {
       EXPECT_TRUE(test.fail);
     }
