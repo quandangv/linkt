@@ -116,6 +116,7 @@ namespace node {
     std::array<tstring, 7> tokens;
     unsigned char token_count{0};
     base_s fallback;
+    tstring process(tstring&);
   };
   using parse_func = std::function<base_s(parse_context&)>;
   struct parse_error : std::logic_error { using logic_error::logic_error; };

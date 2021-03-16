@@ -1,6 +1,7 @@
 #include "base.hpp"
 #include "common.hpp"
 #include "wrapper.hpp"
+#include "token_iterator.hpp"
 
 #include <sstream>
 
@@ -59,6 +60,28 @@ bool is_fixed(base_s node) {
   if (auto doc = dynamic_cast<wrapper*>(node.get()))
     node = doc->get_child_ptr(""_ts);
   return dynamic_cast<fixed*>(node.get());
+}
+
+int parse_word_matcher(int c) {
+  return c == '?' ? 2 : std::isspace(c) ? 0 : 1;
+}
+
+tstring parse_preprocessed::process(tstring& value) {
+  token_count = fill_tokens<parse_word_matcher>(value, tokens);
+  // Extract the fallback before anything else
+  for (int i = token_count; i--> 0;) {
+    if (!tokens[i].empty() && tokens[i].front() == '?') {
+      tokens[i].erase_front();
+      auto last_element = token_count - 1;
+      token_count = i;
+      if (tokens[i].empty() && i < last_element)
+        i++;
+      return tokens[i].merge(tokens[last_element]);
+      //fallback = parse_raw<T>(context, tokens[i].merge(tokens[last_element]));
+      break;
+    }
+  }
+  return tstring();
 }
 
 NAMESPACE_END
