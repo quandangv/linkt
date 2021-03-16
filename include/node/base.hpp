@@ -6,6 +6,7 @@
 #include <memory>
 #include <functional>
 #include <vector>
+#include <cmath>
 
 namespace node {
   template<class T> struct base;
@@ -57,11 +58,11 @@ namespace node {
     virtual base_s clone  (clone_context&) const = 0;
 
     string get() const { return operator string(); }
-    base_s checked_clone  (clone_context& context, const string& msg) const {
-      auto result = clone(context);
-      return result ?: throw clone_error("clone_error: Empty clone result in: " + msg);
-    }
   };
+  template<class T> std::shared_ptr<base<T>> checked_clone  (base_s source, clone_context& context, const string& msg) {
+    auto result = std::dynamic_pointer_cast<base<T>>(source->clone(context));
+    return result ?: throw clone_error("clone_error: Empty clone result in: " + msg);
+  }
 
   template<class T>
   struct settable {
@@ -80,8 +81,9 @@ namespace node {
   };
 
   template<>
-  struct base<float> : base<string> {
+  struct base<float> : base<int> {
     virtual explicit operator float() const = 0;
+    virtual explicit operator int() const { return std::lround((float)*this); }
     explicit operator string() const {
       std::string str = std::to_string ((float)*this);
       auto erase = str.find_last_not_of('0');
@@ -98,6 +100,18 @@ namespace node {
     explicit operator T  () const { return value; }
     base_s clone  (clone_context&) const { return std::make_shared<plain<T>>(T(value)); }
     bool set(const T& newval) { value = newval; return true; }
+  };
+
+  template<class T> std::shared_ptr<plain<T>> parse_plain(const tstring& value) {
+    return std::make_shared<plain<T>>(parse<T>(value.begin(), value.size()));
+  }
+
+  template<class T> T parse(const char* str, size_t len);
+
+  template<class T>
+  struct adapter : base<T>, settable<T> {
+    base_s source;
+    adapter(base_s source) : source(source) {}
   };
 
   struct parse_context {

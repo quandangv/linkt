@@ -24,7 +24,7 @@ parse_raw(parse_context& context, tstring& value) {
   size_t start, end;
   if (!find_enclosed(value, context.raw, "${", "{", "}", start, end)) {
     // There is no node inside the string, it's a plain string
-    return std::make_shared<plain<T>>(value);
+    return parse_plain<T>(value);
   } else if (start == 0 && end == value.size()) {
     // There is a single node inside, interpolation is unecessary
     value.erase_front(2);
@@ -52,6 +52,7 @@ parse_raw(parse_context& context, tstring& value) {
     newval->base = ss.str();
     return newval;
   }
+  return std::shared_ptr<base<T>>();
 }
 
 template<class T> std::shared_ptr<base<T>>
@@ -65,38 +66,53 @@ template<class T> std::shared_ptr<base<T>>
 parse_escaped(parse_context& context, tstring& value) {
   parse_preprocessed prep;
   auto fb_str = prep.process(value);
+  std::shared_ptr<base<T>> fallback;
   if (!fb_str.untouched())
-    prep.fallback = parse_raw<T>(context, fb_str);
+    prep.fallback = fallback = parse_raw<T>(context, fb_str);
 
   auto merge_tokens = [&]()->tstring& { return prep.tokens[prep.token_count - 1].merge(prep.tokens[1]); };
-
-  auto make_operator = [&]()->base_s {
+  auto make_operator = [&]()->std::shared_ptr<base<T>> {
     if (prep.token_count == 0)
       throw parse_error("Empty reference string");
     if (prep.token_count == 1) {
-      return std::make_shared<address_ref<string>>(context.parent_based_ref ? context.get_parent() : context.get_current(), prep.tokens[0]);
+      return std::make_shared<address_ref<T>>(context.parent_based_ref ? context.get_parent() : context.get_current(), prep.tokens[0]);
     } else if (prep.tokens[0] == "dep"_ts) {
-      return std::make_shared<address_ref<string>>(context.get_parent(), merge_tokens());
+      return std::make_shared<address_ref<T>>(context.get_parent(), merge_tokens());
     } else if (prep.tokens[0] == "rel"_ts) {
-      return std::make_shared<address_ref<string>>(context.get_current(), merge_tokens());
+      return std::make_shared<address_ref<T>>(context.get_current(), merge_tokens());
     } else if (prep.tokens[0] == "file"_ts) {
-      return std::make_shared<file>(parse_raw<T>(context, merge_tokens()), move(prep.fallback));
+      if constexpr(std::is_same<T, string>::value)
+        return std::make_shared<file>(parse_raw<T>(context, merge_tokens()), move(prep.fallback));
     } else if (prep.tokens[0] == "cmd"_ts) {
-      return std::make_shared<cmd>(parse_raw<T>(context, merge_tokens()), move(prep.fallback));
+      if constexpr(std::is_same<T, string>::value)
+        return std::make_shared<cmd>(parse_raw<T>(context, merge_tokens()), move(prep.fallback));
     } else if (prep.tokens[0] == "env"_ts) {
-      return std::make_shared<env>(parse_raw<T>(context, merge_tokens()), move(prep.fallback));
+      if constexpr(std::is_same<T, string>::value)
+        return std::make_shared<env>(parse_raw<T>(context, merge_tokens()), move(prep.fallback));
     } else if (prep.tokens[0] == "cache"_ts) {
-      return cache::parse(context, prep);
+      if constexpr(std::is_same<T, string>::value)
+        return cache::parse(context, prep);
+
     } else if (prep.tokens[0] == "clock"_ts) {
-      return clock::parse(context, prep);
+      if constexpr(std::is_same<int, T>::value || std::is_same<string, T>::value)
+        return clock::parse(context, prep);
+
     } else if (prep.tokens[0] == "array_cache"_ts) {
-      return array_cache::parse(context, prep);
+      if constexpr(std::is_same<T, string>::value)
+        return array_cache::parse(context, prep);
+
     } else if (prep.tokens[0] == "save"_ts) {
-      return save::parse(context, prep);
+      if constexpr(std::is_same<T, string>::value)
+        return save::parse(context, prep);
+
     } else if (prep.tokens[0] == "map"_ts) {
-      return map::parse(context, prep);
+      if constexpr(std::is_convertible<float, T>::value || std::is_same<string, T>::value)
+        return map::parse(context, prep);
+
     } else if (prep.tokens[0] == "color"_ts) {
-      return color::parse(context, prep);
+      if constexpr(std::is_same<T, string>::value)
+        return color::parse(context, prep);
+
     } else if (prep.tokens[0] == "clone"_ts) {
       for (int i = 1; i < prep.token_count; i++) {
         auto source = address_ref<T>(context.get_parent(), prep.tokens[i]).get_source_direct();
@@ -106,17 +122,17 @@ parse_escaped(parse_context& context, tstring& value) {
         if (auto wrp = std::dynamic_pointer_cast<wrapper>(*source)) {
           context.get_current()->merge(wrp, clone_context);
         } else if (i == prep.token_count -1) {
-          return (*source)->clone(clone_context);
+          return checked_clone<T>(*source, clone_context, "parse.clone");
         } else
           throw parse_error("Can't merge non-wrapper nodes");
       }
-      return base_s();
-    } else
-      throw parse_error("Unsupported operator type: " + prep.tokens[0]);
+      return {};
+    }
+    throw parse_error("Unsupported operator type: " + prep.tokens[0]);
   };
   auto op = make_operator();
   if (op && prep.fallback)
-    return std::make_shared<fallback_wrapper>(op, move(prep.fallback));
+    return std::make_shared<fallback_wrapper<T>>(op, fallback);
   return op;
 }
 

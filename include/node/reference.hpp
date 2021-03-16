@@ -15,7 +15,7 @@ namespace node {
     operator T() const;
     bool set  (const T& value);
     base_s clone  (clone_context&) const;
-    base_s get_source  () const;
+    std::shared_ptr<base<T>> get_source  () const;
     base_s* get_source_direct  () const;
     string get_path() const;
   };
@@ -31,3 +31,5 @@ namespace node {
     base_s clone  (clone_context&) const;
   };
 }
+
+#include "reference.hxx"

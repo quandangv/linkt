@@ -1,4 +1,3 @@
-#include "reference.hpp"
 #include "common.hpp"
 #include "wrapper.hpp"
 
@@ -22,15 +21,13 @@ template<class T> string address_ref<T>::get_path() const {
   return ss.str();
 }
 
-template<class T> base_s address_ref<T>::get_source() const {
+template<class T> std::shared_ptr<base<T>> address_ref<T>::get_source() const {
   auto direct = get_source_direct();
   if (!direct || !*direct) {
     return {};
   }
-  if (auto direct_wrapper = std::dynamic_pointer_cast<wrapper>(*direct)) {
-    return direct_wrapper->map[""];
-  }
-  return *direct;
+  auto direct_wrapper = std::dynamic_pointer_cast<wrapper>(*direct);
+  return std::dynamic_pointer_cast<base<T>>(direct_wrapper ? direct_wrapper->map[""] : *direct);
 }
 
 template<class T> base_s* address_ref<T>::get_source_direct() const {

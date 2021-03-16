@@ -23,6 +23,7 @@ set(NODE_HEADERS
   ${PUBLIC_HEADERS_DIR}/node/wrapper.hpp
   ${PUBLIC_HEADERS_DIR}/node/fallback.hpp
   ${PUBLIC_HEADERS_DIR}/node/reference.hpp
+  ${PUBLIC_HEADERS_DIR}/node/reference.hxx
   ${PUBLIC_HEADERS_DIR}/node/parse.hpp
   ${PUBLIC_HEADERS_DIR}/node/parse.hxx
   ${STRINGS_PUBLIC_HEADERS_DIR}/tstring.hpp
@@ -36,8 +37,6 @@ set(NODE_SOURCES
   ${SRC_DIR}/node/base.cpp
   ${SRC_DIR}/node/node.cpp
   ${SRC_DIR}/node/wrapper.cpp
-  ${SRC_DIR}/node/fallback.cpp
-  ${SRC_DIR}/node/reference.cpp
   ${SRC_DIR}/node/string_interpolate.cpp
   ${TSTRING_SOURCES}
 )

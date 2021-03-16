@@ -144,7 +144,7 @@ void wrapper::merge(const const_wrapper_s& src, clone_context& context) {
           wrp = wrap(place);
         wrp->merge(src_wrp, context);
       } else if (!place)
-        place = pair.second->checked_clone(context, "wrapper::merge");
+        place = checked_clone<string>(pair.second, context, "wrapper::merge");
     } catch (const std::exception& e) {
       context.report_error("Exception while cloning " + context.current_path + ": " + e.what());
     }

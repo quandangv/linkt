@@ -40,7 +40,7 @@ base_s string_interpolate::clone(clone_context& context) const {
   result->base = base;
   result->spots.reserve(spots.size());
   for(auto& spot : spots)
-    result->spots.emplace_back(spot.position, spot.replacement->checked_clone(context, "string_interpolate::clone"));
+    result->spots.emplace_back(spot.position, checked_clone<string>(spot.replacement, context, "string_interpolate::clone"));
   if (context.optimize) {
     for(auto& spot : result->spots)
       if (!is_fixed(spot.replacement))

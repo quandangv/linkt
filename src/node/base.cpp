@@ -77,11 +77,25 @@ tstring parse_preprocessed::process(tstring& value) {
       if (tokens[i].empty() && i < last_element)
         i++;
       return tokens[i].merge(tokens[last_element]);
-      //fallback = parse_raw<T>(context, tokens[i].merge(tokens[last_element]));
-      break;
     }
   }
   return tstring();
+}
+
+template<> unsigned long parse<unsigned long>(const char* str, size_t len) {
+  char* end;
+  auto result = std::strtoul(str, &end, 10);
+  if (end != str + len)
+    throw std::logic_error("Parse to ulong failed: "s + str);
+  return result;
+}
+
+template<> int parse<int>(const char* str, size_t len) {
+  return parse<unsigned long>(str, len);
+}
+
+template<> string parse<string>(const char* str, size_t len) {
+  return string(str, len);
 }
 
 NAMESPACE_END

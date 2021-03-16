@@ -9,13 +9,13 @@
 namespace node {
   using steady_time = std::chrono::time_point<std::chrono::steady_clock>;
 
-  struct meta : base<string>, with_fallback {
+  struct meta : base<string>, with_fallback<string> {
     const base_s value;
 
     meta(const base_s& value, const base_s& fallback);
 
     template<class T> std::shared_ptr<T> copy(clone_context& context) const {
-      return std::make_shared<T>(value->checked_clone(context, "meta::copy"), fallback ? fallback->clone(context) : base_s());
+      return std::make_shared<T>(checked_clone<string>(value, context, "meta::copy"), fallback ? fallback->clone(context) : base_s());
     }
   };
 
@@ -59,7 +59,7 @@ namespace node {
 
   struct cache : base<string> {
     base_s source;
-    base_s duration_ms;
+    std::shared_ptr<base<int>> duration_ms;
     mutable string cache_str;
     mutable steady_time cache_expire;
 
@@ -93,7 +93,7 @@ namespace node {
     unsigned int loop;
     mutable steady_time zero_point;
 
-    explicit operator int  () const;
+    explicit operator int() const;
     base_s clone  (clone_context&) const;
     static std::shared_ptr<clock> parse(parse_context&, parse_preprocessed&);
   };
