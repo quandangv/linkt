@@ -1,9 +1,8 @@
-#include "common.hpp"
 #include "wrapper.hpp"
 
 #include <sstream>
 
-NAMESPACE(node)
+namespace node {
 
 template<class T> address_ref<T>::address_ref(wrapper_w ancestor, tstring path)
     : ancestor_w(ancestor), indirect_paths() {
@@ -32,7 +31,7 @@ template<class T> std::shared_ptr<base<T>> address_ref<T>::get_source() const {
 
 template<class T> base_s* address_ref<T>::get_source_direct() const {
   auto ancestor = ancestor_w.lock();
-  if (!ancestor) THROW_ERROR(ancestor_destroyed, "address_ref(" + get_path() + ")::get_source_direct");
+  if (!ancestor) throw ancestor_destroyed_error("address_ref(" + get_path() + ")::get_source_direct");
   for (auto& path : indirect_paths)
     if (!(ancestor = ancestor->get_wrapper(path)))
       return nullptr;
@@ -44,13 +43,13 @@ template<class T> base_s* address_ref<T>::get_source_direct() const {
 
 template<class T> address_ref<T>::operator T() const {
   auto src = get_source();
-  if (!src) THROW_ERROR(node, "Referenced key not found: " + get_path());
+  if (!src) throw node_error("Referenced key not found: " + get_path());
   return src->operator T();
 }
 
 template<class T> bool address_ref<T>::set(const T& val) {
   auto ancestor = ancestor_w.lock();
-  if (!ancestor) THROW_ERROR(ancestor_destroyed, "set");
+  if (!ancestor) throw ancestor_destroyed_error("set");
   auto src = get_source();
   if (!src)
     return false;
@@ -60,14 +59,14 @@ template<class T> bool address_ref<T>::set(const T& val) {
 
 template<class T> base_s address_ref<T>::clone(clone_context& context) const {
   auto ancestor = ancestor_w.lock();
-  if (!ancestor) THROW_ERROR(ancestor_destroyed, "clone");
+  if (!ancestor) throw ancestor_destroyed_error("clone");
   // Find the corresponding ancestor in the clone result tree
   auto ancestor_it = find_if(context.ancestors.rbegin(), context.ancestors.rend(), [&](auto& pair) { return pair.first == ancestor; });
   wrapper_s cloned_ancestor;
   if (ancestor_it != context.ancestors.rend()) {
     cloned_ancestor = ancestor_it->second;
   } else if (context.no_dependency) {
-    THROW_ERROR(clone, "Address_ref: External dependency");
+    throw clone_error("Address_ref: External dependency");
   } else {
     cloned_ancestor = ancestor;
   }
@@ -130,4 +129,4 @@ template<class T> base_s ref<T>::clone  (clone_context&) const {
   throw clone_error("clone_error: node::ref can't be cloned");
 }
 
-NAMESPACE_END
+}
