@@ -75,7 +75,8 @@ tstring parse_preprocessed::process(tstring& value) {
   return tstring();
 }
 
-template<> unsigned long parse<unsigned long>(const char* str, size_t len) {
+  template<> unsigned long
+parse<unsigned long>(const char* str, size_t len) {
   char* end;
   auto result = std::strtoul(str, &end, 10);
   if (end != str + len)
@@ -83,11 +84,13 @@ template<> unsigned long parse<unsigned long>(const char* str, size_t len) {
   return result;
 }
 
-template<> int parse<int>(const char* str, size_t len) {
+  template<> int
+parse<int>(const char* str, size_t len) {
   return parse<unsigned long>(str, len);
 }
 
-template<> string parse<string>(const char* str, size_t len) {
+  template<> string
+parse<string>(const char* str, size_t len) {
   return string(str, len);
 }
 
