@@ -23,27 +23,32 @@ namespace node {
     explicit wrapper(const base_s& value) : map{{"", value}} {}
     wrapper() {}
 
-    static wrapper_s wrap  (base_s& node);
+    static wrapper_s wrap(base_s& node);
 
-    base_s& add  (tstring path, ancestor_processor* processor = nullptr);
-    base_s& add  (tstring path, const base_s& value);
-    base_s& add  (tstring path, parse_context& context, tstring& value);
-    wrapper_s add_wrapper  (const string& path);
+    base_s& add(tstring path, ancestor_processor* processor = nullptr);
+    base_s& add(tstring path, const base_s& value);
+    base_s& add(tstring path, parse_context& context, tstring& value);
+    wrapper_s add_wrapper(const string& path);
 
-    base_s get_child_ptr  (tstring path) const;
-    base_s* get_child_place  (tstring path);
-    string get_child  (const tstring& path, string&& fallback) const;
-    std::optional<string> get_child  (const tstring& path) const;
-    wrapper_s get_wrapper  (const string& path) const;
+    base_s get_child_ptr(tstring path) const;
+    base_s* get_child_place(tstring path);
+    string get_child(const tstring& path, string&& fallback) const;
+    std::optional<string> get_child(const tstring& path) const;
+    wrapper_s get_wrapper(const string& path) const;
 
-    void iterate_children  (std::function<void(const string&, const base_s&)> processor) const;
-    void iterate_children  (std::function<void(const string&, const base&)> processor) const;
+    void iterate_children(std::function<void(const string&, const base_s&)> processor) const;
+    void iterate_children(std::function<void(const string&, const base&)> processor) const;
 
-    bool set  (const tstring& path, const string& value);
-    void merge  (const const_wrapper_s& source, clone_context&);
-    void optimize  (clone_context&);
+    void merge(const const_wrapper_s& source, clone_context&);
+    void optimize(clone_context&);
     operator string() const;
-    base_s clone  (clone_context&) const;
+    base_s clone(clone_context&) const;
     bool is_fixed() const;
+
+    template<class T> bool
+    set(const tstring& path, const T& value) {
+      auto target = std::dynamic_pointer_cast<settable<T>>(get_child_ptr(path));
+      return target ? target->set(value) : false;
+    }
   };
 }

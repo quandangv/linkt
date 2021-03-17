@@ -163,10 +163,13 @@ struct Misc : TestWithParam<node::wrapper_s> {};
 INSTANTIATE_TEST_SUITE_P(wrapper, Misc, ValuesIn(tests));
 
 // Set a key and check if it was successful
-void set_key(node::wrapper_s& doc, const string& key, const string& newval) {
+template<class T = string> void
+set_key(node::wrapper_s& doc, const string& key, const T& newval) {
   auto last_count = get_test_part_count();
   EXPECT_TRUE(doc->set(key, newval));
-  EXPECT_EQ(newval, doc->get_child(key)) << "Unexpected value after assignment";
+  auto child = std::dynamic_pointer_cast<node::base<T>>(doc->get_child_ptr(key));
+  EXPECT_TRUE(child) << "Child is of wrong type";
+  EXPECT_EQ(newval, child->operator T()) << "Unexpected value after assignment";
   if (last_count != get_test_part_count())
     cerr << "Key: " << key << endl << endl;
 }
@@ -216,7 +219,7 @@ TEST_P(Misc, array_cache) {
   EXPECT_EQ(doc->get_child("multiplier"_ts, "fail"), "0 10");
   EXPECT_EQ(doc->get_child("array_cache"_ts, "fail"), "0 10 10");
   EXPECT_EQ(doc->get_child("array_cache"_ts, "fail"), "0 10 10");
-  set_key(doc, "multiplier.source", "2");
+  set_key<int>(doc, "multiplier.source", 2);
   EXPECT_EQ(doc->get_child("array_cache"_ts, "fail"), "0 10 10 20");
   EXPECT_EQ(doc->get_child("array_cache2"_ts, "fail"), "0 10 10 20");
   EXPECT_EQ(doc->get_child("multiplier.last"_ts, "fail"), "0 10 10 20");
@@ -237,15 +240,15 @@ TEST_P(Misc, clock) {
 TEST_P(Misc, assign_ref) {
   auto doc = GetParam();
   // Test local_ref assignments
-  set_key(doc, "key-a", "b");
-  set_key(doc, "key-a", "a");
-  set_key(doc, "ref-a", "foo");
-  set_key(doc, "ref-ref-a", "bar");
+  set_key<string>(doc, "key-a", "b");
+  set_key<string>(doc, "key-a", "a");
+  set_key<string>(doc, "ref-a", "foo");
+  set_key<string>(doc, "ref-ref-a", "bar");
   EXPECT_EQ("bar", *doc->get_child("key-a"_ts));
   EXPECT_EQ("Hello quan", *doc->get_child("greeting"_ts));
 
   // Test fallback assignments
-  set_key(doc, "ref-default-a", "foobar");
+  set_key<string>(doc, "ref-default-a", "foobar");
   EXPECT_EQ("foobar", *doc->get_child("key-a"_ts));
   EXPECT_FALSE(doc->set("cmd-ref"_ts, "hello"));
   EXPECT_EQ("Hello quan", *doc->get_child("greeting"_ts));
@@ -254,9 +257,9 @@ TEST_P(Misc, assign_ref) {
 TEST_P(Misc, assign_file_env) {
   auto doc = GetParam();
   // Test file_ref assignments
-  set_key(doc, "ref-nexist", "barfoo");
-  set_key(doc, "env-nexist", "barbar");
-  set_key(doc, "file-parse", "foo");
+  set_key<string>(doc, "ref-nexist", "barfoo");
+  set_key<string>(doc, "env-nexist", "barbar");
+  set_key<string>(doc, "file-parse", "foo");
   std::ifstream ifs("key_file.txt");
   string content;
   getline(ifs, content);
@@ -264,6 +267,6 @@ TEST_P(Misc, assign_file_env) {
   EXPECT_EQ("foo", content);
 
   // Test env_ref assignments
-  set_key(doc, "env", "foo");
-  set_key(doc, "file-parse", "content");
+  set_key<string>(doc, "env", "foo");
+  set_key<string>(doc, "file-parse", "content");
 }

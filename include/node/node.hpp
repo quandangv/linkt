@@ -75,7 +75,8 @@ namespace node {
   };
 
   struct array_cache : base<string> {
-    base_s source, calculator;
+    std::shared_ptr<base<int>> source;
+    base_s calculator;
     mutable std::shared_ptr<std::vector<string>> cache_arr;
 
     explicit operator string() const;

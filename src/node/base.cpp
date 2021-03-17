@@ -77,6 +77,7 @@ tstring parse_preprocessed::process(tstring& value) {
 
   template<> unsigned long
 parse<unsigned long>(const char* str, size_t len) {
+  if (!str) throw node_error("trying to parse null");
   char* end;
   auto result = std::strtoul(str, &end, 10);
   if (end != str + len)
@@ -89,8 +90,19 @@ parse<int>(const char* str, size_t len) {
   return parse<unsigned long>(str, len);
 }
 
+  template<> float
+parse<float>(const char* str, size_t len) {
+  if (!str) throw node_error("trying to parse null");
+  char* end;
+  auto result = std::strtof(str, &end);
+  if (end != str + len)
+    throw std::logic_error("Parse to float failed: "s + str);
+  return result;
+}
+
   template<> string
 parse<string>(const char* str, size_t len) {
+  if (!str) throw node_error("trying to parse null");
   return string(str, len);
 }
 

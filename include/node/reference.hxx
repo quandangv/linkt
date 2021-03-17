@@ -75,31 +75,41 @@ template<class T> base_s address_ref<T>::clone(clone_context& context) const {
     for (auto& path : indirect_paths) {
       cloned_ancestor = cloned_ancestor->add_wrapper(path);
       if (!(ancestor = ancestor->get_wrapper(path)))
-        return std::make_shared<address_ref>(cloned_ancestor, string(get_path()));
+        return std::make_shared<address_ref<T>>(cloned_ancestor, string(get_path()));
       context.ancestors.emplace_back(ancestor, cloned_ancestor);
     }
 
-    auto& result = cloned_ancestor->map[direct_path];
-    auto result_wrapper = std::dynamic_pointer_cast<wrapper>(result);
-    if (result_wrapper) {
-      if (result_wrapper->map[""])
-        return std::make_shared<ref<string>>(result_wrapper->map[""]);
-    } else if (result)
-      return std::make_shared<ref<string>>(result);
+    base_s result;
+    {
+      auto& cloned = cloned_ancestor->map[direct_path];
+      auto cloned_wrapper = std::dynamic_pointer_cast<wrapper>(cloned);
+      if (cloned_wrapper) {
+        if (result = cloned_wrapper->map[""]) {
+          goto return_result;
+        }
+      } else if (result = cloned) {
+        goto return_result;
+      }
 
-    auto src_it = ancestor->map.find(direct_path);
-    if (src_it == ancestor->map.end() || !src_it->second)
-      return std::make_shared<address_ref>(cloned_ancestor, string(get_path()));
-    auto tmp_src = move(src_it->second);
-    if (result_wrapper) {
-      if (auto src_wrapper = std::dynamic_pointer_cast<wrapper>(tmp_src)) {
-        result_wrapper->merge(src_wrapper, context);
-      } else result = result_wrapper->map[""] = tmp_src->clone(context);
-    } else result = tmp_src->clone(context);
-    src_it->second = tmp_src;
-    return std::make_shared<ref<string>>(result);
+      auto src_it = ancestor->map.find(direct_path);
+      if (src_it == ancestor->map.end() || !src_it->second)
+        return std::make_shared<address_ref<T>>(cloned_ancestor, string(get_path()));
+      auto tmp_src = move(src_it->second);
+      if (cloned_wrapper) {
+        if (auto src_wrapper = std::dynamic_pointer_cast<wrapper>(tmp_src)) {
+          cloned_wrapper->merge(src_wrapper, context);
+        } else cloned = cloned_wrapper->map[""] = tmp_src->clone(context);
+      } else cloned = tmp_src->clone(context);
+      src_it->second = tmp_src;
+      result = cloned;
+    }
+    return_result:
+    if (!result) throw clone_error("result is null");
+    auto converted = std::dynamic_pointer_cast<base<T>>(result);
+    if (!converted) throw clone_error("result have invalid type");
+    return std::make_shared<ref<T>>(converted);
   }
-  return std::make_shared<address_ref>(cloned_ancestor, string(get_path()));
+  return std::make_shared<address_ref<T>>(cloned_ancestor, string(get_path()));
 }
 
 template<class T> bool address_ref<T>::is_fixed() const {

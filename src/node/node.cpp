@@ -162,9 +162,7 @@ std::shared_ptr<cache> cache::parse(parse_context& context, parse_preprocessed& 
 }
 
 array_cache::operator string() const {
-  auto str = source->get();
-  auto index = *(parse_ulong(str.data(), str.size()) ?: THROW_ERROR(parse, "Expected numeric value: " + str));
-  return get(index);
+  return get(source->operator int());
 }
 
 string array_cache::get(size_t index) const {
@@ -177,7 +175,10 @@ string array_cache::get(size_t index) const {
 
 base_s array_cache::clone(clone_context& context) const {
   auto result = std::make_shared<array_cache>();
-  result->source = checked_clone<string>(source, context, "array_cache::clone");
+  LG_DBUG((long)source.get());
+  LG_DBUG((long)std::dynamic_pointer_cast<address_ref<int>>(source).get());
+  LG_DBUG((long)std::dynamic_pointer_cast<ref<int>>(source->clone(context)).get());
+  result->source = checked_clone<int>(source, context, "array_cache::clone");
   result->calculator = checked_clone<string>(calculator, context, "array_cache::clone");
   result->cache_arr = cache_arr;
   return result;
@@ -197,7 +198,7 @@ std::shared_ptr<array_cache> array_cache::parse(parse_context& context, parse_pr
         result->cache_arr = cache->cache_arr;
       else THROW_ERROR(parse, "1st argument must be the size of the cache or a parent path to another array_cache: " + context.raw);
     }
-    result->source = checked_parse_raw<string>(context, prep.tokens[2]);
+    result->source = checked_parse_raw<int>(context, prep.tokens[2]);
     result->calculator = checked_parse_raw<string>(context, prep.tokens[3]);
     return result;
   } else
