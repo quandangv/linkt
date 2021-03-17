@@ -32,13 +32,14 @@ double get_time_milli() {
   return round(time.tv_sec * 1000.0 + time.tv_nsec / 1000000.0);
 }
 
-void check_key(const node::wrapper& w, string path, string expected, bool exception) {
+void check_key(const node::wrapper& w, string path, string expected, bool exception, bool fixed = true) {
   auto last_count = get_test_part_count();
   try {
-    auto result = w.get_child(path);
+    auto result = w.get_child_ptr(path);
     EXPECT_TRUE(result) << "Can't retrieve key";
-    if (last_count == get_test_part_count()) {
-      EXPECT_EQ(*result, expected) << "Unexpected value";
+    if (result) {
+      EXPECT_EQ(result->get(), expected) << "Unexpected value";
+      EXPECT_EQ(result->is_fixed(), fixed);
     }
   } catch (const std::exception& e) {
     EXPECT_TRUE(exception) << "Unexpected exception thrown: " << e.what();

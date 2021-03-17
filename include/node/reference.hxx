@@ -104,7 +104,8 @@ template<class T> base_s address_ref<T>::clone(clone_context& context) const {
 
 template<class T> bool address_ref<T>::is_fixed() const {
   auto src = get_source();
-  return src ? src->is_fixed() : true;
+  if (!src) throw node_error("Referenced key not found: " + get_path());
+  return src->is_fixed();
 }
 
 template<class T> ref<T>::ref(std::weak_ptr<base<T>> value) : value(value) {
@@ -133,7 +134,9 @@ template<class T> base_s ref<T>::clone  (clone_context&) const {
 }
 
 template<class T> bool ref<T>::is_fixed() const {
-  return false;
+  auto val = this->value.lock();
+  if (!val) throw ancestor_destroyed_error("ancestor_destroyed_error: ref::is_fixed");
+  return val->is_fixed();
 }
 
 }

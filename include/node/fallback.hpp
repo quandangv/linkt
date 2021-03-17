@@ -40,5 +40,12 @@ namespace node {
     base_s clone  (clone_context& context) const {
       return std::make_shared<fallback_wrapper>(checked_clone<T>(source, context, "fallback_wrapper::clone"), checked_clone<T>(with_fallback<T>::fallback, context, "fallback_wrapper::clone"));
     }
+    bool is_fixed() const {
+      try {
+        return source->is_fixed();
+      } catch (const std::exception& e) {
+        return false;
+      }
+    }
   };
 }
