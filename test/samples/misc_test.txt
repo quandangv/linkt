@@ -28,6 +28,6 @@ cache_too_short = ${cache 0 ${appender}}
 multiplier = ${save last '${rel last} ${cmd echo $((${rel source}*10))}'}
 # multiplier = ${save last '${rel last} ${rel source}'}
 multiplier.last = ${var 0}
-multiplier.source = ${var 1}
+multiplier.source = ${var int 1}
 array_cache = ${array_cache 3 ${multiplier.source} ${multiplier}}
 array_cache2 = ${array_cache array_cache ${multiplier.source} ${multiplier}}

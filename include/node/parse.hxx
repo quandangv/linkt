@@ -70,16 +70,20 @@ parse_escaped(parse_context& context, tstring& value) {
   if (!fb_str.untouched())
     prep.fallback = fallback = parse_raw<T>(context, fb_str);
 
-  auto merge_tokens = [&]()->tstring& { return prep.tokens[prep.token_count - 1].merge(prep.tokens[1]); };
+  auto merge_tokens = [&]()->tstring& {
+    return prep.tokens[prep.token_count - 1].merge(prep.tokens[1]);
+  };
   auto make_operator = [&]()->std::shared_ptr<base<T>> {
     if (prep.token_count == 0)
       throw parse_error("Empty reference string");
     if (prep.token_count == 1) {
-      return std::make_shared<address_ref<T>>(context.parent_based_ref ? context.get_parent() : context.get_current(), prep.tokens[0]);
+      auto ancestor = context.parent_based_ref ? context.get_parent() : context.get_current();
+      return std::make_shared<address_ref<T>>(ancestor, prep.tokens[0]);
     } else if (prep.tokens[0] == "dep"_ts) {
       return std::make_shared<address_ref<T>>(context.get_parent(), merge_tokens());
     } else if (prep.tokens[0] == "rel"_ts) {
       return std::make_shared<address_ref<T>>(context.get_current(), merge_tokens());
+
     } else if (prep.tokens[0] == "file"_ts) {
       if constexpr(std::is_same<T, string>::value)
         return std::make_shared<file>(parse_raw<T>(context, merge_tokens()), move(prep.fallback));
@@ -114,7 +118,17 @@ parse_escaped(parse_context& context, tstring& value) {
         return color::parse(context, prep);
 
     } else if (prep.tokens[0] == "var"_ts) {
-      return parse_plain<settable_plain<T>, T>(trim_quotes(merge_tokens()));
+      if (prep.token_count == 2)
+        return parse_plain<settable_plain<T>, T>(trim_quotes(prep.tokens[1]));
+      else if (prep.token_count == 3) {
+        if constexpr(!std::is_same<T, string>::value)
+          throw parse_error("Parse.var: Can only specify type when parsing to string");
+        if (prep.tokens[1] == "int"_ts)
+          return parse_plain<settable_plain<int>, int>(trim_quotes(prep.tokens[2]));
+        if (prep.tokens[1] == "float"_ts)
+          return parse_plain<settable_plain<float>, float>(trim_quotes(prep.tokens[2]));
+        throw parse_error("Parse.var: Invalid var type: " + prep.tokens[1]);
+      } else throw parse_error("Parse.var: Invalid token count");
 
     } else if (prep.tokens[0] == "clone"_ts) {
       for (int i = 1; i < prep.token_count; i++) {

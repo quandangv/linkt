@@ -75,8 +75,12 @@ namespace node {
 
     template<class T> std::shared_ptr<base<T>>
   checked_clone(base_s source, clone_context& context, const string& msg) {
-      auto result = std::dynamic_pointer_cast<base<T>>(source->clone(context));
-      return result ?: throw clone_error("clone_error: Empty clone result in: " + msg);
+      auto result = source->clone(context);
+      auto converted = std::dynamic_pointer_cast<base<T>>(result
+          ?: throw clone_error("clone_error: Empty clone result in: " + msg));
+      return converted
+          ?: throw clone_error("clone_error: Clone result in " + msg + " have invalid type: "
+          + typeid(result.get()).name());
   }
 
     template<class T>

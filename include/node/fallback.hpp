@@ -3,7 +3,7 @@
 #include "base.hpp"
 
 namespace node {
-  template<class T>
+    template<class T>
   struct with_fallback {
     std::shared_ptr<base<T>> fallback;
 
@@ -18,7 +18,7 @@ namespace node {
     }
   };
 
-  template<class T>
+    template<class T>
   struct fallback_wrapper : base<T>, settable<T>, protected with_fallback<T> {
     const std::shared_ptr<base<T>> source;
 

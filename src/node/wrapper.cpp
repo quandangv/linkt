@@ -118,6 +118,10 @@ wrapper_s wrapper::wrap(base_s& place) {
 
 bool wrapper::set(const tstring& path, const string& value) {
   auto target = std::dynamic_pointer_cast<settable<string>>(get_child_ptr(path));
+  if (!get_child_ptr(path))
+    LG_DBUG("Child not found");
+  if (!target)
+    LG_DBUG("Child not derived from settable");
   return target ? target->set(value) : false;
 }
 
