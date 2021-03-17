@@ -11,12 +11,12 @@ namespace node {
     std::vector<string> indirect_paths;
     string direct_path;
 
-    address_ref  (std::weak_ptr<wrapper> ancestor, tstring path);
+    address_ref(std::weak_ptr<wrapper> ancestor, tstring path);
     operator T() const;
-    bool set  (const T& value);
-    base_s clone  (clone_context&) const;
-    std::shared_ptr<base<T>> get_source  () const;
-    base_s* get_source_direct  () const;
+    bool set(const T& value);
+    base_s clone(clone_context&) const;
+    base_s get_source() const;
+    base_s* get_source_direct() const;
     string get_path() const;
     bool is_fixed() const;
   };
@@ -28,8 +28,8 @@ namespace node {
 
     ref(std::weak_ptr<base<T>> value);
     operator T() const;
-    bool set  (const T& value);
-    base_s clone  (clone_context&) const;
+    bool set(const T& value);
+    base_s clone(clone_context&) const;
     bool is_fixed() const;
   };
 }

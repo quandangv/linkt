@@ -4,7 +4,8 @@
 
 namespace node {
 
-template<class T> address_ref<T>::address_ref(std::weak_ptr<wrapper> ancestor, tstring path)
+  template<class T>
+address_ref<T>::address_ref(std::weak_ptr<wrapper> ancestor, tstring path)
     : ancestor_w(ancestor), indirect_paths() {
   trim(path);
   for (tstring indirect; !(indirect = cut_front(path, '.')).untouched();)
@@ -12,7 +13,8 @@ template<class T> address_ref<T>::address_ref(std::weak_ptr<wrapper> ancestor, t
   direct_path = path;
 }
 
-template<class T> string address_ref<T>::get_path() const {
+  template<class T> string
+address_ref<T>::get_path() const {
   std::stringstream ss;
   for (auto& path : indirect_paths)
     ss << path << '.';
@@ -20,16 +22,18 @@ template<class T> string address_ref<T>::get_path() const {
   return ss.str();
 }
 
-template<class T> std::shared_ptr<base<T>> address_ref<T>::get_source() const {
+  template<class T> base_s
+address_ref<T>::get_source() const {
   auto direct = get_source_direct();
   if (!direct || !*direct) {
     return {};
   }
   auto direct_wrapper = std::dynamic_pointer_cast<wrapper>(*direct);
-  return std::dynamic_pointer_cast<base<T>>(direct_wrapper ? direct_wrapper->map[""] : *direct);
+  return direct_wrapper ? direct_wrapper->map[""] : *direct;
 }
 
-template<class T> base_s* address_ref<T>::get_source_direct() const {
+  template<class T> base_s*
+address_ref<T>::get_source_direct() const {
   auto ancestor = ancestor_w.lock();
   if (!ancestor) throw ancestor_destroyed_error("address_ref(" + get_path() + ")::get_source_direct");
   for (auto& path : indirect_paths)
@@ -41,21 +45,29 @@ template<class T> base_s* address_ref<T>::get_source_direct() const {
   return nullptr;
 }
 
-template<class T> address_ref<T>::operator T() const {
+  template<class T>
+address_ref<T>::operator T() const {
   auto src = get_source();
   if (!src) throw node_error("Referenced key not found: " + get_path());
-  return src->operator T();
+  if (auto convert = std::dynamic_pointer_cast<base<T>>(src))
+    return convert->operator T();
+  return parse<T>(src->get());
 }
 
-template<class T> bool address_ref<T>::set(const T& val) {
+  template<class T> bool
+address_ref<T>::set(const T& val) {
   auto src = get_source();
-  if (!src)
-    return false;
-  auto target = std::dynamic_pointer_cast<settable<T>>(src);
-  return target ? target->set(val) : false;
+  if (!src) return false;
+  if (auto target = std::dynamic_pointer_cast<settable<T>>(src))
+    return target->set(val);
+  if constexpr (!std::is_same<T, string>::value)
+    if (auto target = std::dynamic_pointer_cast<settable<string>>(src))
+      return target->set(std::to_string(val));
+  return false;
 }
 
-template<class T> base_s address_ref<T>::clone(clone_context& context) const {
+  template<class T> base_s
+address_ref<T>::clone(clone_context& context) const {
   auto ancestor = ancestor_w.lock();
   if (!ancestor) throw ancestor_destroyed_error("clone");
   // Find the corresponding ancestor in the clone result tree
@@ -105,20 +117,22 @@ template<class T> base_s address_ref<T>::clone(clone_context& context) const {
     }
     return_result:
     if (!result) throw clone_error("result is null");
-    auto converted = std::dynamic_pointer_cast<base<T>>(result);
-    if (!converted) throw clone_error("result have invalid type");
-    return std::make_shared<ref<T>>(converted);
+    if (auto converted = std::dynamic_pointer_cast<base<T>>(result))
+      return std::make_shared<ref<T>>(converted);
+    return std::make_shared<adapter<T>>(result);
   }
   return std::make_shared<address_ref<T>>(cloned_ancestor, string(get_path()));
 }
 
-template<class T> bool address_ref<T>::is_fixed() const {
+  template<class T> bool
+address_ref<T>::is_fixed() const {
   auto src = get_source();
   if (!src) throw node_error("Referenced key not found: " + get_path());
   return src->is_fixed();
 }
 
-template<class T> ref<T>::ref(std::weak_ptr<base<T>> value) : value(value) {
+  template<class T>
+ref<T>::ref(std::weak_ptr<base<T>> value) : value(value) {
   start:
   auto val = value.lock();
   if (!val) throw ancestor_destroyed_error("ancestor_destroyed_error: ref::ref");
@@ -127,23 +141,30 @@ template<class T> ref<T>::ref(std::weak_ptr<base<T>> value) : value(value) {
     goto start;
   }
 }
-template<class T> ref<T>::operator T() const {
+
+  template<class T>
+ref<T>::operator T() const {
   auto val = value.lock();
   if (!val) throw ancestor_destroyed_error("ancestor_destroyed_error: ref::get");
   return val->operator T();
 }
-template<class T> bool ref<T>::set  (const T& value) {
+
+  template<class T> bool
+ref<T>::set(const T& value) {
   auto val = this->value.lock();
   if (!val) throw ancestor_destroyed_error("ancestor_destroyed_error: ref::set");
   if (auto s = std::dynamic_pointer_cast<settable<T>>(val))
     return s->set(value);
   return false;
 }
-template<class T> base_s ref<T>::clone  (clone_context&) const {
+
+  template<class T> base_s
+ref<T>::clone(clone_context&) const {
   throw clone_error("clone_error: node::ref can't be cloned");
 }
 
-template<class T> bool ref<T>::is_fixed() const {
+  template<class T> bool
+ref<T>::is_fixed() const {
   auto val = this->value.lock();
   if (!val) throw ancestor_destroyed_error("ancestor_destroyed_error: ref::is_fixed");
   return val->is_fixed();

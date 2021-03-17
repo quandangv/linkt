@@ -166,10 +166,34 @@ namespace node {
     template<class T> T
   parse(const char* str, size_t len);
 
+    template<class T> T
+  parse(const string& str) {
+    return parse<T>(str.data(), str.size());
+  }
+
     template<class T>
   struct adapter : base<T>, settable<T> {
-    base_s source;
-    adapter(base_s source) : source(source) {}
+    std::weak_ptr<base<string>> source_w;
+    adapter(base_s source) : source_w(source) {}
+    explicit operator T() const {
+        auto source = source_w.lock();
+        if (!source) throw node_error("adapter::get");
+        auto str = source->get();
+        return parse<T>(str.data(), str.size());
+    }
+    bool set(const T& value) {
+        auto source = source_w.lock();
+        if (!source) return false;
+        if (auto target = std::dynamic_pointer_cast<settable<T>>(source))
+          return target->set(value);
+        if constexpr (!std::is_same<T, string>::value)
+          if (auto target = std::dynamic_pointer_cast<settable<string>>(source))
+            return target->set(std::to_string(value));
+        return false;
+    }
+    base_s clone(clone_context&) const {
+        throw clone_error("Can't clone adapter");
+    }
   };
 
   struct parse_context {

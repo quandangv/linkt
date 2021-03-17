@@ -92,7 +92,7 @@ namespace node {
     float from_min{0}, from_range{0}, to_min{0}, to_range{0};
 
     map  (base_s value);
-    explicit operator float  () const;
+    explicit operator float() const;
     base_s clone  (clone_context&) const;
     bool is_fixed() const;
 

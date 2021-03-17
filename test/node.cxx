@@ -172,4 +172,8 @@ TEST(Node, Other) {
   test_nodes({{"map", "${map 5:10 0:2 7.5}", "1"}});
   test_nodes({{"map", "${map 5:10 2 7.5 ? -1}", "1"}});
   test_nodes({{"map", "${map 5:10 7.5}", "1", false, true}});
+  test_nodes({
+    {"source", "60", "60"},
+    {"cache", "${cache ${source} hello}", "hello", false},
+  });
 }

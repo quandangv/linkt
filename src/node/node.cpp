@@ -144,11 +144,15 @@ cache::operator string() const {
 }
 
 base_s cache::clone(clone_context& context) const {
+  LG_DBUG("start clone");
   auto result = std::make_shared<cache>();
   result->source = checked_clone<string>(source, context, "cache::clone");
+  LG_DBUG("start duration");
   result->duration_ms = checked_clone<int>(duration_ms, context, "cache::clone");
+  LG_DBUG("end duration");
   result->cache_str = cache_str;
   result->cache_expire = cache_expire;
+  LG_DBUG("end clone");
   return result;
 }
 
