@@ -55,13 +55,6 @@ base_s& parse_context::get_place() {
   return *place ? THROW_ERROR(parse, "get_place: Duplicate key") : *place;
 }
 
-// Checks if the value of a node come directly from a plain node, meaning it never changes
-bool is_fixed(base_s node) {
-  if (auto doc = dynamic_cast<wrapper*>(node.get()))
-    node = doc->get_child_ptr(""_ts);
-  return dynamic_cast<fixed*>(node.get());
-}
-
 int parse_word_matcher(int c) {
   return c == '?' ? 2 : std::isspace(c) ? 0 : 1;
 }

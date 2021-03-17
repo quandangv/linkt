@@ -44,5 +44,6 @@ namespace node {
     void optimize  (clone_context&);
     operator string() const;
     base_s clone  (clone_context&) const;
+    bool is_fixed() const;
   };
 }

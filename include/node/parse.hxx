@@ -24,7 +24,7 @@ parse_raw(parse_context& context, tstring& value) {
   size_t start, end;
   if (!find_enclosed(value, context.raw, "${", "{", "}", start, end)) {
     // There is no node inside the string, it's a plain string
-    return parse_plain<T>(value);
+    return parse_plain<plain<T>, T>(value);
   } else if (start == 0 && end == value.size()) {
     // There is a single node inside, interpolation is unecessary
     value.erase_front(2);
@@ -112,6 +112,9 @@ parse_escaped(parse_context& context, tstring& value) {
     } else if (prep.tokens[0] == "color"_ts) {
       if constexpr(std::is_same<T, string>::value)
         return color::parse(context, prep);
+
+    } else if (prep.tokens[0] == "var"_ts) {
+      return parse_plain<settable_plain<T>, T>(trim_quotes(merge_tokens()));
 
     } else if (prep.tokens[0] == "clone"_ts) {
       for (int i = 1; i < prep.token_count; i++) {

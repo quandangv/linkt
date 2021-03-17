@@ -14,14 +14,13 @@ namespace node {
   struct wrapper;
   using std::string;
   using base_s = std::shared_ptr<base<string>>;
-  using base_w = std::weak_ptr<base<string>>;
   using wrapper_s = std::shared_ptr<wrapper>;
   using const_wrapper_s = std::shared_ptr<const wrapper>;
-  using wrapper_w = std::weak_ptr<wrapper>;
 
   struct node_error : std::logic_error { using logic_error::logic_error; };
   struct required_field_null_error : std::logic_error { using logic_error::logic_error; };
   struct clone_error : std::logic_error { using logic_error::logic_error; };
+  struct parse_error : std::logic_error { using logic_error::logic_error; };
 
   struct errorlist : std::vector<std::pair<std::string, std::string>> {
     void report_error  (int line, const std::string& msg)
@@ -50,12 +49,12 @@ namespace node {
     ~throwing_clone_context() noexcept(false);
   };
 
-  template<>
-  struct base<string> {
+  template<> struct base<string> {
     virtual ~base() {}
 
     virtual explicit operator string() const = 0;
     virtual base_s clone  (clone_context&) const = 0;
+    virtual bool is_fixed() const { return false; }
 
     string get() const { return operator string(); }
   };
@@ -64,24 +63,20 @@ namespace node {
     return result ?: throw clone_error("clone_error: Empty clone result in: " + msg);
   }
 
-  template<class T>
-  struct settable {
-    virtual bool set  (const T&) = 0;
-  };
-
-  template<class T>
-  struct base : base<string> {
+  template<class T> struct base : base<string> {
     virtual explicit operator T() const = 0;
   };
 
-  template<>
-  struct base<int> : base<string> {
+  template<class T> struct settable {
+    virtual bool set  (const T&) = 0;
+  };
+
+  template<> struct base<int> : base<string> {
     virtual explicit operator int() const = 0;
     explicit operator string() const { return std::to_string((int)*this); }
   };
 
-  template<>
-  struct base<float> : base<int> {
+  template<> struct base<float> : base<int> {
     virtual explicit operator float() const = 0;
     virtual explicit operator int() const { return std::lround((float)*this); }
     explicit operator string() const {
@@ -91,25 +86,30 @@ namespace node {
     }
   };
 
-  struct fixed {};
-
-  template<class T>
-  struct plain : base<T>, fixed, settable<T> {
+  template<class T> struct plain : base<T> {
+  protected:
     T value;
+  public:
     plain  (T&& value) : value(value) {}
     explicit operator T  () const { return value; }
     base_s clone  (clone_context&) const { return std::make_shared<plain<T>>(T(value)); }
-    bool set(const T& newval) { value = newval; return true; }
+    bool is_fixed() const { return true; }
   };
 
-  template<class T> std::shared_ptr<plain<T>> parse_plain(const tstring& value) {
-    return std::make_shared<plain<T>>(parse<T>(value.begin(), value.size()));
+  template<class T> struct settable_plain : plain<T>, settable<T> {
+    using plain<T>::plain;
+    base_s clone  (clone_context&) const { return std::make_shared<settable_plain<T>>(T(plain<T>::value)); }
+    bool set(const T& newval) { plain<T>::value = newval; return true; }
+    bool is_fixed() const { return false; }
+  };
+
+  template<class Type, class Return> std::shared_ptr<Type> parse_plain(const tstring& value) {
+    return std::make_shared<Type>(parse<Return>(value.begin(), value.size()));
   }
 
   template<class T> T parse(const char* str, size_t len);
 
-  template<class T>
-  struct adapter : base<T>, settable<T> {
+  template<class T> struct adapter : base<T>, settable<T> {
     base_s source;
     adapter(base_s source) : source(source) {}
   };
@@ -126,14 +126,11 @@ namespace node {
     base_s& get_place();
     friend struct parse_context_base;
   };
+
   struct parse_preprocessed {
     std::array<tstring, 7> tokens;
     unsigned char token_count{0};
     base_s fallback;
     tstring process(tstring&);
   };
-  using parse_func = std::function<base_s(parse_context&)>;
-  struct parse_error : std::logic_error { using logic_error::logic_error; };
-
-  bool is_fixed(base_s node);
 }

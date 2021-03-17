@@ -24,11 +24,15 @@ color::operator string() const {
 }
 
 base_s color::clone(clone_context& context) const {
-  auto result = meta::copy<color>(context);
-  if (context.optimize && is_fixed(result->value))
+  if (context.optimize && is_fixed())
     return std::make_shared<plain<string>>(operator string());
+  auto result = meta::copy<color>(context);
   result->processor = processor;
   return result;
+}
+
+bool color::is_fixed() const {
+  return value->is_fixed();
 }
 
 std::shared_ptr<color> color::parse(parse_context& context, parse_preprocessed& prep) {
@@ -213,10 +217,9 @@ map::operator float() const {
 }
 
 base_s map::clone(clone_context& context) const {
-  auto result = std::make_shared<map>(value->clone(context));
-  if (context.optimize && is_fixed(result->value))
+  if (context.optimize && is_fixed())
       return std::make_shared<plain<string>>(operator string());
-
+  auto result = std::make_shared<map>(value->clone(context));
   result->from_min = from_min;
   result->from_range = from_range;
   result->to_min = to_min;
@@ -236,6 +239,10 @@ std::shared_ptr<map> map::parse(parse_context& context, parse_preprocessed& prep
     result->to_min = convert<float, strtof>(min);
   result->to_range = convert<float, strtof>(prep.tokens[2]) - result->to_min;
   return result;
+}
+
+bool map::is_fixed() const {
+  return value->is_fixed();
 }
 
 clock::operator int() const {

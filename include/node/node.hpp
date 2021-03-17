@@ -26,6 +26,7 @@ namespace node {
     explicit operator string() const;
     base_s clone  (clone_context&) const;
     static std::shared_ptr<color> parse(parse_context&, parse_preprocessed&);
+    bool is_fixed() const;
   };
 
   struct env : public meta, settable<string> {
@@ -86,6 +87,7 @@ namespace node {
     explicit operator float  () const;
     base_s clone  (clone_context&) const;
     static std::shared_ptr<map> parse(parse_context&, parse_preprocessed&);
+    bool is_fixed() const;
   };
 
   struct clock : base<int> {
@@ -109,5 +111,6 @@ namespace node {
 
     explicit operator string() const;
     base_s clone  (clone_context&) const;
+    bool is_fixed() const;
   };
 }

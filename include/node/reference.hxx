@@ -4,7 +4,7 @@
 
 namespace node {
 
-template<class T> address_ref<T>::address_ref(wrapper_w ancestor, tstring path)
+template<class T> address_ref<T>::address_ref(std::weak_ptr<wrapper> ancestor, tstring path)
     : ancestor_w(ancestor), indirect_paths() {
   trim(path);
   for (tstring indirect; !(indirect = cut_front(path, '.')).untouched();)
@@ -48,8 +48,6 @@ template<class T> address_ref<T>::operator T() const {
 }
 
 template<class T> bool address_ref<T>::set(const T& val) {
-  auto ancestor = ancestor_w.lock();
-  if (!ancestor) throw ancestor_destroyed_error("set");
   auto src = get_source();
   if (!src)
     return false;
@@ -104,6 +102,11 @@ template<class T> base_s address_ref<T>::clone(clone_context& context) const {
   return std::make_shared<address_ref>(cloned_ancestor, string(get_path()));
 }
 
+template<class T> bool address_ref<T>::is_fixed() const {
+  auto src = get_source();
+  return src ? src->is_fixed() : true;
+}
+
 template<class T> ref<T>::ref(std::weak_ptr<base<T>> value) : value(value) {
   start:
   auto val = value.lock();
@@ -127,6 +130,10 @@ template<class T> bool ref<T>::set  (const T& value) {
 }
 template<class T> base_s ref<T>::clone  (clone_context&) const {
   throw clone_error("clone_error: node::ref can't be cloned");
+}
+
+template<class T> bool ref<T>::is_fixed() const {
+  return false;
 }
 
 }

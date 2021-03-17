@@ -1,10 +1,10 @@
-key-a = a
+key-a = ${var a}
 ref-ref-a = ${ref-a ? ${ref-a}}
 ref-a = ${key-a}
 ref-fail = ${key-nexist}
 ref-default-a = ${key-nexist?${key-a}}
 ref-fallback-a = ${ .key-a ? fail }
-ref-nexist = ${key-nexist? " f a i l ' }
+ref-nexist = ${key-nexist? ${var " f a i l ' }}
 
 file-parse = ${file key_file.txt }
 
@@ -18,16 +18,16 @@ greeting.name = quan
 
 wrapper.key-b = b
 appender = ${save last '${rel last} eat\n${rel last} eat.'}
+appender.last = ${var 'I'}
 
 clock = ${clock 1 1000 0}
 
-appender.last = 'I'
 cache = ${cache 1000 ${appender}}
 cache_too_short = ${cache 0 ${appender}}
 
 multiplier = ${save last '${rel last} ${cmd echo $((${rel source}*10))}'}
 # multiplier = ${save last '${rel last} ${rel source}'}
-multiplier.last = 0
-multiplier.source = 1
+multiplier.last = ${var 0}
+multiplier.source = ${var 1}
 array_cache = ${array_cache 3 ${multiplier.source} ${multiplier}}
 array_cache2 = ${array_cache array_cache ${multiplier.source} ${multiplier}}

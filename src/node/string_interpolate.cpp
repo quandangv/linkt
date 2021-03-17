@@ -36,18 +36,21 @@ string_interpolate::operator string() const {
 }
 
 base_s string_interpolate::clone(clone_context& context) const {
+  if (context.optimize && is_fixed())
+    return std::make_shared<plain<string>>(get());
   auto result = std::make_unique<string_interpolate>();
   result->base = base;
   result->spots.reserve(spots.size());
   for(auto& spot : spots)
     result->spots.emplace_back(spot.position, checked_clone<string>(spot.replacement, context, "string_interpolate::clone"));
-  if (context.optimize) {
-    for(auto& spot : result->spots)
-      if (!is_fixed(spot.replacement))
-        return result;
-    return std::make_shared<plain<string>>(get());
-  }
   return result;
+}
+
+bool string_interpolate::is_fixed() const {
+  for(auto& spot : spots)
+    if (!spot.replacement->is_fixed())
+      return false;
+  return true;
 }
 
 NAMESPACE_END

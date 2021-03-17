@@ -166,4 +166,8 @@ base_s wrapper::clone(clone_context& context) const {
   return result;
 }
 
+bool wrapper::is_fixed() const {
+  auto it = map.find("");
+  return it != map.end() && it->second ? it->second->is_fixed() : true;
+}
 NAMESPACE_END
