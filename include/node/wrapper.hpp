@@ -12,7 +12,6 @@
 namespace node {
   struct parse_context;
   using std::string;
-  using ancestor_processor = std::function<void(tstring& path, wrapper_s ancestor)>;
   struct wrapper_error : std::logic_error { using logic_error::logic_error; };
 
   struct wrapper : base<string>, std::enable_shared_from_this<wrapper> {
@@ -25,7 +24,7 @@ namespace node {
 
     static wrapper_s wrap(base_s& node);
 
-    base_s& add(tstring path, ancestor_processor* processor = nullptr);
+    base_s& add(tstring path);
     base_s& add(tstring path, const base_s& value);
     base_s& add(tstring path, parse_context& context, tstring& value);
     wrapper_s add_wrapper(const string& path);
@@ -37,7 +36,6 @@ namespace node {
     wrapper_s get_wrapper(const string& path) const;
 
     void iterate_children(std::function<void(const string&, const base_s&)> processor) const;
-    void iterate_children(std::function<void(const string&, const base&)> processor) const;
 
     void merge(const const_wrapper_s& source, clone_context&);
     void optimize(clone_context&);

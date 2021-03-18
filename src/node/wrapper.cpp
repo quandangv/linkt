@@ -40,8 +40,12 @@ std::optional<string> wrapper::get_child(const tstring& path) const {
 }
 
 string wrapper::get_child(const tstring& path, string&& fallback) const {
-  auto result = get_child(path);
-  return result ? *result : move(fallback);
+  try {
+    auto result = get_child(path);
+    return result ? *result : move(fallback);
+  } catch (const std::exception& e) {
+    return fallback;
+  }
 }
 
 wrapper_s wrapper::get_wrapper(const string& path) const {
@@ -50,7 +54,7 @@ wrapper_s wrapper::get_wrapper(const string& path) const {
   return wrapper_s();
 }
 
-base_s& wrapper::add(tstring path, ancestor_processor* processor) {
+base_s& wrapper::add(tstring path) {
   trim(path);
   for (char c : path)
     if (auto invalid = strchr(" #$\"'(){}[]", c))
@@ -59,8 +63,6 @@ base_s& wrapper::add(tstring path, ancestor_processor* processor) {
   if (auto immediate_path = cut_front(path, '.'); !immediate_path.untouched()) {
     // This isn't the final part of the path
     auto ancestor = add_wrapper(immediate_path);
-    if (processor)
-      processor->operator()(immediate_path, ancestor);
     return ancestor->add(path);
   } else {
     // This is the final part of the path
@@ -101,14 +103,6 @@ void wrapper::iterate_children(std::function<void(const string&, const base_s&)>
   for(auto& pair : map)
     processor(pair.first, pair.second);
 }
-
-void wrapper::iterate_children(std::function<void(const string&, const base&)> processor) const {
-  iterate_children([&](const string& name, const base_s& child) {
-    if (child)
-      processor(name, *child);
-  });
-}
-
 
 wrapper_s wrapper::wrap(base_s& place) {
   auto wrp = std::make_shared<wrapper>(place);

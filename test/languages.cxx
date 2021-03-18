@@ -185,6 +185,9 @@ TEST_P(Misc, wrapper) {
   EXPECT_ANY_THROW(doc->get_child("ref-fail"_ts));
   doc->add("manual"_ts, std::make_shared<node::plain<string>>("hello"));
   EXPECT_EQ(doc->get_child("manual"_ts, "fail"), "hello");
+  EXPECT_FALSE((*doc->get_child_place("multiplier"_ts))->is_fixed());
+  EXPECT_EQ(node::parse<float>("3.0"), 3.0f);
+  EXPECT_ANY_THROW(node::parse<float>("3.0a"));
 }
 
 TEST_P(Misc, parse_errors) {
@@ -225,6 +228,9 @@ TEST_P(Misc, array_cache) {
   EXPECT_EQ(doc->get_child("multiplier.last"_ts, "fail"), "0 10 10 20");
   EXPECT_EQ(doc->get_child("multiplier"_ts, "fail"), "0 10 10 20 20");
   EXPECT_EQ(doc->get_child("multiplier.last"_ts, "fail"), "0 10 10 20 20");
+  set_key<int>(doc, "multiplier.source", 1000);
+  EXPECT_EQ(doc->get_child("multiplier"_ts, "fail"), "0 10 10 20 20 10000");
+  EXPECT_EQ(doc->get_child("array_cache"_ts, "fail"), "fail");
 }
 
 TEST_P(Misc, clock) {

@@ -39,6 +39,14 @@ void test_nodes(parse_test testset, int repeat = base_repeat) {
     }
   };
   triple_node_test(doc, test_doc, repeat);
+
+  //Test for wrapper::optimize
+  node::clone_context clone_ctx;
+  doc->optimize(clone_ctx);
+  for (auto test : testset) {
+    bool found_error = (bool)std::erase_if(clone_ctx.errors, [&](auto pair) { return pair.first == test.path; });
+    EXPECT_TRUE(!found_error || test.fail || test.clone_fail) << "Key: " << test.path;
+  }
 }
 
 TEST(Node, Simple) {
@@ -151,10 +159,12 @@ TEST(Node, Clone) {
   });
   test_nodes({
     {"src1.key1", "a", "a"},
-    {"src2.key2", "b", "b"},
+    {"src2.key2.b", "b", "b"},
     {"src3", "c", "c"},
     {"merge", "${clone src1 src2 src3}", "c"},
     {"merge-fail", "${clone src3 src2 src1}", "", false, true},
+    {"merge-wrap.key2", "a", "a"},
+    {"merge-wrap", "${clone src2 src3}", "c"},
   });
 }
 
@@ -176,4 +186,6 @@ TEST(Node, Other) {
     {"source", "60", "60"},
     {"cache", "${cache ${source} hello}", "hello", false},
   });
+  test_nodes({{"cache", "${cache 123 hello 456}", "hello", false, true}});
+  test_nodes({{"cache", "${cache abf hello}", "hello", false, true}});
 }
