@@ -197,7 +197,7 @@ std::shared_ptr<array_cache> array_cache::parse(parse_context& context, parse_pr
       for (size_t i = 0; i < size; i++)
         result->cache_arr->emplace_back();
     } else {
-      auto cache_base = address_ref<string>(context.get_parent(), prep.tokens[1]).get_source();
+      auto cache_base = context.get_parent()->get_child_ptr(prep.tokens[1]);
       if (auto cache = std::dynamic_pointer_cast<array_cache>(cache_base))
         result->cache_arr = cache->cache_arr;
       else THROW_ERROR(parse, "1st argument must be the size of the cache or a parent path to another array_cache: " + context.raw);

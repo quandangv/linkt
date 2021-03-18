@@ -170,4 +170,29 @@ ref<T>::is_fixed() const {
   return val->is_fixed();
 }
 
+  template<class T> bool
+adapter<T>::set(const T& value) {
+  auto source = source_w.lock();
+  if (!source) return false;
+  if (auto target = std::dynamic_pointer_cast<settable<T>>(source))
+    return target->set(value);
+  if constexpr (!std::is_same<T, string>::value)
+    if (auto target = std::dynamic_pointer_cast<settable<string>>(source))
+      return target->set(std::to_string(value));
+  return false;
+}
+
+  template<class T> base_s
+adapter<T>::clone(clone_context&) const {
+  throw clone_error("clone_error: node::adapter can't be cloned");
+}
+
+  template<class T>
+adapter<T>::operator T() const {
+  auto source = source_w.lock();
+  if (!source) throw node_error("adapter::get");
+  auto str = source->get();
+  return parse<T>(str.data(), str.size());
+}
+
 }

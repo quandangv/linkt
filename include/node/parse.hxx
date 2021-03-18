@@ -132,7 +132,7 @@ parse_escaped(parse_context& context, tstring& value) {
 
     } else if (prep.tokens[0] == "clone"_ts) {
       for (int i = 1; i < prep.token_count; i++) {
-        auto source = address_ref<T>(context.get_parent(), prep.tokens[i]).get_source_direct();
+        auto source = context.get_parent()->get_child_place(prep.tokens[i]);
         throwing_clone_context clone_context;
         if (!source || !*source)
           throw parse_error("Can't find node to clone");
