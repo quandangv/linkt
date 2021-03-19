@@ -158,17 +158,17 @@ namespace node {
     }
   };
 
-    template<class Type, class Return> std::shared_ptr<Type>
-  parse_plain(const tstring& value) {
-      return std::make_shared<Type>(parse<Return>(value.begin(), value.size()));
-  }
-
     template<class T> T
   parse(const char* str, size_t len);
 
     template<class T> T
   parse(const string& str) {
     return parse<T>(str.data(), str.size());
+  }
+
+    template<class Type, class Return> std::shared_ptr<Type>
+  parse_plain(const tstring& value) {
+      return std::make_shared<Type>(parse<Return>(value.begin(), value.size()));
   }
 
   struct parse_context {
