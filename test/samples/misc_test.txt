@@ -31,3 +31,7 @@ multiplier.last = ${var 0}
 multiplier.source = ${var int 1}
 array_cache = ${array_cache 3 ${multiplier.source} ${multiplier}}
 array_cache2 = ${array_cache array_cache ${multiplier.source} ${multiplier}}
+
+float = ${var float 1}
+smooth = ${smooth 0.2 0.5 ${float}}
+

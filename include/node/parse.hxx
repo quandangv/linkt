@@ -113,6 +113,10 @@ parse_escaped(parse_context& context, tstring& value) {
       if constexpr(std::is_convertible<float, T>::value || std::is_same<string, T>::value)
         return map::parse(context, prep);
 
+    } else if (prep.tokens[0] == "smooth"_ts) {
+      if constexpr(std::is_convertible<float, T>::value || std::is_same<string, T>::value)
+        return smooth::parse(context, prep);
+
     } else if (prep.tokens[0] == "color"_ts) {
       if constexpr(std::is_same<T, string>::value)
         return color::parse(context, prep);

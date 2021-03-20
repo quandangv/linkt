@@ -39,7 +39,6 @@ namespace node {
 
     explicit operator string() const;
     base_s clone(clone_context&) const;
-    bool is_fixed() const;
       static std::shared_ptr<color>
     parse(parse_context&, parse_preprocessed&);
   };
@@ -109,16 +108,22 @@ namespace node {
     using base_deep<float>::base_deep;
     explicit operator float() const;
     base_s clone(clone_context&) const;
-    bool is_fixed() const;
 
       static std::shared_ptr<map>
     parse(parse_context&, parse_preprocessed&);
   };
 
-  //struct smooth : base<float> {
-  //  const std::shared_ptr<base<float>> value;
-  //  float current, velocity;
-  //};
+  struct smooth : base_deep<float> {
+    float spring, drag;
+    mutable float current{0}, velocity{0};
+
+    using base_deep<float>::base_deep;
+    explicit operator float() const;
+    base_s clone(clone_context&) const;
+
+      static std::shared_ptr<smooth>
+    parse(parse_context&, parse_preprocessed&);
+  };
 
   struct clock : base<int> {
     std::chrono::milliseconds tick_duration;

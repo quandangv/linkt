@@ -171,9 +171,6 @@ string array_cache::get(size_t index) const {
 
 base_s array_cache::clone(clone_context& context) const {
   auto result = std::make_shared<array_cache>();
-  LG_DBUG((long)source.get());
-  LG_DBUG((long)std::dynamic_pointer_cast<address_ref<int>>(source).get());
-  LG_DBUG((long)std::dynamic_pointer_cast<ref<int>>(source->clone(context)).get());
   result->source = checked_clone<int>(source, context, "array_cache::clone");
   result->calculator = checked_clone<string>(calculator, context, "array_cache::clone");
   result->cache_arr = cache_arr;
@@ -231,6 +228,29 @@ std::shared_ptr<map> map::parse(parse_context& context, parse_preprocessed& prep
   if (auto min = cut_front(prep.tokens[2], ':'); !min.untouched())
     result->to_min = convert<float, strtof>(min);
   result->to_range = convert<float, strtof>(prep.tokens[2]) - result->to_min;
+  return result;
+}
+
+smooth::operator float() const {
+  return current += velocity += (value->operator float() - current) * spring - velocity * drag;
+}
+
+std::shared_ptr<smooth> smooth::parse(parse_context& context, parse_preprocessed& prep) {
+  if (prep.token_count != 4)
+    THROW_ERROR(parse, "smooth: Expected 3 components");
+  auto result = std::make_shared<smooth>(parse_raw<float>(context, prep.tokens[prep.token_count - 1]));
+  result->spring = node::parse<float>(prep.tokens[1]);
+  result->drag = node::parse<float>(prep.tokens[2]);
+  return result;
+}
+
+base_s smooth::clone(clone_context& context) const {
+  if (context.optimize && is_fixed()) {
+    return std::make_shared<plain<float>>(value->operator float());
+  }
+  auto result = std::make_shared<smooth>(checked_clone<float>(value, context, "smooth::clone"));
+  result->spring = spring;
+  result->drag = drag;
   return result;
 }
 

@@ -196,6 +196,7 @@ TEST_P(Misc, parse_errors) {
   EXPECT_THROW(test_context.get_current(), node::parse_error);
   EXPECT_THROW(test_context.get_place(), node::parse_error);
   EXPECT_THROW(test_context.get_parent(), node::parse_error);
+
   EXPECT_THROW({
     node::throwing_clone_context context;
     context.no_dependency = true;
@@ -276,3 +277,13 @@ TEST_P(Misc, assign_file_env) {
   set_key<string>(doc, "env", "foo");
   set_key<string>(doc, "file-parse", "content");
 }
+
+TEST_P(Misc, other) {
+  auto doc = GetParam();
+  EXPECT_EQ(doc->get_child("smooth"_ts, "fail"), "0.2");
+  EXPECT_EQ(doc->get_child("smooth"_ts, "fail"), "0.46");
+  EXPECT_EQ(doc->get_child("smooth"_ts, "fail"), "0.698");
+  EXPECT_EQ(doc->get_child("smooth"_ts, "fail"), "0.8774");
+  EXPECT_EQ(doc->get_child("smooth"_ts, "fail"), "0.99162");
+}
+
