@@ -209,22 +209,22 @@ std::shared_ptr<array_cache> array_cache::parse(parse_context& context, parse_pr
     THROW_ERROR(parse, "array_cache: Expected 3 components");
 }
 
-map::map(base_s value) : value(value) {
-  if (!value) THROW_ERROR(required_field_null, "meta::meta");
+map::map(std::shared_ptr<base<float>> value) : value(value) {
+  if (!value) THROW_ERROR(required_field_null, "map::map");
+}
+
+inline float clamp(float value) {
+  return value <= 0 ? 0 : value >= 1 ? 1 : value;
 }
 
 map::operator float() const {
-  auto str = value->get();
-  size_t remaining;
-  auto num =  std::stof(str, &remaining);
-  return remaining != str.size() ? THROW_ERROR(node, "value is not a number") :
-      to_min + to_range/from_range*(num - from_min);
+  return to_min + to_range * clamp((value->operator float() - from_min)/from_range);
 }
 
 base_s map::clone(clone_context& context) const {
   if (context.optimize && is_fixed())
-      return std::make_shared<plain<string>>(operator string());
-  auto result = std::make_shared<map>(value->clone(context));
+      return std::make_shared<plain<float>>(operator float());
+  auto result = std::make_shared<map>(checked_clone<float>(value, context, "map::clone"));
   result->from_min = from_min;
   result->from_range = from_range;
   result->to_min = to_min;
@@ -235,7 +235,7 @@ base_s map::clone(clone_context& context) const {
 std::shared_ptr<map> map::parse(parse_context& context, parse_preprocessed& prep) {
   if (prep.token_count != 4)
     THROW_ERROR(parse, "map: Expected 3 components");
-  auto result = std::make_shared<map>(parse_raw<string>(context, prep.tokens[prep.token_count - 1]));
+  auto result = std::make_shared<map>(parse_raw<float>(context, prep.tokens[prep.token_count - 1]));
   if (auto min = cut_front(prep.tokens[1], ':'); !min.untouched())
     result->from_min = convert<float, strtof>(min);
   result->from_range = convert<float, strtof>(prep.tokens[1]) - result->from_min;

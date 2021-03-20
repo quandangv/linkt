@@ -121,13 +121,14 @@ parse_escaped(parse_context& context, tstring& value) {
       if (prep.token_count == 2)
         return parse_plain<settable_plain<T>, T>(trim_quotes(prep.tokens[1]));
       else if (prep.token_count == 3) {
-        if constexpr(!std::is_same<T, string>::value)
-          throw parse_error("Parse.var: Can only specify type when parsing to string");
-        if (prep.tokens[1] == "int"_ts)
-          return parse_plain<settable_plain<int>, int>(trim_quotes(prep.tokens[2]));
-        if (prep.tokens[1] == "float"_ts)
-          return parse_plain<settable_plain<float>, float>(trim_quotes(prep.tokens[2]));
-        throw parse_error("Parse.var: Invalid var type: " + prep.tokens[1]);
+        if constexpr(std::is_same<T, string>::value) {
+          if (prep.tokens[1] == "int"_ts)
+            return parse_plain<settable_plain<int>, int>(trim_quotes(prep.tokens[2]));
+          if (prep.tokens[1] == "float"_ts)
+            return parse_plain<settable_plain<float>, float>(trim_quotes(prep.tokens[2]));
+          throw parse_error("Parse.var: Invalid var type: " + prep.tokens[1]);
+        }
+        throw parse_error("Parse.var: Can only specify type when parsing to string");
       } else throw parse_error("Parse.var: Invalid token count");
 
     } else if (prep.tokens[0] == "clone"_ts) {

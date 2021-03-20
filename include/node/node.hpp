@@ -88,17 +88,20 @@ namespace node {
   };
 
   struct map : base<float> {
-    const base_s value;
+    const std::shared_ptr<base<float>> value;
     float from_min{0}, from_range{0}, to_min{0}, to_range{0};
 
-    map  (base_s value);
+    map(std::shared_ptr<base<float>> value);
     explicit operator float() const;
-    base_s clone  (clone_context&) const;
+    base_s clone(clone_context&) const;
     bool is_fixed() const;
 
       static std::shared_ptr<map>
     parse(parse_context&, parse_preprocessed&);
   };
+
+  //struct smooth : base<float> {
+  //  const base_s v
 
   struct clock : base<int> {
     std::chrono::milliseconds tick_duration;
