@@ -10,10 +10,6 @@
 
 NAMESPACE(node)
 
-meta::meta(const base_s& value, const base_s& fallback) : with_fallback(fallback), value(value) {
-  if (!value) THROW_ERROR(required_field_null, "meta::meta");
-}
-
 color::operator string() const {
   try {
     auto result = processor.operate(value->get());
@@ -29,10 +25,6 @@ base_s color::clone(clone_context& context) const {
   auto result = meta::copy<color>(context);
   result->processor = processor;
   return result;
-}
-
-bool color::is_fixed() const {
-  return value->is_fixed();
 }
 
 std::shared_ptr<color> color::parse(parse_context& context, parse_preprocessed& prep) {
@@ -209,10 +201,6 @@ std::shared_ptr<array_cache> array_cache::parse(parse_context& context, parse_pr
     THROW_ERROR(parse, "array_cache: Expected 3 components");
 }
 
-map::map(std::shared_ptr<base<float>> value) : value(value) {
-  if (!value) THROW_ERROR(required_field_null, "map::map");
-}
-
 inline float clamp(float value) {
   return value <= 0 ? 0 : value >= 1 ? 1 : value;
 }
@@ -244,10 +232,6 @@ std::shared_ptr<map> map::parse(parse_context& context, parse_preprocessed& prep
     result->to_min = convert<float, strtof>(min);
   result->to_range = convert<float, strtof>(prep.tokens[2]) - result->to_min;
   return result;
-}
-
-bool map::is_fixed() const {
-  return value->is_fixed();
 }
 
 clock::operator int() const {

@@ -9,14 +9,27 @@
 namespace node {
   using steady_time = std::chrono::time_point<std::chrono::steady_clock>;
 
-  struct meta : base<string>, with_fallback<string> {
-    const base_s value;
+    template<class T>
+  struct base_deep : base<T> {
+    const std::shared_ptr<base<T>> value;
 
-    meta(const base_s& value, const base_s& fallback);
+    base_deep(std::shared_ptr<base<T>> value) : value(value) {
+        if (!value) throw required_field_null_error("base_deep::base_deep");
+    }
 
-    template<class T> std::shared_ptr<T>
+    bool is_fixed() const {
+        return value->is_fixed();
+    }
+  };
+
+  struct meta : base_deep<string>, with_fallback<string> {
+    meta(const base_s& value, const base_s& fallback)
+        : base_deep(value), with_fallback(fallback) {}
+
+      template<class T> std::shared_ptr<T>
     copy(clone_context& context) const {
-      return std::make_shared<T>(checked_clone<string>(value, context, "meta::copy"), fallback ? fallback->clone(context) : base_s());
+        return std::make_shared<T>(checked_clone<string>(value, context, "meta::copy")
+            , fallback ? fallback->clone(context) : base_s());
     }
   };
 
@@ -36,12 +49,14 @@ namespace node {
     explicit operator string() const;
     bool set  (const string& value);
     base_s clone(clone_context&) const;
+    bool is_fixed() const { return false; }
   };
 
   struct cmd : meta {
     using meta::meta;
     explicit operator string() const;
     base_s clone(clone_context&) const;
+    bool is_fixed() const { return false; }
   };
 
   struct file : public meta, settable<string> {
@@ -49,6 +64,7 @@ namespace node {
     explicit operator string() const;
     bool set(const string& value);
     base_s clone(clone_context&) const;
+    bool is_fixed() const { return false; }
   };
 
   struct save : base<string> {
@@ -87,11 +103,10 @@ namespace node {
     parse(parse_context&, parse_preprocessed&);
   };
 
-  struct map : base<float> {
-    const std::shared_ptr<base<float>> value;
+  struct map : base_deep<float> {
     float from_min{0}, from_range{0}, to_min{0}, to_range{0};
 
-    map(std::shared_ptr<base<float>> value);
+    using base_deep<float>::base_deep;
     explicit operator float() const;
     base_s clone(clone_context&) const;
     bool is_fixed() const;
@@ -101,7 +116,9 @@ namespace node {
   };
 
   //struct smooth : base<float> {
-  //  const base_s v
+  //  const std::shared_ptr<base<float>> value;
+  //  float current, velocity;
+  //};
 
   struct clock : base<int> {
     std::chrono::milliseconds tick_duration;
