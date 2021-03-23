@@ -127,36 +127,6 @@ std::shared_ptr<save> save::parse(parse_context& context, parse_preprocessed& pr
   return result;
 }
 
-cache::operator string() const {
-  if (auto now = std::chrono::steady_clock::now(); now > cache_expire) {
-    cache_str = source->get();
-    cache_expire = now + std::chrono::milliseconds(duration_ms->operator int());
-  }
-  return cache_str;
-}
-
-base_s cache::clone(clone_context& context) const {
-  LG_DBUG("start clone");
-  auto result = std::make_shared<cache>();
-  result->source = checked_clone<string>(source, context, "cache::clone");
-  LG_DBUG("start duration");
-  result->duration_ms = checked_clone<int>(duration_ms, context, "cache::clone");
-  LG_DBUG("end duration");
-  result->cache_str = cache_str;
-  result->cache_expire = cache_expire;
-  LG_DBUG("end clone");
-  return result;
-}
-
-std::shared_ptr<cache> cache::parse(parse_context& context, parse_preprocessed& prep) {
-  if (prep.token_count != 3)
-    THROW_ERROR(parse, "cache: Expected 2 components");
-  auto result = std::make_shared<cache>();
-  result->duration_ms = checked_parse_raw<int>(context, prep.tokens[1]);
-  result->source = checked_parse_raw<string>(context, prep.tokens[2]);
-  return result;
-}
-
 array_cache::operator string() const {
   return get(source->operator int());
 }
@@ -236,12 +206,21 @@ smooth::operator float() const {
 }
 
 std::shared_ptr<smooth> smooth::parse(parse_context& context, parse_preprocessed& prep) {
-  if (prep.token_count != 4)
-    THROW_ERROR(parse, "smooth: Expected 3 components");
-  auto result = std::make_shared<smooth>(parse_raw<float>(context, prep.tokens[prep.token_count - 1]));
-  result->spring = node::parse<float>(prep.tokens[1]);
-  result->drag = node::parse<float>(prep.tokens[2]);
+  std::shared_ptr<smooth> result;
+  if (prep.token_count < 3)
+    goto wrong_token_count;
+  result = std::make_shared<smooth>(parse_raw<float>(context, prep.tokens[prep.token_count - 1]));
+  result->drag = node::parse<float>(prep.tokens[1]);
+  if (prep.token_count == 3)
+    // In this case, drag shouldn't be greater than 1.2, or the resulting smooth will be jagged
+    result->spring = result->drag * result->drag / 3;
+  else if (prep.token_count == 4)
+    result->spring = node::parse<float>(prep.tokens[2]);
+  else
+    goto wrong_token_count;
   return result;
+  wrong_token_count:
+  THROW_ERROR(parse, "smooth: Expected 2 or 3 components");
 }
 
 base_s smooth::clone(clone_context& context) const {

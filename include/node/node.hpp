@@ -77,17 +77,48 @@ namespace node {
     parse(parse_context&, parse_preprocessed&);
   };
 
-  struct cache : base<string> {
-    base_s source;
+  template<class T>
+  struct cache : base<T> {
+    std::shared_ptr<base<T>> source;
     std::shared_ptr<base<int>> duration_ms;
-    mutable string cache_str;
+    mutable T cache_value;
     mutable steady_time cache_expire;
 
-    explicit operator string() const;
+    explicit operator T() const;
     base_s clone  (clone_context&) const;
-      static std::shared_ptr<cache>
+
+      static std::shared_ptr<cache<T>>
     parse(parse_context&, parse_preprocessed&);
   };
+
+  template<class T>
+cache<T>::operator T() const {
+  if (auto now = std::chrono::steady_clock::now(); now > cache_expire) {
+    cache_value = source->operator T();
+    cache_expire = now + std::chrono::milliseconds(duration_ms->operator int());
+  }
+  return cache_value;
+}
+
+  template<class T>
+base_s cache<T>::clone(clone_context& context) const {
+  auto result = std::make_shared<cache>();
+  result->source = checked_clone<T>(source, context, "cache::clone");
+  result->duration_ms = checked_clone<int>(duration_ms, context, "cache::clone");
+  result->cache_value = cache_value;
+  result->cache_expire = cache_expire;
+  return result;
+}
+
+  template<class T>
+std::shared_ptr<cache<T>> cache<T>::parse(parse_context& context, parse_preprocessed& prep) {
+  if (prep.token_count != 3)
+    throw parse_error("cache: Expected 2 components");
+  auto result = std::make_shared<cache>();
+  result->duration_ms = checked_parse_raw<int>(context, prep.tokens[1]);
+  result->source = checked_parse_raw<T>(context, prep.tokens[2]);
+  return result;
+}
 
   struct array_cache : base<string> {
     std::shared_ptr<base<int>> source;
