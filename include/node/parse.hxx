@@ -1,6 +1,7 @@
 #include "node.hpp"
 #include "wrapper.hpp"
 #include "reference.hpp"
+#include "cache.hpp"
 
 #include <array>
 
@@ -101,8 +102,7 @@ parse_escaped(parse_context& context, tstring& value) {
         return clock::parse(context, prep);
 
     } else if (prep.tokens[0] == "array_cache"_ts) {
-      if constexpr(std::is_same<T, string>::value)
-        return array_cache::parse(context, prep);
+      return array_cache<T>::parse(context, prep);
 
     } else if (prep.tokens[0] == "save"_ts) {
       if constexpr(std::is_same<T, string>::value)

@@ -33,18 +33,3 @@ constexpr auto DEBUG_SCOPES{"@DEBUG_SCOPES@"sv};
 #endif
 
 #define THROW_ERROR(name, msg) throw name##_error(#name "_error: "s + msg)
-
-template<typename Left, typename Right>
-Right* assign(Left& left, const std::shared_ptr<Right>& right) {
-  left = right;
-  return right.get();
-}
-
-inline std::optional<unsigned long int> parse_ulong(const char* str, size_t len) {
-  char* end;
-  auto result = std::strtoul(str, &end, 10);
-  if (end != str + len)
-    return {};
-  return result;
-}
-

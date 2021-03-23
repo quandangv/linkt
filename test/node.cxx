@@ -22,7 +22,7 @@ void test_nodes(parse_test testset, int repeat = base_repeat) {
     try {
       doc->add(test.path, context, ts);
     } catch (const std::exception& e) {
-      EXPECT_TRUE(test.fail);
+      EXPECT_TRUE(test.fail) << "Unexpected exception: " << e.what();
     }
     if (last_count != get_test_part_count())
       cerr << "Key: " << test.path << endl;
@@ -186,6 +186,10 @@ TEST(Node, Other) {
   test_nodes({
     {"source", "60", "60"},
     {"cache", "${cache ${source} hello}", "hello", false},
+  });
+  test_nodes({
+    {"source", "${var float 100.25}", "100.25", false},
+    {"cache", "${cache ${cache 1000 ${source}} 420}", "420", false},
   });
   test_nodes({{"cache", "${cache 123 hello 456}", "hello", false, true}});
   test_nodes({{"cache", "${cache abf hello}", "hello", false, true}});

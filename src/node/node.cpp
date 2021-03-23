@@ -127,47 +127,6 @@ std::shared_ptr<save> save::parse(parse_context& context, parse_preprocessed& pr
   return result;
 }
 
-array_cache::operator string() const {
-  return get(source->operator int());
-}
-
-string array_cache::get(size_t index) const {
-  if (index >=cache_arr->size())
-    THROW_ERROR(node, "Index larger than cache maximum: " + std::to_string(index) + " > " + std::to_string(cache_arr->size() - 1));
-  if (auto& result = cache_arr->operator[](index); result.empty()) {
-    return result = calculator->get();
-  } else return result;
-}
-
-base_s array_cache::clone(clone_context& context) const {
-  auto result = std::make_shared<array_cache>();
-  result->source = checked_clone<int>(source, context, "array_cache::clone");
-  result->calculator = checked_clone<string>(calculator, context, "array_cache::clone");
-  result->cache_arr = cache_arr;
-  return result;
-}
-
-std::shared_ptr<array_cache> array_cache::parse(parse_context& context, parse_preprocessed& prep) {
-  if (prep.token_count == 4) {
-    auto result = std::make_shared<array_cache>();
-    auto size = parse_ulong(prep.tokens[1].begin(), prep.tokens[1].size());
-    if (size) {
-      result->cache_arr = std::make_shared<std::vector<string>>(*size + 1);
-      for (size_t i = 0; i < size; i++)
-        result->cache_arr->emplace_back();
-    } else {
-      auto cache_base = context.get_parent()->get_child_ptr(prep.tokens[1]);
-      if (auto cache = std::dynamic_pointer_cast<array_cache>(cache_base))
-        result->cache_arr = cache->cache_arr;
-      else THROW_ERROR(parse, "1st argument must be the size of the cache or a parent path to another array_cache: " + context.raw);
-    }
-    result->source = checked_parse_raw<int>(context, prep.tokens[2]);
-    result->calculator = checked_parse_raw<string>(context, prep.tokens[3]);
-    return result;
-  } else
-    THROW_ERROR(parse, "array_cache: Expected 3 components");
-}
-
 inline float clamp(float value) {
   return value <= 0 ? 0 : value >= 1 ? 1 : value;
 }
