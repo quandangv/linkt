@@ -1,19 +1,15 @@
-lemonbar: '   ${greeting} ${sep}%{r}${cpu} ${memory} ${battery} ${sep} %{B-}   '
-  sep: '%{B-}  '
-  base: ${dep sep}${format} ${text}
-  static_base:$ clone base
-    text:$ cache ${dep cache_time ? 1000} ${dep raw}
-  dynamic_base:$ clone base
+lemonbar: '%{O20}${greeting} ${sep}%{r}${cpu} ${memory} ${battery} ${fpms} ${sep} %{B- O20}'
+  sep: '%{B- O10}'
+  dynamic_base: ${dep sep}${format} ${text}
     percentage:$ cache ${dep cache_time ? 1000} ${dep calculation}
     smooth_level:$i cache 5 ${smooth 0.3 ${dep level}}
     background:$ color cielch(${map 30 0.9:0.4 ${dep smooth_level}}, ${map 30 0.1:0.6 ${dep smooth_level}}, ${map 30 60:30 ${dep smooth_level}})
     foreground:$ color cielch(${map 30 0.3:2 ${dep smooth_level}}, 0.4, ${map 30 60:30 ${dep smooth_level}})
     format:$ array_cache 31 ${dep smooth_level} '%{B${dep background} F${dep foreground}}'
 
-  greeting:$ clone static_base
-    raw: Hello %{T2}${env USER}%{T-}, it's %{T2}${cmd date +%H:%M}%{T-}
-    cache_time: 200000
-    format: %{B- F#522}
+  greeting: ${dep sep} ${text}
+    text:$ cache 10000 ${dep raw}
+    raw: %{B- F#522}Hi %{T2}${env USER}%{T-}, it is %{T2}${cmd date +%H:%M}%{T-}
 
   cpu:$ clone dynamic_base
     text: CPU %{T2}${dep percentage}%{T-}
@@ -21,12 +17,17 @@ lemonbar: '   ${greeting} ${sep}%{r}${cpu} ${memory} ${battery} ${sep} %{B-}   '
 
   memory:$ clone dynamic_base
     text: RAM %{T2}${dep percentage}%{T-}
-    level:$ map 09:10 0:30 ${dep percentage}
+    level:$ map 89:90 0:30 ${dep percentage}
 
   battery:$ clone dynamic_base
     text: BAT %{T2}${dep percentage}%{T-}
     cache_time: 10000
     level:$ map 21:20 0:30 ${dep percentage}
+
+  fpms:$ clone dynamic_base
+    text: FPMS %{T2}${dep calculation}%{T-}
+    calculation:$ var float -1
+    level:$ map 3.41:3.4 0:30 ${dep percentage}
 
 lemonbar.cpu.calculation:$ save last_status ${cmd ./scripts/cpu.sh ${last_status} ? N/A}
   last_status:$ var '0 0'

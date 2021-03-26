@@ -3,33 +3,26 @@
 #include <fstream>
 #include <chrono>
 #include <thread>
-#include <sstream>
 #include <cmath>
 
 struct fps_display {
-  double current_sum{0.0}, avg{0};;
+  float current_sum{0}, avg{0};;
   unsigned int count{0}, loop;
 
   fps_display(unsigned int loop) : loop(loop) {}
-  std::string feed(double value) {
-    std::stringstream ss;
+  float feed(double value) {
     current_sum += value;
     count++;
-    auto current_avg = current_sum / count;
-    if (count < loop) {
-      auto diff = current_avg - avg;
-      ss << avg << ' ' << std::showpos << diff;
-    } else {
-      ss << (avg = current_avg);
+    if (count == loop) {
+      avg = current_sum / loop;
       count = 0;
       current_sum = 0.0;
     }
-    return ss.str();
+    return avg;
   }
 };
 
 int main(int argc, char** argv) {
-  bool show_framerate = argc < 2 || strcmp(argv[1], "no_framerate");
   std::ifstream file {"lemonbar.yml"};
   if (file.fail()) {
     std::cout << "Failed to load file 'lemonbar.yml'. "
@@ -54,7 +47,6 @@ int main(int argc, char** argv) {
       std::cout << "At " << e.first << ": " << e.second << std::endl;
   }
 
-  std::cout << "Show framerate: " << show_framerate << std::endl;
   std::cout << "If you have lemonbar installed,\n"
       "Pass the result of this program to lemonbar and get a simple status bar\n";
   fps_display fps(40);
@@ -66,10 +58,9 @@ int main(int argc, char** argv) {
       double elapsed = double(clock() - start_retrieve) / CLOCKS_PER_SEC * 1000;
       if (!result)
         std::cout << "Failed to retrieve the key at path 'lemonbar'";
-      else if (show_framerate)
-        std::cout << *result << "%{F#fff B#000} " << fps.feed(elapsed) << "ms" << std::endl;
-      else
-        std::cout << *result << std::endl;
+      else if (!wrapper->set<float>("lemonbar.fpms.calculation"_ts, round(100 / fps.feed(elapsed))/100))
+        std::cout << "Can't set fps value";
+      std::cout << *result << std::endl;
     } catch (const std::exception& e) {
       std::cout << "Error while retrieving key: " << e.what() << std::endl;
     }
