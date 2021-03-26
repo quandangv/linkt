@@ -130,8 +130,15 @@ node::wrapper_s parse_yml(std::istream& is, node::errorlist& err) {
       }
 
       records.emplace_back(indent, nullptr);
-      auto value = find(modes, '$') != tstring::npos ?
-          node::parse_escaped<string>(context, line) : node::parse_raw<string>(context, line);
+      node::base_s value;
+      if (find(modes, '$') == tstring::npos)
+        value = node::parse_raw<string>(context, line);
+      else if (find(modes, 'i') != tstring::npos)
+        value = node::parse_escaped<int>(context, line);
+      else if (find(modes, 'f') != tstring::npos)
+        value = node::parse_escaped<float>(context, line);
+      else
+        value = node::parse_escaped<string>(context, line);
       if (value)
         context.get_place() = value;
 
