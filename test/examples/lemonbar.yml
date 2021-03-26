@@ -9,7 +9,7 @@ lemonbar: '%{O20}${greeting} ${sep}%{r}${cpu} ${memory} ${battery} ${fpms} ${sep
 
   greeting: ${dep sep} ${text}
     text:$ cache 10000 ${dep raw}
-    raw: %{B- F#522}Hi %{T2}${env USER}%{T-}, it is %{T2}${cmd date +%H:%M}%{T-}
+    raw: %{B- F#522}Hi %{T2}${env USER}%{T-}, it is %{T2 A:hello:}${cmd date +%H:%M}%{T- A}
 
   cpu:$ clone dynamic_base
     text: CPU %{T2}${dep percentage}%{T-}
