@@ -1,38 +1,35 @@
-lemonbar: '${greeting} ${cpu} ${memory} ${battery} ${date} ${sep}%{B-}'
-  sep: '%{B#fff} '
-  base: ${dep sep}%{B${B}} ${text}
+lemonbar: '   ${greeting} ${sep}%{r}${cpu} ${memory} ${battery} ${sep} %{B-}   '
+  sep: '%{B-}  '
+  base: ${dep sep}${format} ${text}
+  static_base:$ clone base
     text:$ cache ${dep cache_time ? 1000} ${dep raw}
-    B:$ array_cache 240 ${H.raw} ${color cielch(${L}, 1, ${H})}
-      L: 0.7
-      H:$ cmd echo $((${raw}*3/2))
+  dynamic_base:$ clone base
+    percentage:$ cache ${dep cache_time ? 1000} ${dep calculation}
+    smooth_level:$i cache 5 ${smooth 0.3 ${dep level}}
+    background:$ color cielch(${map 30 0.9:0.4 ${dep smooth_level}}, ${map 30 0.1:0.6 ${dep smooth_level}}, ${map 30 60:30 ${dep smooth_level}})
+    foreground:$ color cielch(${map 30 0.3:2 ${dep smooth_level}}, 0.4, ${map 30 60:30 ${dep smooth_level}})
+    format:$ array_cache 31 ${dep smooth_level} '%{B${dep background} F${dep foreground}}'
 
-  greeting:$ clone base
-    raw: Hello ${dep calculation}
-    cache_time: 100000
-    B.H.raw:$ clock 10 240 0
+  greeting:$ clone static_base
+    raw: Hello %{T2}${env USER}%{T-}, it's %{T2}${cmd date +%H:%M}%{T-}
+    cache_time: 200000
+    format: %{B- F#522}
 
-  cpu:$ clone base
-    raw: CPU ${dep calculation}
-    B.H.raw:$ clock 10 240 30
+  cpu:$ clone dynamic_base
+    text: CPU %{T2}${dep percentage}%{T-}
+    level:$ map 89:90 0:30 ${dep percentage}
 
-  memory:$ clone base
-    raw: RAM ${dep calculation}
-    B.H.raw:$ clock 10 240 60
+  memory:$ clone dynamic_base
+    text: RAM %{T2}${dep percentage}%{T-}
+    level:$ map 09:10 0:30 ${dep percentage}
 
-  battery:$ clone base
-    raw: BAT ${dep calculation}
-    B.H.raw:$ clock 10 240 90
+  battery:$ clone dynamic_base
+    text: BAT %{T2}${dep percentage}%{T-}
     cache_time: 10000
+    level:$ map 21:20 0:30 ${dep percentage}
 
-  date:$ clone base
-    raw: ${dep calculation}
-    cache_time: 30000
-    B.H.raw:$ clock 10 240 120
-
-lemonbar.greeting.calculation:$ env USER
 lemonbar.cpu.calculation:$ save last_status ${cmd ./scripts/cpu.sh ${last_status} ? N/A}
-  last_status: 0 0
+  last_status:$ var '0 0'
 lemonbar.memory.calculation:$ cmd ./scripts/memory.sh ? N/A
 lemonbar.battery.calculation:$ cmd ./scripts/battery.sh ${bat_name} ? N/A
   bat_name: BAT1
-lemonbar.date.calculation:$ cmd date +%H:%M

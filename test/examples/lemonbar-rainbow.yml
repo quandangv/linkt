@@ -1,0 +1,38 @@
+lemonbar: '${greeting} ${cpu} ${memory} ${battery} ${date} ${sep}%{B-}'
+  sep: '%{B#fff} '
+  base: ${dep sep}%{B${B}} ${text}
+    text:$ cache ${dep cache_time ? 1000} ${dep raw}
+    B:$ array_cache 240 ${H.raw} ${color cielch(${L}, 1, ${H})}
+      L: 0.7
+      H:$ cmd echo $((${raw}*3/2))
+
+  greeting:$ clone base
+    raw: Hello ${dep calculation}
+    cache_time: 100000
+    B.H.raw:$ clock 10 240 0
+
+  cpu:$ clone base
+    raw: CPU %{T2}${dep calculation}%%{T-}
+    B.H.raw:$ clock 10 240 30
+
+  memory:$ clone base
+    raw: RAM %{T2}${dep calculation}%%{T-}
+    B.H.raw:$ clock 10 240 60
+
+  battery:$ clone base
+    raw: BAT %{T2}${dep calculation}%%{T-}
+    B.H.raw:$ clock 10 240 90
+    cache_time: 10000
+
+  date:$ clone base
+    raw: %{T2}${dep calculation}%{T-}
+    cache_time: 30000
+    B.H.raw:$ clock 10 240 120
+
+lemonbar.greeting.calculation:$ env USER
+lemonbar.cpu.calculation:$ save last_status ${cmd ./scripts/cpu.sh ${last_status} ? N/A}
+  last_status:$ var '0 0'
+lemonbar.memory.calculation:$ cmd ./scripts/memory.sh ? N/A
+lemonbar.battery.calculation:$ cmd ./scripts/battery.sh ${bat_name} ? N/A
+  bat_name: BAT1
+lemonbar.date.calculation:$ cmd date +%H:%M
