@@ -122,9 +122,9 @@ TEST(Language, Yml) {
 }
 
 vector<string> expected_clone_errors = {"ref-fail"};
-node::wrapper_s load_doc() {
+node::wrapper_s load_doc(string path = "misc_test.txt") {
   // Load the test file
-  std::ifstream ifs{"misc_test.txt"};
+  std::ifstream ifs{path};
   EXPECT_FALSE(ifs.fail());
   node::errorlist err;
   auto doc = parse_ini(ifs, err);
@@ -137,8 +137,8 @@ node::wrapper_s load_doc() {
   }
   return doc;
 }
-node::wrapper_s load_optimized_doc() {
-  auto doc = load_doc();
+node::wrapper_s load_optimized_doc(string path = "misc_test.txt") {
+  auto doc = load_doc(path);
   node::clone_context context;
   context.optimize = context.no_dependency = true;
   doc = std::dynamic_pointer_cast<node::wrapper>(doc->clone(context));
@@ -285,5 +285,24 @@ TEST_P(Misc, other) {
   EXPECT_EQ(doc->get_child("smooth"_ts, "fail"), "0.698");
   EXPECT_EQ(doc->get_child("smooth"_ts, "fail"), "0.8774");
   EXPECT_EQ(doc->get_child("smooth"_ts, "fail"), "0.99162");
+}
+
+TEST(Interpolation, time) {
+  double total_time = 0;
+  auto src_doc = load_doc("str_interpolation_time.txt");
+  node::throwing_clone_context context;
+  context.optimize = context.no_dependency = true;
+  for (int i = 0; i < base_repeat * 20; i++) {
+    auto doc = std::dynamic_pointer_cast<node::wrapper>(src_doc->clone(context));
+    auto time = get_time_milli();
+    EXPECT_EQ(doc->get_child("appender"_ts, "fail"), "I eat.");
+    EXPECT_EQ(doc->get_child("appender"_ts, "fail"), "I eat eat.");
+    EXPECT_EQ(doc->get_child("appender"_ts, "fail"), "I eat eat eat.");
+    EXPECT_EQ(doc->get_child("appender"_ts, "fail"), "I eat eat eat eat.");
+    EXPECT_EQ(doc->get_child("appender"_ts, "fail"), "I eat eat eat eat eat.");
+    total_time += get_time_milli() - time;
+  }
+  if (print_time)
+    cout << "Test time: " << total_time << endl;
 }
 

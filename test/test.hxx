@@ -12,8 +12,8 @@ using namespace ::testing;
 
 using std::cerr, std::cout, std::vector, std::endl, std::string;
 
-constexpr int base_repeat = 1000;
-constexpr int print_time = false;
+constexpr int base_repeat = 300;
+constexpr int print_time = true;
 
 const TestResult& get_test_result() {
   auto error = std::runtime_error("Null pointer! Are we in a test?");
@@ -52,7 +52,6 @@ void triple_node_test(node::base_s node, std::function<void(node::base_s, node::
   if (repeat <= 0)
     repeat = 1;
   auto fail_count = get_test_part_count();
-  auto time = get_time_milli();
   node::clone_context context;
   auto test = [&] {
     for (int i = 0; i < repeat; i++) {
@@ -63,12 +62,12 @@ void triple_node_test(node::base_s node, std::function<void(node::base_s, node::
     return false;
   };
 
+  auto time = get_time_milli();
   if (test())
     GTEST_SKIP() << "First test failed. Skipping clone test";
   auto normal_time = get_time_milli() - time;
 
   EXPECT_NO_THROW(node = node->clone(context));
-  time = get_time_milli();
   if (test())
     GTEST_SKIP() << "Clone test failed. Skipping optimize test";
 

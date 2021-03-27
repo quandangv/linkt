@@ -110,10 +110,13 @@ TEST(Node, Ref) {
 TEST(Node, Interpolate) {
   test_nodes({
     {"key-a", "a", "a"},
-    {"interpolation", "This is ${key-a} test", "This is a test"},
-    {"interpolation2", "$ ${key-a}", "$ a"},
-    {"interpolation3", "} ${key-a}", "} a"},
-  }, base_repeat * 10);
+    {"interpolation", "This is a test", "This is a test"},
+    {"interpolation2", "$ a", "$ a"},
+    {"interpolation3", "} a", "} a"},
+    {"interpolation4", "} a", "} a"},
+    {"interpolation5", "} a", "} a"},
+    {"interpolation6", "} a", "} a"},
+  }, base_repeat * 20);
 }
 
 TEST(Node, File) {
