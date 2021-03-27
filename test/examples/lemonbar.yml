@@ -3,13 +3,13 @@ lemonbar: '%{O20}${greeting} ${sep}%{r}${cpu} ${memory} ${battery} ${fpms} ${sep
   dynamic_base:H ${dep sep}${format} ${text}
     percentage:$ cache ${dep cache_time ? 1000} ${dep calculation}
     smooth_level:$i cache 5 ${smooth 0.3 ${dep level}}
-    background:$ color cielch(${map 30 0.9:0.4 ${dep smooth_level}}, ${map 30 0.1:0.6 ${dep smooth_level}}, ${map 30 60:30 ${dep smooth_level}})
+    background:$ color cielch(${map 30 0.9:0.4 ${dep smooth_level}}, ${map 30 0.2:0.6 ${dep smooth_level}}, ${map 30 80:30 ${dep smooth_level}})
     foreground:$ color cielch(${map 30 0.3:2 ${dep smooth_level}}, 0.4, ${map 30 60:30 ${dep smooth_level}})
     format:$ array_cache 31 ${dep smooth_level} '%{B${dep background} F${dep foreground}}'
 
   greeting: ${dep sep} ${text}
     text:$ cache 10000 ${dep raw}
-    raw: %{B- F#522}Hi %{T2}${env USER}%{T-}, it is %{T2 A:hello:}${cmd date +%H:%M}%{T- A}
+    raw: %{B- F#522}Hi %{T2}${env USER}%{T-}, it is %{T2 A:export date_mode=true:}${cmd date +%H:%M}%{T- A}
 
   cpu:$ clone dynamic_base
     text: CPU %{T2}${dep percentage}%{T-}
