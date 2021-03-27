@@ -154,7 +154,6 @@ void write_yml(std::ostream& os, const node::wrapper_s& root, int indent) {
     if (!child || name.empty() || name[0] == '.') return;
     if(auto ctn = std::dynamic_pointer_cast<node::wrapper>(child)) {
       if (ctn->map[".hidden"]) {
-        LG_DBUG("HIDDEN " << name);
         return;
       }
       std::fill_n(std::ostream_iterator<char>(os), indent, ' ');

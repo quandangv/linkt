@@ -116,6 +116,8 @@ wrapper::operator string() const {
 }
 
 void wrapper::merge(const const_wrapper_s& src, clone_context& context) {
+  if (src->map.find(".hidden") != src->map.end() && context.optimize)
+    return;
   auto ancestors_mark = context.ancestors.size();
   context.ancestors.emplace_back(src, shared_from_this());
   for(auto& pair : src->map) {

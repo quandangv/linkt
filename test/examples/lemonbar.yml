@@ -1,6 +1,6 @@
 lemonbar: '%{O20}${greeting} ${sep}%{r}${cpu} ${memory} ${battery} ${fpms} ${sep} %{B- O20}'
   sep: '%{B- O10}'
-  dynamic_base: ${dep sep}${format} ${text}
+  dynamic_base:H ${dep sep}${format} ${text}
     percentage:$ cache ${dep cache_time ? 1000} ${dep calculation}
     smooth_level:$i cache 5 ${smooth 0.3 ${dep level}}
     background:$ color cielch(${map 30 0.9:0.4 ${dep smooth_level}}, ${map 30 0.1:0.6 ${dep smooth_level}}, ${map 30 60:30 ${dep smooth_level}})

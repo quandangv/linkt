@@ -87,8 +87,6 @@ int main(int argc, char** argv) {
   close(pipes[1]);
   pollfd pollin{pipes[0], POLLIN, 0};
 
-  std::cout << "If you have lemonbar installed,\n"
-      "Pass the result of this program to lemonbar and get a simple status bar\n";
   fps_display fps(40);
   while (true) {
     if (poll(&pollin, 1, 0) > 0 && pollin.revents & POLLIN) {
