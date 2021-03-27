@@ -89,9 +89,6 @@ TEST(Node, Ref) {
     {"test2.ref-file-default", "${file nexist.txt ? ${test.key-a}}", "a", false},
     {"test2.ref-nexist", "${test.key-nexist? \" f a i l ' }", "\" f a i l '", false},
     {"test2.ref-fail", "${test.key-fail}", "${test.key-fail}", true, false, true, true},
-    {"test2.interpolation", "This is ${test.key-a} test", "This is a test"},
-    {"test2.interpolation2", "$ ${test.key-a}", "$ a"},
-    {"test2.interpolation3", "} ${test.key-a}", "} a"},
     {"test2.escape", "\\${test.key-a}", "${test.key-a}"},
     {"test2.not-escape", "\\$${test.key-a}", "\\$a"},
   });
@@ -109,6 +106,16 @@ TEST(Node, Ref) {
   test_nodes({{"dep", "${dep fail fail2}", "", false, true}});
   test_nodes({{"dep", "${rel fail fail2}", "", false, true}});
 }
+
+TEST(Node, Interpolate) {
+  test_nodes({
+    {"key-a", "a", "a"},
+    {"interpolation", "This is ${key-a} test", "This is a test"},
+    {"interpolation2", "$ ${key-a}", "$ a"},
+    {"interpolation3", "} ${key-a}", "} a"},
+  }, base_repeat * 10);
+}
+
 TEST(Node, File) {
   test_nodes({
     {"ext", "txt", "txt"},
