@@ -51,6 +51,7 @@ parse_raw(parse_context& context, tstring& value) {
     } while (find_enclosed(value, context.raw, "${", "{", "}", start, end));
     ss << value;
     newval->base = ss.str();
+    newval->tmp.reserve(newval->base.size());
     return newval;
   }
   return std::shared_ptr<base<T>>();

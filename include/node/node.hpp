@@ -114,11 +114,13 @@ namespace node {
 
   struct string_interpolate : base<string> {
     struct replace_spot {
-      int position;
+      mutable size_t start, length;
       base_s replacement;
-      replace_spot(int pos, base_s repl) : position(pos), replacement(repl) {}
+      replace_spot(size_t pos, base_s repl) : start(pos), length(0), replacement(repl) {}
+      replace_spot(size_t start, size_t length, base_s repl)
+          : start(start), length(length), replacement(repl) {}
     };
-    string base;
+    mutable string base, tmp;
     std::vector<replace_spot> spots;
 
     explicit operator string() const;

@@ -49,6 +49,7 @@ set(EXTERNAL_TESTS node languages)
 set(COPIED_FILES
   key_file.txt
   misc_test.txt
+  str_interpolation_time.txt
   ini_test.txt
   ini_test_output.txt
   yml_test.txt

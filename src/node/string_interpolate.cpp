@@ -1,38 +1,36 @@
 #include "node.hpp"
 #include "common.hpp"
 #include "wrapper.hpp"
-#include "string_interpolate.hpp"
 
 NAMESPACE(node)
 
 using spot = string_interpolate::replace_spot;
 
-template<typename T>
-struct base_it {
-  vector<spot>::const_iterator it;
-  T& operator++() { ++it; return reinterpret_cast<T&>(*this); }
-  bool operator==(const T& other) const { return other.it == it; }
-};
-struct replacement_it : public base_it<replacement_it> {
-  string operator*() { return (*it).replacement->get(); }
-};
-struct position_it : public base_it<position_it> {
-  size_t operator*() { return it->position; }
-};
-template<typename IteratorType>
-struct list {
-  const vector<spot>& list;
-
-  IteratorType begin() const {
-    return IteratorType{list.begin()};
-  }
-  IteratorType end() const {
-    return IteratorType{list.end()};
-  }
-};
-
 string_interpolate::operator string() const {
-  return interpolate(base, list<position_it>{spots}, list<replacement_it>{spots});
+  size_t base_i = 0;
+  bool copied = false;
+  for (auto& spot : spots) {
+    auto replacement = spot.replacement->get();
+    if (copied) {
+      tmp.append(base, base_i, spot.start - base_i);
+    } else if (replacement.size() != spot.length) {
+      tmp.assign(base, 0, spot.start);
+      copied = true;
+    }
+    base_i = spot.start + spot.length;
+    if (copied) {
+      spot.start = tmp.size();
+      spot.length = replacement.size();
+      tmp.append(replacement);
+    } else {
+      base.replace(spot.start, spot.length, replacement);
+    }
+  }
+  if (copied) {
+    tmp.append(base, base_i, string::npos);
+    base.swap(tmp);
+  }
+  return base;
 }
 
 base_s string_interpolate::clone(clone_context& context) const {
@@ -42,7 +40,7 @@ base_s string_interpolate::clone(clone_context& context) const {
   result->base = base;
   result->spots.reserve(spots.size());
   for(auto& spot : spots)
-    result->spots.emplace_back(spot.position, checked_clone<string>(spot.replacement, context, "string_interpolate::clone"));
+    result->spots.emplace_back(spot.start, spot.length, checked_clone<string>(spot.replacement, context, "string_interpolate::clone"));
   return result;
 }
 
