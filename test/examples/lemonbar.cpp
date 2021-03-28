@@ -53,6 +53,7 @@ int main(int argc, char** argv) {
     std::cerr << "Error while parsing:\n";
     for (auto& e : err)
       std::cerr << "At " << e.first << ": " << e.second << std::endl;
+    return -1;
   }
   node::clone_context context;
   wrapper->optimize(context);
@@ -60,6 +61,7 @@ int main(int argc, char** argv) {
     std::cerr << "Error while optimizing:\n";
     for (auto& e : context.errors)
       std::cerr << "At " << e.first << ": " << e.second << std::endl;
+    return -1;
   }
 
   // Fork and call lemonbar
@@ -88,6 +90,9 @@ int main(int argc, char** argv) {
   pollfd pollin{pipes[0], POLLIN, 0};
 
   fps_display fps(40);
+  auto node = wrapper->get_child_ptr("lemonbar"_ts);
+  if (!node)
+    std::cerr << "Failed to retrieve the key at path 'lemonbar'";
   while (true) {
     if (poll(&pollin, 1, 0) > 0 && pollin.revents & POLLIN) {
       char buffer[128];
@@ -99,18 +104,17 @@ int main(int argc, char** argv) {
         buffer_end += count;
         char* line_start = buffer, *newline;
         while ((newline = (char*)memchr(line_start, '\n', buffer_end - line_start))) {
-          std::cerr << line_start;
           *newline = 0;
-          if (!memcmp(line_start, "export ", 7)) {
-            line_start += 7;
+          if (!memcmp(line_start, "save ", 5)) {
+            line_start += 5;
             for (; line_start < newline; line_start++)
               if (!std::isspace(*line_start))
                 break;
             auto sep = (char*)memchr(line_start, '=', buffer_end - line_start);
             if (sep) {
               *sep = 0;
-              std::cerr << "set " << line_start << " to " << sep + 1 << "\n";
-              setenv(line_start, sep + 1, 1);
+              if (!wrapper->set<string>(tstring(line_start), string(sep+1)))
+                std::cerr << "Can't set key: " << line_start << std::endl;
             } else std::cerr << "Invalid: " << line_start << std::endl;
           } else {
             system(line_start);
@@ -121,21 +125,17 @@ int main(int argc, char** argv) {
       }
     }
 
-    auto next_frame = std::chrono::steady_clock::now() + std::chrono::milliseconds(50);
+    auto now = std::chrono::steady_clock::now();
     try {
-      clock_t start_retrieve = clock();
-      auto result = wrapper->get_child("lemonbar"_ts);
-      double elapsed = double(clock() - start_retrieve) / CLOCKS_PER_SEC * 1000;
-      if (!result)
-        std::cerr << "Failed to retrieve the key at path 'lemonbar'";
-      else if (!wrapper->set<float>("lemonbar.fpms.calculation"_ts
-          , round(100/fps.feed(elapsed))/100))
-        std::cerr << "Can't set fps value";
-      fputs(result->data(), lemonbar);
+      auto result = node->get();
+      auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - now).count() / 1000000.0;
+      if (!wrapper->set<float>("lemonbar.frame.calculation"_ts, round(10*fps.feed(elapsed))/10))
+        std::cerr << "Can't set frame time" << std::endl;
+      fputs(result.data(), lemonbar);
       fflush(lemonbar);
     } catch (const std::exception& e) {
       std::cerr << "Error while retrieving key: " << e.what() << std::endl;
     }
-    std::this_thread::sleep_until(next_frame);
+    std::this_thread::sleep_until(now + std::chrono::milliseconds(50));
   }
 }

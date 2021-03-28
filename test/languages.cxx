@@ -218,6 +218,20 @@ TEST_P(Misc, save_cache) {
   EXPECT_EQ(doc->get_child("cache_too_short"_ts, "fail"), "I eat eat eat eat eat.");
 }
 
+TEST_P(Misc, env_cache) {
+  auto doc = GetParam();
+  set_key<string>(doc, "test1", "");
+  set_key<string>(doc, "test2", "");
+  EXPECT_EQ(doc->get_child("env_cache"_ts, "fail"), "");
+  set_key<string>(doc, "test1", "hello");
+  set_key<string>(doc, "test2", "1");
+  EXPECT_EQ(doc->get_child("env_cache"_ts, "fail"), "hello");
+  set_key<string>(doc, "test1", "world");
+  EXPECT_EQ(doc->get_child("env_cache"_ts, "fail"), "hello");
+  set_key<string>(doc, "test2", "2");
+  EXPECT_EQ(doc->get_child("env_cache"_ts, "fail"), "world");
+}
+
 TEST_P(Misc, array_cache) {
   auto doc = GetParam();
   EXPECT_EQ(doc->get_child("multiplier"_ts, "fail"), "0 10");

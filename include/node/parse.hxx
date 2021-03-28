@@ -95,12 +95,15 @@ parse_escaped(parse_context& context, tstring& value) {
     } else if (prep.tokens[0] == "env"_ts) {
       if constexpr(std::is_same<T, string>::value)
         return std::make_shared<env>(parse_raw<T>(context, merge_tokens()), move(prep.fallback));
-    } else if (prep.tokens[0] == "cache"_ts) {
-      return cache<T>::parse(context, prep);
-
     } else if (prep.tokens[0] == "clock"_ts) {
       if constexpr(std::is_same<int, T>::value || std::is_same<string, T>::value)
         return clock::parse(context, prep);
+
+    } else if (prep.tokens[0] == "cache"_ts) {
+      return cache<T>::parse(context, prep);
+
+    } else if (prep.tokens[0] == "refcache"_ts) {
+      return refcache<T>::parse(context, prep);
 
     } else if (prep.tokens[0] == "array_cache"_ts) {
       return array_cache<T>::parse(context, prep);

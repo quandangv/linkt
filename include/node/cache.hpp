@@ -18,6 +18,23 @@ namespace node {
   };
 
     template<class T>
+  struct refcache : base<T> {
+    std::shared_ptr<base<T>> calculator;
+    base_s source;
+    int duration_ms;
+    mutable T cache_value;
+    mutable string prevsrc;
+    mutable steady_time cache_expire;
+    mutable bool unset;
+
+    explicit operator T() const;
+    base_s clone  (clone_context&) const;
+
+      static std::shared_ptr<refcache<T>>
+    parse(parse_context&, parse_preprocessed&);
+  };
+
+    template<class T>
   struct array_cache : base<T> {
     std::shared_ptr<base<int>> source;
     std::shared_ptr<base<T>> calculator;

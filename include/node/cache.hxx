@@ -32,6 +32,42 @@ std::shared_ptr<cache<T>> cache<T>::parse(parse_context& context, parse_preproce
 }
 
   template<class T>
+refcache<T>::operator T() const {
+  auto now = std::chrono::steady_clock::now();
+  if (auto newsrc = source->get(); newsrc != prevsrc || now > cache_expire || unset) {
+    cache_value = calculator->operator T();
+    prevsrc = newsrc;
+    unset = false;
+    cache_expire = now + std::chrono::milliseconds(duration_ms);
+  }
+  return cache_value;
+}
+
+  template<class T>
+base_s refcache<T>::clone(clone_context& context) const {
+  auto result = std::make_shared<refcache>();
+  result->source = checked_clone<string>(source, context, "refcache::clone");
+  result->calculator = checked_clone<T>(calculator, context, "refcache::clone");
+  result->cache_value = cache_value;
+  result->duration_ms = duration_ms;
+  result->prevsrc = prevsrc;
+  result->unset = unset;
+  return result;
+}
+
+  template<class T>
+std::shared_ptr<refcache<T>> refcache<T>::parse(parse_context& context, parse_preprocessed& prep) {
+  if (prep.token_count != 4)
+    throw parse_error("cache: Expected 4 components");
+  auto result = std::make_shared<refcache>();
+  result->source = checked_parse_raw<T>(context, prep.tokens[1]);
+  result->duration_ms = node::parse<int>(prep.tokens[2]);
+  result->calculator = checked_parse_raw<T>(context, prep.tokens[3]);
+  result->unset = true;
+  return result;
+}
+
+  template<class T>
 array_cache<T>::operator T() const {
   return get(source->operator int());
 }

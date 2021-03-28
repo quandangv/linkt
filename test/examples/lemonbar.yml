@@ -1,15 +1,17 @@
-lemonbar: '%{O20}${greeting} ${sep}%{r}${cpu} ${memory} ${battery} ${fpms} ${sep} %{B- O20}'
+lemonbar: '%{O40}${greeting}%{r}${cpu} ${memory} ${battery} ${frame} %{B- O40}'
   sep: '%{B- O10}'
   dynamic_base:H ${dep sep}${format} ${text}
     percentage:$ cache ${dep cache_time ? 1000} ${dep calculation}
     smooth_level:$i cache 5 ${smooth 0.3 ${dep level}}
-    background:$ color cielch(${map 30 0.9:0.4 ${dep smooth_level}}, ${map 30 0.2:0.6 ${dep smooth_level}}, ${map 30 80:30 ${dep smooth_level}})
+    background:$ color cielch(${map 30 0.9:0.4 ${dep smooth_level}}, ${map 30 0.2:0.6 ${dep smooth_level}}, ${map 30 90:30 ${dep smooth_level}})
     foreground:$ color cielch(${map 30 0.3:2 ${dep smooth_level}}, 0.4, ${map 30 60:30 ${dep smooth_level}})
     format:$ array_cache 31 ${dep smooth_level} '%{B${dep background} F${dep foreground}}'
 
-  greeting: ${dep sep} ${text}
-    text:$ cache 10000 ${dep raw}
-    raw: %{B- F#522}Hi %{T2}${env USER}%{T-}, it is %{T2 A:export date_mode=true:}${cmd date +%H:%M}%{T- A}
+  greeting: ${text}
+    text:$ refcache ${dep datetime.mode} 10000 ${dep raw}
+    raw: %{F#522 U#522}Hi %{T2}${env USER}%{T-}, ${dep datetime}
+    datetime:$ save mode ${cmd ./scripts/date.sh ${mode} ? N/A}
+      mode:$ var time
 
   cpu:$ clone dynamic_base
     text: CPU %{T2}${dep percentage}%{T-}
@@ -24,10 +26,10 @@ lemonbar: '%{O20}${greeting} ${sep}%{r}${cpu} ${memory} ${battery} ${fpms} ${sep
     cache_time: 10000
     level:$ map 21:20 0:30 ${dep percentage}
 
-  fpms:$ clone dynamic_base
-    text: FPMS %{T2}${dep calculation}%{T-}
+  frame:$ clone dynamic_base
+    text: %{T2}${dep calculation}%{T-}ms
     calculation:$ var float -1
-    level:$ map 3.41:3.4 0:30 ${dep percentage}
+    level:$ map 2.5:2.6 0:30 ${dep percentage}
 
 lemonbar.cpu.calculation:$ save last_status ${cmd ./scripts/cpu.sh ${last_status} ? N/A}
   last_status:$ var '0 0'
