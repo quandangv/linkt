@@ -2,6 +2,7 @@
 #include "wrapper.hpp"
 #include "reference.hpp"
 #include "cache.hpp"
+#include "strsub.hpp"
 
 #include <array>
 
@@ -35,7 +36,7 @@ parse_raw(parse_context& context, tstring& value) {
   if constexpr(std::is_same<T, string>::value) {
     // String interpolation
     std::stringstream ss;
-    auto newval = std::make_shared<string_interpolate>();
+    auto newval = std::make_shared<strsub>();
     do {
       // Write the part we have moved past to the base string
       ss << substr(value, 0, start);

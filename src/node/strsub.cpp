@@ -1,12 +1,10 @@
-#include "node.hpp"
+#include "strsub.hpp"
 #include "common.hpp"
 #include "wrapper.hpp"
 
-NAMESPACE(node)
+namespace node {
 
-using spot = string_interpolate::replace_spot;
-
-string_interpolate::operator string() const {
+strsub::operator string() const {
   size_t base_i = 0;
   bool copied = false;
   for (auto& spot : spots) {
@@ -33,22 +31,22 @@ string_interpolate::operator string() const {
   return base;
 }
 
-base_s string_interpolate::clone(clone_context& context) const {
+base_s strsub::clone(clone_context& context) const {
   if (context.optimize && is_fixed())
     return std::make_shared<plain<string>>(get());
-  auto result = std::make_unique<string_interpolate>();
+  auto result = std::make_unique<strsub>();
   result->base = base;
   result->spots.reserve(spots.size());
   for(auto& spot : spots)
-    result->spots.emplace_back(spot.start, spot.length, checked_clone<string>(spot.replacement, context, "string_interpolate::clone"));
+    result->spots.emplace_back(spot.start, spot.length, checked_clone<string>(spot.replacement, context, "strsub::clone"));
   return result;
 }
 
-bool string_interpolate::is_fixed() const {
+bool strsub::is_fixed() const {
   for(auto& spot : spots)
     if (!spot.replacement->is_fixed())
       return false;
   return true;
 }
 
-NAMESPACE_END
+}

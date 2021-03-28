@@ -181,7 +181,7 @@ TEST(Node, Clone) {
 TEST(Node, Other) {
   setenv("test_env", "test_env", true);
   unsetenv("nexist");
-  test_nodes({{"interpolate", "%{${color hsv(0, 1, 0.5)}}", "%{#800000}"}});
+  test_nodes({{"strsub", "%{${color hsv(0, 1, 0.5)}}", "%{#800000}"}});
   test_nodes({{"dumb1", "${dumb nexist.txt}", "${dumb nexist.txt}", false, true}});
   test_nodes({{"dumb2", "", ""}});
   test_nodes({{"dumb3", "${}", "", false, true}});

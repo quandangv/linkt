@@ -301,7 +301,7 @@ TEST_P(Misc, other) {
   EXPECT_EQ(doc->get_child("smooth"_ts, "fail"), "0.99162");
 }
 
-TEST(Interpolation, time) {
+TEST(Strsub, time) {
   double total_time = 0;
   auto src_doc = load_doc("str_interpolation_time.txt");
   node::throwing_clone_context context;
