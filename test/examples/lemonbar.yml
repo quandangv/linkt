@@ -5,7 +5,7 @@ lemonbar: '%{O40}${greeting}%{r}${cpu} ${memory} ${battery} ${frame} %{B- O40}'
     smooth_level:$i cache 5 ${smooth 0.3 ${dep level}}
     background:$ color cielch(${map 30 0.9:0.4 ${dep smooth_level}}, ${map 30 0.2:0.6 ${dep smooth_level}}, ${map 30 90:30 ${dep smooth_level}})
     foreground:$ color cielch(${map 30 0.3:2 ${dep smooth_level}}, 0.4, ${map 30 60:30 ${dep smooth_level}})
-    format:$ array_cache 31 ${dep smooth_level} '%{B${dep background} F${dep foreground}}'
+    format:$ arrcache 31 ${dep smooth_level} '%{B${dep background} F${dep foreground}}'
 
   greeting: ${text}
     text:$ refcache ${dep datetime.mode} 10000 ${dep raw}

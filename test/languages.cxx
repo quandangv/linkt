@@ -231,20 +231,20 @@ TEST_P(Misc, env_cache) {
   EXPECT_EQ(doc->get_child("env_cache"_ts, "fail"), "world");
 }
 
-TEST_P(Misc, array_cache) {
+TEST_P(Misc, arrcache) {
   auto doc = GetParam();
   EXPECT_EQ(doc->get_child("multiplier"_ts, "fail"), "0 10");
-  EXPECT_EQ(doc->get_child("array_cache"_ts, "fail"), "0 10 10");
-  EXPECT_EQ(doc->get_child("array_cache"_ts, "fail"), "0 10 10");
+  EXPECT_EQ(doc->get_child("arrcache"_ts, "fail"), "0 10 10");
+  EXPECT_EQ(doc->get_child("arrcache"_ts, "fail"), "0 10 10");
   set_key<int>(doc, "multiplier.source", 2);
-  EXPECT_EQ(doc->get_child("array_cache"_ts, "fail"), "0 10 10 20");
-  EXPECT_EQ(doc->get_child("array_cache2"_ts, "fail"), "0 10 10 20");
+  EXPECT_EQ(doc->get_child("arrcache"_ts, "fail"), "0 10 10 20");
+  EXPECT_EQ(doc->get_child("arrcache2"_ts, "fail"), "0 10 10 20");
   EXPECT_EQ(doc->get_child("multiplier.last"_ts, "fail"), "0 10 10 20");
   EXPECT_EQ(doc->get_child("multiplier"_ts, "fail"), "0 10 10 20 20");
   EXPECT_EQ(doc->get_child("multiplier.last"_ts, "fail"), "0 10 10 20 20");
   set_key<int>(doc, "multiplier.source", 1000);
   EXPECT_EQ(doc->get_child("multiplier"_ts, "fail"), "0 10 10 20 20 10000");
-  EXPECT_EQ(doc->get_child("array_cache"_ts, "fail"), "fail");
+  EXPECT_EQ(doc->get_child("arrcache"_ts, "fail"), "fail");
 }
 
 TEST_P(Misc, clock) {

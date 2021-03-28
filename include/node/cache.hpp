@@ -7,7 +7,7 @@
 namespace node {
     template<class T>
   struct cache : base<T> {
-    std::shared_ptr<base<T>> source;
+    std::shared_ptr<base<T>> calculator;
     std::shared_ptr<base<int>> duration_ms;
     mutable T cache_value;
     mutable steady_time cache_expire;
@@ -21,8 +21,8 @@ namespace node {
 
     template<class T>
   struct refcache : base<T> {
-    std::shared_ptr<base<T>> calculator;
     base_s source;
+    std::shared_ptr<base<T>> calculator;
     int duration_ms;
     mutable T cache_value;
     mutable string prevsrc;
@@ -37,7 +37,7 @@ namespace node {
   };
 
     template<class T>
-  struct array_cache : base<T> {
+  struct arrcache : base<T> {
     std::shared_ptr<base<int>> source;
     std::shared_ptr<base<T>> calculator;
     mutable std::shared_ptr<std::vector<std::optional<T>>> cache_arr;
@@ -46,7 +46,7 @@ namespace node {
     T get  (size_t index) const;
     base_s clone  (clone_context&) const;
 
-      static std::shared_ptr<array_cache<T>>
+      static std::shared_ptr<arrcache<T>>
     parse(parse_context&, parse_preprocessed&);
   };
 }

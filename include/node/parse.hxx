@@ -106,8 +106,8 @@ parse_escaped(parse_context& context, tstring& value) {
     } else if (prep.tokens[0] == "refcache"_ts) {
       return refcache<T>::parse(context, prep);
 
-    } else if (prep.tokens[0] == "array_cache"_ts) {
-      return array_cache<T>::parse(context, prep);
+    } else if (prep.tokens[0] == "arrcache"_ts) {
+      return arrcache<T>::parse(context, prep);
 
     } else if (prep.tokens[0] == "save"_ts) {
       if constexpr(std::is_same<T, string>::value)
