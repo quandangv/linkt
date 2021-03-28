@@ -32,13 +32,26 @@ strsub::operator string() const {
 }
 
 base_s strsub::clone(clone_context& context) const {
-  if (context.optimize && is_fixed())
-    return std::make_shared<plain<string>>(get());
   auto result = std::make_unique<strsub>();
+
+  if (context.optimize) {
+    operator string();
+    bool fixed = true;
+    for(auto& spot : spots) {
+      if (!spot.replacement->is_fixed()) {
+        result->spots.emplace_back(spot.start, spot.length, checked_clone<string>(spot.replacement, context, "strsub::clone"));
+        fixed = false;
+      }
+    }
+    if (fixed)
+      return std::make_shared<plain<string>>(string(base));
+  } else {
+    for(auto& spot : spots)
+      result->spots.emplace_back(spot.start, spot.length, checked_clone<string>(spot.replacement, context, "strsub::clone"));
+  }
+
   result->base = base;
   result->spots.reserve(spots.size());
-  for(auto& spot : spots)
-    result->spots.emplace_back(spot.start, spot.length, checked_clone<string>(spot.replacement, context, "strsub::clone"));
   return result;
 }
 

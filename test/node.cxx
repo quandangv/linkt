@@ -107,7 +107,7 @@ TEST(Node, Ref) {
   test_nodes({{"dep", "${rel fail fail2}", "", false, true}});
 }
 
-TEST(Node, Interpolate) {
+TEST(Node, strsub) {
   test_nodes({
     {"key-a", "a", "a"},
     {"interpolation", "This is a test", "This is a test"},
@@ -116,7 +116,7 @@ TEST(Node, Interpolate) {
     {"interpolation4", "} a", "} a"},
     {"interpolation5", "} a", "} a"},
     {"interpolation6", "} a", "} a"},
-  }, base_repeat * 20);
+  }, base_repeat * 10);
 }
 
 TEST(Node, File) {

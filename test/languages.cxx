@@ -106,7 +106,6 @@ TEST(Language, Functional_ini) {
 TEST(Language, Yml) {
   test_language({"yml_test", "yml",
     {
-      {"bar.base.B.dumb", "hello"},
       {"bar.bat.B.L.value", "60"},
       {"bar.bat.B.L", "0.8"},
       {"bar.bat.stat", "60"},
@@ -306,7 +305,7 @@ TEST(Strsub, time) {
   auto src_doc = load_doc("str_interpolation_time.txt");
   node::throwing_clone_context context;
   context.optimize = context.no_dependency = true;
-  for (int i = 0; i < base_repeat * 20; i++) {
+  for (int i = 0; i < base_repeat * 10; i++) {
     auto doc = std::dynamic_pointer_cast<node::wrapper>(src_doc->clone(context));
     auto time = get_time_milli();
     EXPECT_EQ(doc->get_child("appender"_ts, "fail"), "I eat.");

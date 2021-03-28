@@ -116,8 +116,6 @@ wrapper::operator string() const {
 }
 
 void wrapper::merge(const const_wrapper_s& src, clone_context& context) {
-  if (src->map.find(".hidden") != src->map.end() && context.optimize)
-    return;
   auto ancestors_mark = context.ancestors.size();
   context.ancestors.emplace_back(src, shared_from_this());
   for(auto& pair : src->map) {
@@ -128,6 +126,8 @@ void wrapper::merge(const const_wrapper_s& src, clone_context& context) {
     try {
       auto& place = map[pair.first];
       if (auto src_wrp = std::dynamic_pointer_cast<wrapper>(pair.second)) {
+        if (src_wrp->map.find(".hidden") != src_wrp->map.end())
+          continue;
         wrapper_s wrp;
         if (!place)
           place = wrp = std::make_shared<wrapper>();

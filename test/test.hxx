@@ -12,7 +12,7 @@ using namespace ::testing;
 
 using std::cerr, std::cout, std::vector, std::endl, std::string;
 
-constexpr int base_repeat = 300;
+constexpr int base_repeat = 500;
 constexpr int print_time = false;
 
 const TestResult& get_test_result() {
