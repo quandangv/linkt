@@ -22,11 +22,12 @@ lemonbar: '%{O40}${greeting}%{r}${cpu} ${memory} ${battery} ${frame} %{B- O40}'
 
   memory:$ clone dynamic_base
     text: RAM %{T2}${dep percentage}%{T-}
+    cache_time: 2000
     level:$ map 89:90 0:30 ${dep percentage}
 
   battery:$ clone dynamic_base
     text: BAT %{T2}${dep percentage}%{T-}
-    cache_time: 10000
+    cache_time: 1000
     level:$ map 21:20 0:30 ${dep percentage}
 
   frame:$ clone dynamic_base
