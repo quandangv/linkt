@@ -1,6 +1,7 @@
 #include "strsub.hpp"
 #include "common.hpp"
 #include "wrapper.hpp"
+#include "reference.hpp"
 
 namespace node {
 
@@ -36,14 +37,20 @@ base_s strsub::clone(clone_context& context) const {
 
   if (context.optimize) {
     operator string();
-    bool fixed = true;
-    for(auto& spot : spots) {
+    for (auto& spot : spots) {
       if (!spot.replacement->is_fixed()) {
-        result->spots.emplace_back(spot.start, spot.length, checked_clone<string>(spot.replacement, context, "strsub::clone"));
-        fixed = false;
+        auto replacement = checked_clone<string>(spot.replacement, context, "strsub::clone");
+        while (auto repref = std::dynamic_pointer_cast<ref_base<string>>(replacement))
+          replacement = repref->get_source();
+        if (auto repsub = std::dynamic_pointer_cast<strsub>(replacement)) {
+          for (auto& repspot : repsub->spots)
+            result->spots.emplace_back(repspot.start + spot.start, repspot.length, repspot.replacement);
+        } else {
+          result->spots.emplace_back(spot.start, spot.length, replacement);
+        }
       }
     }
-    if (fixed)
+    if (result->spots.empty())
       return std::make_shared<plain<string>>(string(base));
   } else {
     for(auto& spot : spots)

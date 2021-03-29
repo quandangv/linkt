@@ -110,12 +110,25 @@ TEST(Node, Ref) {
 TEST(Node, strsub) {
   test_nodes({
     {"key-a", "a", "a"},
-    {"interpolation", "This is a test", "This is a test"},
-    {"interpolation2", "$ a", "$ a"},
-    {"interpolation3", "} a", "} a"},
-    {"interpolation4", "} a", "} a"},
-    {"interpolation5", "} a", "} a"},
-    {"interpolation6", "} a", "} a"},
+    {"strsub", "This is ${key-a} test", "This is a test"},
+    {"strsub2", "$ ${key-a}", "$ a"},
+    {"strsub3", "} ${key-a}", "} a"},
+    {"strsub4", "} ${key-a}", "} a"},
+    {"strsub5", "} ${key-a}", "} a"},
+    {"strsub6", "} ${key-a}", "} a"},
+  }, base_repeat * 10);
+}
+
+TEST(Node, strsub_nested) {
+  setenv("test_env", "a", true);
+  test_nodes({
+    {"key-a", "${env test_env}", "a", false},
+    {"strsub", "This is ${key-a} test", "This is a test", false},
+    {"strsub2", "'${strsub}' is a statement", "'This is a test' is a statement", false},
+    {"strsub3", "${strsub2}", "'This is a test' is a statement", false},
+    {"strsub4", "${strsub2}", "'This is a test' is a statement", false},
+    {"strsub5", "${strsub2}", "'This is a test' is a statement", false},
+    {"strsub6", "${strsub2}", "'This is a test' is a statement", false},
   }, base_repeat * 10);
 }
 

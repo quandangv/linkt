@@ -1,4 +1,5 @@
 lemonbar: '%{O40}${greeting}%{r}${cpu} ${memory} ${battery} ${frame} %{B- O40}'
+#lemonbar: '%{O40}${greeting}%{c}${wm}%{r}${cpu} ${memory} ${battery} ${frame} %{B- O40}'
   sep: '%{B- O10}'
   dynamic_base:H ${dep sep}${format} ${text}
     percentage:$ cache ${dep cache_time ? 1000} ${dep calculation}
@@ -7,11 +8,13 @@ lemonbar: '%{O40}${greeting}%{r}${cpu} ${memory} ${battery} ${frame} %{B- O40}'
     foreground:$ color cielch(${map 30 0.3:2 ${dep smooth_level}}, 0.4, ${map 30 60:30 ${dep smooth_level}})
     format:$ arrcache 31 ${dep smooth_level} '%{B${dep background} F${dep foreground}}'
 
-  greeting: ${text}
-    text:$ refcache ${dep datetime.mode} 10000 ${dep raw}
+  greeting:$ refcache ${datetime.mode} 10000 ${raw}
     raw: %{F#522 U#522}Hi %{T2}${env USER}%{T-}, ${dep datetime}
     datetime:$ save mode ${cmd ./scripts/date.sh ${mode} ? N/A}
       mode:$ var time
+
+  wm:$ cache 200 ${raw}
+    raw:$ cmd ./scripts/bspwm.sh ? N/A
 
   cpu:$ clone dynamic_base
     text: CPU %{T2}${dep percentage}%{T-}
