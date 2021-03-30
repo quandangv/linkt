@@ -3,7 +3,7 @@ lemonbar: '%{O40}${greeting}%{c}${wm}%{r}${cpu} ${memory} ${battery} ${frame} %{
   sep: '%{B- O10}'
   dynamic_base:H ${dep sep}${format} ${text}
     percentage:$ cache ${dep cache_time ? 1000} ${dep calculation}
-    smooth_level:$ cache 5 ${smooth 0.3 ${dep level}}
+    smooth_level:$i cache 5 ${smooth 0.3 ${dep level}}
     background:$ color cielch(${map 30 0.9:0.4 ${dep smooth_level}}, ${map 30 0.2:0.6 ${dep smooth_level}}, ${map 30 90:30 ${dep smooth_level}})
     foreground:$ color cielch(${map 30 0.3:2 ${dep smooth_level}}, 0.4, ${map 30 60:30 ${dep smooth_level}})
     format:$ arrcache 31 ${dep smooth_level} '%{B${dep background} F${dep foreground}}'
