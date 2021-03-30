@@ -5,6 +5,7 @@
 
 #include <chrono>
 #include <cspace/processor.hpp>
+#include <poll.h>
 
 namespace node {
   using steady_time = std::chrono::time_point<std::chrono::steady_clock>;
@@ -14,11 +15,11 @@ namespace node {
     const std::shared_ptr<base<T>> value;
 
     base_deep(std::shared_ptr<base<T>> value) : value(value) {
-        if (!value) throw required_field_null_error("base_deep::base_deep");
+      if (!value) throw required_field_null_error("base_deep::base_deep");
     }
 
     bool is_fixed() const {
-        return value->is_fixed();
+      return value->is_fixed();
     }
   };
 
@@ -56,6 +57,21 @@ namespace node {
     explicit operator string() const;
     base_s clone(clone_context&) const;
     bool is_fixed() const { return false; }
+  };
+
+  struct poll : base<string>, with_fallback<string> {
+    string cmd;
+    mutable pollfd pfd{0, POLLIN, 0};
+
+    poll(const string& cmd, const base_s& fallback);
+    ~poll();
+    explicit operator string() const;
+    base_s clone(clone_context&) const;
+    void start_cmd() const;
+    bool is_fixed() const { return false; }
+
+      static std::shared_ptr<poll>
+    parse(parse_context&, parse_preprocessed&);
   };
 
   struct file : public meta, settable<string> {

@@ -37,3 +37,6 @@ smooth = ${smooth 0.5 0.2 ${float}}
 env_cache = ${refcache ${test2} 1000 ${test1}}
 test1 = ${var ""}
 test2 = ${var ""}
+
+poll = ${poll "./poll.sh"}
+poll-cmd = ${cmd "echo hello && sleep 0.005 && echo world"}

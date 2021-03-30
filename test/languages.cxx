@@ -189,6 +189,19 @@ TEST_P(Misc, wrapper) {
   EXPECT_ANY_THROW(node::parse<float>("3.0a"));
 }
 
+TEST_P(Misc, poll) {
+  auto doc = GetParam();
+  EXPECT_EQ(doc->get_child("poll-cmd"_ts, "fallback"), "hello\nworld");
+  set_key<string>(doc, "file-parse", "wait");
+  EXPECT_EQ(doc->get_child("poll"_ts, "fallback"), "");
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  EXPECT_EQ(doc->get_child("poll"_ts, "fallback"), "hello");
+  EXPECT_EQ(doc->get_child("poll"_ts, "fallback"), "");
+  set_key<string>(doc, "file-parse", "content");
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  EXPECT_EQ(doc->get_child("poll"_ts, "fallback"), "world");
+}
+
 TEST_P(Misc, parse_errors) {
   auto doc = GetParam();
   node::parse_context test_context;

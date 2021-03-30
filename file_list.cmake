@@ -48,6 +48,7 @@ set(LINI_SOURCES
 set(INTERNAL_TESTS)
 set(EXTERNAL_TESTS node languages)
 set(COPIED_FILES
+  poll.sh
   key_file.txt
   misc_test.txt
   str_interpolation_time.txt

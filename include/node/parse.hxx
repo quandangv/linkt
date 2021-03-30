@@ -93,6 +93,9 @@ parse_escaped(parse_context& context, tstring& value) {
     } else if (prep.tokens[0] == "cmd"_ts) {
       if constexpr(std::is_same<T, string>::value)
         return std::make_shared<cmd>(parse_raw<T>(context, merge_tokens()), move(prep.fallback));
+    } else if (prep.tokens[0] == "poll"_ts) {
+      if constexpr(std::is_same<T, string>::value)
+        return std::make_shared<poll>(merge_tokens(), move(prep.fallback));
     } else if (prep.tokens[0] == "env"_ts) {
       if constexpr(std::is_same<T, string>::value)
         return std::make_shared<env>(parse_raw<T>(context, merge_tokens()), move(prep.fallback));

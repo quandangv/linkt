@@ -94,11 +94,11 @@ namespace node {
   };
 
     template<>
-  struct base<int> : base<string> {
+  struct base<int> : virtual base<string> {
     virtual explicit operator int() const = 0;
 
     explicit operator string() const {
-      return std::to_string((int)*this);
+      return std::to_string(operator int());
     }
   };
 
@@ -109,13 +109,13 @@ namespace node {
 
       virtual explicit
     operator int() const {
-        return std::lround((float)*this);
+      return std::lround(operator float());
     }
 
     explicit operator string() const {
-        std::string str = std::to_string ((float)*this);
-        auto erase = str.find_last_not_of('0');
-        return str.erase (str[erase] == '.' ? erase : (erase + 1), std::string::npos );
+      std::string str = std::to_string (operator float());
+      auto erase = str.find_last_not_of('0');
+      return str.erase (str[erase] == '.' ? erase : (erase + 1), std::string::npos );
     }
   };
 
@@ -127,15 +127,15 @@ namespace node {
     plain(T&& value) : value(value) {}
 
     explicit operator T  () const {
-        return value;
+      return value;
     }
 
     base_s clone  (clone_context&) const {
-        return std::make_shared<plain<T>>(T(value));
+      return std::make_shared<plain<T>>(T(value));
     }
 
     bool is_fixed() const {
-        return true;
+      return true;
     }
 
   };
@@ -161,14 +161,18 @@ namespace node {
     template<class T> T
   parse(const char* str, size_t len);
 
-    template<class T> T
-  parse(const string& str) {
-    return parse<T>(str.data(), str.size());
+    template<class T> inline T
+  parse(const string& str, const string& msg) {
+    try {
+      return parse<T>(str.data(), str.size());
+    } catch (const std::exception& e) {
+      throw node_error("In " + msg + ": " + e.what());
+    }
   }
 
     template<class Type, class Return> std::shared_ptr<Type>
   parse_plain(const tstring& value) {
-      return std::make_shared<Type>(parse<Return>(value.begin(), value.size()));
+    return std::make_shared<Type>(parse<Return>(value, "parse_plain"));
   }
 
   struct parse_context {

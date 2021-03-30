@@ -24,7 +24,7 @@ struct fps_display {
   }
 };
 
-FILE* lemonbar;
+int lemonbar_pipe;
 
 void sighandle(int signal) {
   if (signal == SIGINT || signal == SIGTERM)
@@ -32,9 +32,9 @@ void sighandle(int signal) {
 }
 
 void cleanup() {
-  if (lemonbar) {
-    fclose(lemonbar);
-    lemonbar = nullptr;
+  if (lemonbar_pipe) {
+    close(lemonbar_pipe);
+    lemonbar_pipe = 0;
   }
 }
 
@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
       return 127;
   }
   // Parent case
-  lemonbar = fdopen(pipes[0], "r+");
+  lemonbar_pipe = pipes[0];
   close(pipes[1]);
   pollfd pollin{pipes[0], POLLIN, 0};
 
@@ -100,7 +100,10 @@ int main(int argc, char** argv) {
       while (true) {
         auto count = read(pipes[0], buffer, 128);
         if (count == 0) break;
-        if (count < 0) return -1;
+        if (count < 0) {
+          if (errno == EINTR) continue;
+          return -1;
+        }
         buffer_end += count;
         char* line_start = buffer, *newline;
         while ((newline = (char*)memchr(line_start, '\n', buffer_end - line_start))) {
@@ -131,8 +134,8 @@ int main(int argc, char** argv) {
       auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - now).count() / 1000000.0;
       if (!wrapper->set<float>("lemonbar.frame.calculation"_ts, round(10*fps.feed(elapsed))/10))
         std::cerr << "Can't set frame time" << std::endl;
-      fputs(result.data(), lemonbar);
-      fflush(lemonbar);
+      //std::cout << result << std::endl;
+      write(lemonbar_pipe, result.data(), result.size());
     } catch (const std::exception& e) {
       std::cerr << "Error while retrieving key: " << e.what() << std::endl;
     }

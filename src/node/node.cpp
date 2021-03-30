@@ -6,6 +6,8 @@
 #include <fstream>
 #include <cstdlib>
 #include <array>
+#include <unistd.h>
+#include <sys/socket.h>
 
 NAMESPACE(node)
 
@@ -94,6 +96,86 @@ base_s cmd::clone(clone_context& context) const {
   return meta::copy<cmd>(context);
 }
 
+poll::poll(const string& cmd, const base_s& fallback) : with_fallback(fallback), cmd(cmd) {}
+
+void poll::start_cmd() const {
+  int pipes[2];
+  if (socketpair(AF_UNIX, SOCK_STREAM, 0, pipes) < 0)
+    throw std::runtime_error("socketpair failed");
+  switch(fork()) {
+    case -1:
+      close(pipes[0]);
+      close(pipes[1]);
+      throw std::runtime_error("fork failed");
+    case 0: // Child case
+      dup2(pipes[1], STDOUT_FILENO);
+      dup2(pipes[1], STDIN_FILENO);
+      close(pipes[0]);
+      close(pipes[1]);
+      execl("/usr/bin/sh", "sh", "-c", cmd.data(), nullptr);
+      throw std::runtime_error("execl failed");
+  }
+  // Parent case
+  close(pipes[1]);
+  pfd.fd = pipes[0];
+}
+
+poll::~poll() {
+  if (pfd.fd) {
+    close(pfd.fd);
+    pfd.fd = pfd.events = 0;
+  }
+}
+
+poll::operator string() const {
+  if (!pfd.fd)
+    start_cmd();
+  if (::poll(&pfd, 1, 0) > 0 && pfd.revents & POLLIN) {
+    // Return the last line
+    char buffer[128];
+    string result;
+    while(1) {
+      auto count = read(pfd.fd, buffer, 128);
+      LG_DBUG(count);
+      if (count == 0) return result;
+      if (count < 0) {
+        if (errno == EINTR) continue;
+        start_cmd();
+        throw std::runtime_error("read failed");
+      }
+      auto line_end = (char*)memrchr(buffer, '\n', count);
+      if (!line_end) {
+        result += string(buffer, count);
+        if (count < 128)
+          return result;
+      } else {
+        if (line_end == buffer + count-1) {
+          if (line_end == buffer)
+            return !result.empty() ? result : fallback ? fallback->get() : "";
+          if (auto line_start = (char*)memrchr(buffer, '\n', line_end - buffer - 1))
+            return string(line_start+1, line_end - line_start - 1);
+          return result += string(buffer, line_end - buffer);
+        }
+        result = string(line_end + 1, count - (line_end - buffer) - 1);
+        if (count < 128)
+          return result;
+      }
+    }
+    LG_DBUG(result);
+  }
+  return fallback ? fallback->get() : "";
+}
+
+base_s poll::clone(clone_context& context) const {
+  return std::make_shared<poll>(cmd, fallback ? checked_clone<string>(fallback, context, "poll::clone") : base_s());
+}
+
+std::shared_ptr<poll> poll::parse(parse_context&, parse_preprocessed& prep) {
+  if (prep.token_count != 2)
+    THROW_ERROR(parse, "poll: Expected 1 components");
+  return std::make_shared<poll>(prep.tokens[1], move(prep.fallback));
+}
+
 save::operator string() const {
   auto str = value->get();
   auto sep = str.rfind('\n');
@@ -168,12 +250,12 @@ std::shared_ptr<smooth> smooth::parse(parse_context& context, parse_preprocessed
   if (prep.token_count < 3)
     goto wrong_token_count;
   result = std::make_shared<smooth>(parse_raw<float>(context, prep.tokens[prep.token_count - 1]));
-  result->drag = node::parse<float>(prep.tokens[1]);
+  result->drag = node::parse<float>(prep.tokens[1], "smooth::parse");
   if (prep.token_count == 3)
     // In this case, drag shouldn't be greater than 1.2, or the resulting smooth will be jagged
     result->spring = result->drag * result->drag / 3;
   else if (prep.token_count == 4)
-    result->spring = node::parse<float>(prep.tokens[2]);
+    result->spring = node::parse<float>(prep.tokens[2], "smooth::parse");
   else
     goto wrong_token_count;
   return result;
@@ -209,10 +291,10 @@ std::shared_ptr<clock> clock::parse(parse_context&, parse_preprocessed& prep) {
     THROW_ERROR(parse, "clock: Expected 3 components");
   auto result = std::make_shared<clock>();
   result->tick_duration = std::chrono::milliseconds(
-      node::parse<unsigned long>(prep.tokens[1].begin(), prep.tokens[1].size()));
-  result->loop = node::parse<unsigned long>(prep.tokens[2].begin(), prep.tokens[2].size());
+      node::parse<unsigned long>(prep.tokens[1], "clock::parse"));
+  result->loop = node::parse<unsigned long>(prep.tokens[2], "clock::parse");
   result->zero_point = steady_time(
-      result->tick_duration * node::parse<unsigned long>(prep.tokens[3].begin(), prep.tokens[3].size()));
+      result->tick_duration * node::parse<unsigned long>(prep.tokens[3], "clock::parse"));
   return result;
 }
 

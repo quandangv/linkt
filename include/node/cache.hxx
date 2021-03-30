@@ -61,7 +61,7 @@ std::shared_ptr<refcache<T>> refcache<T>::parse(parse_context& context, parse_pr
     throw parse_error("cache: Expected 4 components");
   auto result = std::make_shared<refcache>();
   result->source = checked_parse_raw<T>(context, prep.tokens[1]);
-  result->duration_ms = node::parse<int>(prep.tokens[2]);
+  result->duration_ms = node::parse<int>(prep.tokens[2], "refcache::parse");
   result->calculator = checked_parse_raw<T>(context, prep.tokens[3]);
   result->unset = true;
   return result;
