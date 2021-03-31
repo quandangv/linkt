@@ -1,3 +1,4 @@
 build/
 /contrib
 .*-token
+/test/examples/scripts/extra-options.sh

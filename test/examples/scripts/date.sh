@@ -9,4 +9,4 @@ else
 fi
 
 echo "$mode"
-echo "%{A:save lemonbar.greeting.datetime.mode=$next: +u}the $mode is %{T2}$(date "+$format")%{T- A -u}"
+echo "%{A:save lemonbar.options.greeting.datetime.mode=$next: +u}the $mode is %{T2}$(date "+$format")%{T- A -u}"
