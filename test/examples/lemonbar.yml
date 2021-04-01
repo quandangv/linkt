@@ -9,11 +9,11 @@ lemonbar: '%{O40}${options} %{c} ${wm} %{r} ${status} ${frame} %{B- O40}'
     format:$ arrcache 31 ${dep smooth_level} '%{B${dep background} F${dep foreground}}'
 
   options:$ refcache '${raw.mode}${greeting.datetime.mode}' 20000 '${dep sep}%{F#522}${raw}${dep sep}'
-    raw:$ save ${mode} ${cmd ./scripts/options.sh ${mode} ${dep greeting} ? N/A}
+    raw:$ save ${mode} ${cmd ./scripts/options.sh ${} ${mode} ${dep greeting} ? N/A}
       mode:$ var closed
     greeting:$ refcache ${datetime.mode} 10000 ${raw}
       raw: %{B- F#522 U#522}Hi %{T2}${env USER}%{T-}, ${dep datetime}
-      datetime:$ save ${mode} ${cmd ./scripts/date.sh ${mode} ${dep stonks} ? N/A}
+      datetime:$ save ${mode} ${cmd ./scripts/date.sh ${} ${mode} ${dep stonks} ? N/A}
         mode:$ var stonks
       stonks:$ save ${cache} ${poll ./scripts/stonks.sh GME ? ${cache}}
         cache:$ var ''
@@ -25,7 +25,10 @@ lemonbar: '%{O40}${options} %{c} ${wm} %{r} ${status} ${frame} %{B- O40}'
 
   status:$ clone dynamic_base
     text:$ save ${dep state} ${save ${cache} ${poll}} ;
-      poll:$ poll ./scripts/performance.sh 1 BAT1 0 ? ${dep cache}
+      poll:$ poll "./scripts/performance.sh ${} ${reload_time} ${bat_type} ${thermal_zone}"  ? ${dep cache}
+        reload_time: 1
+        bat_type: BAT1
+        thermal_zone: 0
       cache:$ var ""
     state:$ var 0
     level:$ map 1 30 ${dep state}

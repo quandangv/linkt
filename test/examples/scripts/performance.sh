@@ -1,29 +1,39 @@
 #!/bin/bash
-# Args: retrieve_rate battery_name thermal_zone
+# Args: path retrieve_rate battery_name thermal_zone
 
+path=$1
 show_cpu() {
-  echo %{+u A:save lemonbar.status.text.poll=ram:}CPU %{T2}${cpu[1]}%{A -u T-}
+  echo %{+u A:save $path=ram:}CPU %{T2}${cpu[1]}%{A -u T-}
 }
 
 show_memory() {
-  echo %{+u A:save lemonbar.status.text.poll=temp:}RAM %{T2}$memory%{A -u T-}
+  echo %{+u A:save $path=temp:}RAM %{T2}$memory%{A -u T-}
 }
 
 show_temperature() {
-  echo %{+u A:save lemonbar.status.text.poll=bat: T2}$temperature%{T-}°C%{A -u}
+  echo %{+u A:save $path=bat: T2}$temperature%{T-}°C%{A -u}
 }
 
 show_battery() {
-  echo %{+u A:save lemonbar.status.text.poll=cpu:}BAT %{T2}$battery%{T- A -u}
+  echo %{+u A:save $path=cpu:}BAT %{T2}$battery%{T- A -u}
 }
 
 cpu[0]="0 0"
 mode=bat
+count=0
 while :; do
   mapfile -t cpu < <(./scripts/cpu.sh ${cpu[0]})
-  memory=$(./scripts/memory.sh)
-  temperature=$(./scripts/temp.sh $3)
-  battery=$(./scripts/battery.sh $2)
+
+  if [[ $(($count%2)) -eq 0 ]]; then
+    memory=$(./scripts/memory.sh)
+  fi
+
+  temperature=$(./scripts/temp.sh $4)
+
+  if [[ $(($count%10)) -eq 0 ]]; then
+    battery=$(./scripts/battery.sh $3)
+  fi
+
   if (( $(echo "$battery < 20" | bc -l) )); then
     echo "1;$(show_battery)"
   elif (( $(echo "$temperature > 70" | bc -l) )); then
@@ -47,9 +57,10 @@ while :; do
     esac
   fi
 
-  read -t $1 newmode
+  read -t $2 newmode
   if [ -n "$newmode" ]; then
     mode="$newmode"
   fi
+  ((count++))
 done
 

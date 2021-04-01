@@ -1,7 +1,8 @@
-close="save lemonbar.options.raw.mode=close"
+close="save $1=close"
 hibernate="A:systemctl hibernate:}Hibernate%{A"
-open="A:save lemonbar.options.raw.mode=open: T2}···%{T- A"
+open="A:save $1=open: T2}···%{T- A"
 suspend="A:systemctl suspend-then-hibernate:}Suspend%{A"
+shift
 
 if [ "$1" = "open" ]; then
   echo open

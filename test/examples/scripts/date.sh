@@ -1,4 +1,6 @@
 #!/bin/bash
+path=$1
+shift
 mode=$1
 shift
 if [ "$mode" = "date" ]; then
@@ -13,4 +15,4 @@ else
 fi
 
 echo "$mode"
-echo "%{A:save lemonbar.options.greeting.datetime.mode=$next: +u}$text%{T- A -u}"
+echo "%{A:save $path=$next: +u}$text%{T- A -u}"
