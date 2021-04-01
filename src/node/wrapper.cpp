@@ -44,6 +44,7 @@ string wrapper::get_child(const tstring& path, string&& fallback) const {
     auto result = get_child(path);
     return result ? *result : move(fallback);
   } catch (const std::exception& e) {
+    LG_DBUG("Error: " << e.what());
     return fallback;
   }
 }

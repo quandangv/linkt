@@ -59,7 +59,7 @@ namespace node {
     bool is_fixed() const { return false; }
   };
 
-  struct poll : base<string>, with_fallback<string> {
+  struct poll : base<string>, with_fallback<string>, settable<string> {
     base_s cmd;
     mutable pollfd pfd{0, POLLIN, 0};
 
@@ -69,6 +69,7 @@ namespace node {
     base_s clone(clone_context&) const;
     void start_cmd() const;
     bool is_fixed() const { return false; }
+    bool set(const string& value);
   };
 
   struct file : public meta, settable<string> {

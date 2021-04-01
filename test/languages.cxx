@@ -192,12 +192,11 @@ TEST_P(Misc, wrapper) {
 TEST_P(Misc, poll) {
   auto doc = GetParam();
   EXPECT_EQ(doc->get_child("poll-cmd"_ts, "fallback"), "hello\nworld");
-  set_key<string>(doc, "file-parse", "wait");
   EXPECT_EQ(doc->get_child("poll"_ts, "fallback"), "");
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
   EXPECT_EQ(doc->get_child("poll"_ts, "fallback"), "hello");
   EXPECT_EQ(doc->get_child("poll"_ts, "fallback"), "");
-  set_key<string>(doc, "file-parse", "content");
+  EXPECT_TRUE(doc->set<string>("poll"_ts, "next"));
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   EXPECT_EQ(doc->get_child("poll"_ts, "fallback"), "world");
 }
@@ -320,16 +319,19 @@ TEST_P(Misc, other) {
 TEST(Strsub, time) {
   double total_time = 0;
   auto src_doc = load_doc("str_interpolation_time.txt");
-  node::throwing_clone_context context;
+  node::clone_context context;
   context.optimize = context.no_dependency = true;
   for (int i = 0; i < base_repeat * 10; i++) {
+    cout << "start clone" << endl;
     auto doc = std::dynamic_pointer_cast<node::wrapper>(src_doc->clone(context));
+    cout << "end clone" << endl;
+    ASSERT_TRUE(context.errors.empty());
     auto time = get_time_milli();
-    EXPECT_EQ(doc->get_child("appender"_ts, "fail"), "I eat.");
-    EXPECT_EQ(doc->get_child("appender"_ts, "fail"), "I eat eat.");
-    EXPECT_EQ(doc->get_child("appender"_ts, "fail"), "I eat eat eat.");
-    EXPECT_EQ(doc->get_child("appender"_ts, "fail"), "I eat eat eat eat.");
-    EXPECT_EQ(doc->get_child("appender"_ts, "fail"), "I eat eat eat eat eat.");
+    ASSERT_EQ(doc->get_child("appender"_ts, "fail"), "I eat.");
+    ASSERT_EQ(doc->get_child("appender"_ts, "fail"), "I eat eat.");
+    ASSERT_EQ(doc->get_child("appender"_ts, "fail"), "I eat eat eat.");
+    ASSERT_EQ(doc->get_child("appender"_ts, "fail"), "I eat eat eat eat.");
+    ASSERT_EQ(doc->get_child("appender"_ts, "fail"), "I eat eat eat eat eat.");
     total_time += get_time_milli() - time;
   }
   if (print_time)

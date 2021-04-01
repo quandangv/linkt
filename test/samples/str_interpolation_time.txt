@@ -1,3 +1,3 @@
-appender = ${save last '${rel last} eat\n${rel last} eat.'}
+appender = ${save ${rel last} '${rel last} eat\n${rel last} eat.'}
 appender.last = ${var 'I'}
 

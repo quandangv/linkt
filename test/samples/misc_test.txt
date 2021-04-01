@@ -17,9 +17,9 @@ greeting = ${cmd echo Hello ${rel name}}
 greeting.name = quan
 
 wrapper.key-b = b
-appender = ${save last '${rel last} eat\n${rel last} eat.'}
+appender = ${save ${appender.last} '${rel last} eat\n${rel last} eat.'}
 appender.last = ${var 'I'}
-appender_delim = ${save last '${rel last} eat;${rel last} eat.' ;}
+appender_delim = ${save ${rel last} '${rel last} eat;${rel last} eat.' ;}
 appender_delim.last = ${var 'I'}
 
 clock = ${clock 1 1000 0}
@@ -27,7 +27,7 @@ clock = ${clock 1 1000 0}
 cache = ${cache 1000 ${appender}}
 cache_too_short = ${cache 0 ${appender}}
 
-multiplier = ${save last '${rel last} ${cmd echo $((${rel source}*10))}'}
+multiplier = ${save ${rel last} '${rel last} ${cmd echo $((${rel source}*10))}'}
 multiplier.last = ${var 0}
 multiplier.source = ${var int 1}
 arrcache = ${arrcache 3 ${multiplier.source} ${multiplier}}

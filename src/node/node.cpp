@@ -109,6 +109,7 @@ void poll::start_cmd() const {
       throw std::runtime_error("fork failed");
     case 0: // Child case
       dup2(pipes[1], STDOUT_FILENO);
+      dup2(pipes[1], STDERR_FILENO);
       dup2(pipes[1], STDIN_FILENO);
       close(pipes[0]);
       close(pipes[1]);
@@ -136,7 +137,6 @@ poll::operator string() const {
     string result;
     while(1) {
       auto count = read(pfd.fd, buffer, 128);
-      LG_DBUG(count);
       if (count == 0) return result;
       if (count < 0) {
         if (errno == EINTR) continue;
@@ -161,13 +161,21 @@ poll::operator string() const {
           return result;
       }
     }
-    LG_DBUG(result);
   }
   return fallback ? fallback->get() : "";
 }
 
 base_s poll::clone(clone_context& context) const {
   return std::make_shared<poll>(cmd, fallback ? checked_clone<string>(fallback, context, "poll::clone") : base_s());
+}
+
+bool poll::set(const string& value) {
+  if (!pfd.fd)
+    start_cmd();
+  if (write(pfd.fd, value.data(), value.size()) == -1) {
+    return false;
+  }
+  return write(pfd.fd, "\n", 1) != -1;
 }
 
 save::operator string() const {
@@ -180,9 +188,12 @@ save::operator string() const {
     result = str.substr(sep + 1);
     str.erase(sep);
   }
+  if (!target)
+    THROW_ERROR(node, "save: Target is empty");
   if (auto conv_target = std::dynamic_pointer_cast<settable<string>>(target);
-      !conv_target || !conv_target->set(str))
+      !conv_target || !conv_target->set(str)) {
     THROW_ERROR(node, "save: Can't set value to target");
+  }
   return result;
 }
 
@@ -198,7 +209,7 @@ std::shared_ptr<save> save::parse(parse_context& context, parse_preprocessed& pr
   if (prep.token_count != 3 && prep.token_count != 4)
     THROW_ERROR(parse, "save: Expected 2 or 3 components, actual: " + std::to_string(prep.token_count - 1));
   auto result = std::make_shared<save>();
-  result->target = std::make_shared<address_ref<string>>(context.get_current(), prep.tokens[1]);
+  result->target = checked_parse_raw<string>(context, prep.tokens[1]);
   result->value = checked_parse_raw<string>(context, prep.tokens[2]);
   if (prep.token_count == 4) {
     if (prep.tokens[3].size() != 1)
