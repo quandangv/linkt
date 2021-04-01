@@ -1,4 +1,4 @@
-lemonbar: '%{O40}${options} %{c} ${wm} %{r} ${cpu} ${memory} ${battery} ${frame} %{B- O40}'
+lemonbar: '%{O40}${options} %{c} ${wm} %{r} ${cpu} ${memory} ${battery} ${temp} ${frame} %{B- O40}'
   sep: '%{B- O10}'
 
   dynamic_base:H ${dep sep}${format} ${text}
@@ -13,11 +13,14 @@ lemonbar: '%{O40}${options} %{c} ${wm} %{r} ${cpu} ${memory} ${battery} ${frame}
       mode:$ var closed
     greeting:$ refcache ${datetime.mode} 10000 ${raw}
       raw: %{B- F#522 U#522}Hi %{T2}${env USER}%{T-}, ${dep datetime}
-      datetime:$ save mode ${cmd ./scripts/date.sh ${mode} ? N/A}
-        mode:$ var time
+      datetime:$ save mode ${cmd ./scripts/date.sh ${mode} ${dep stonks} ? N/A}
+        mode:$ var stonks
+      stonks:$ save cache ${poll ./scripts/stonks.sh GME ? ${cache}}
+        cache:$ var ''
+
 
   wm:$ cache 200 ${raw}
-    raw:$ save cache ${poll './scripts/bspwm.sh' ? ${cache}}
+    raw:$ save cache ${poll ./scripts/bspwm.sh ? ${cache}}
       cache:$ var ''
 
   cpu:$ clone dynamic_base
@@ -28,6 +31,10 @@ lemonbar: '%{O40}${options} %{c} ${wm} %{r} ${cpu} ${memory} ${battery} ${frame}
     text: RAM %{T2}${dep percentage}%{T-}
     cache_time: 2000
     level:$ map 89:90 0:30 ${dep percentage}
+
+  temp:$ clone dynamic_base
+    text: %{T2}${dep percentage}%{T-}°C
+    level:$ map 69:70 0:30 ${dep percentage}
 
   battery:$ clone dynamic_base
     text: BAT %{T2}${dep percentage}%{T-}
@@ -42,5 +49,7 @@ lemonbar: '%{O40}${options} %{c} ${wm} %{r} ${cpu} ${memory} ${battery} ${frame}
 lemonbar.cpu.calculation:$ save last_status ${cmd ./scripts/cpu.sh ${last_status} ? N/A}
   last_status:$ var '0 0'
 lemonbar.memory.calculation:$ cmd ./scripts/memory.sh ? N/A
+lemonbar.temp.calculation:$ cmd ./scripts/temp.sh ${zone} ? N/A
+  zone: 0
 lemonbar.battery.calculation:$ cmd ./scripts/battery.sh ${bat_name} ? N/A
   bat_name: BAT1

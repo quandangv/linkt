@@ -1,12 +1,16 @@
 #!/bin/bash
 mode=$1
-if [[ "$mode" == "date" ]]; then
+shift
+if [ "$mode" = "date" ]; then
   next="time"
-  format="%d-%m-%y"
+  text="the date is %{T2}$(date +%d-%m-%y)"
+elif [ "$mode" = "time" ]; then
+  next="stonks"
+  text="the time is %{T2}$(date +%H:%M)"
 else
   next="date"
-  format="%H:%M"
+  text="$@"
 fi
 
 echo "$mode"
-echo "%{A:save lemonbar.options.greeting.datetime.mode=$next: +u}the $mode is %{T2}$(date "+$format")%{T- A -u}"
+echo "%{A:save lemonbar.options.greeting.datetime.mode=$next: +u}$text%{T- A -u}"
