@@ -198,6 +198,14 @@ save::operator string() const {
   return result;
 }
 
+bool save::set(const string& value) {
+  if (auto conv_target = std::dynamic_pointer_cast<settable<string>>(target);
+      !conv_target || !conv_target->set(value)) {
+    return false;
+  }
+  return true;
+}
+
 base_s save::clone(clone_context& context) const {
   auto result = std::make_shared<save>();
   result->value = checked_clone<string>(value, context, "save::clone");

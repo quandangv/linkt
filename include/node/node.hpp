@@ -80,13 +80,14 @@ namespace node {
     bool is_fixed() const { return false; }
   };
 
-  struct save : base<string> {
+  struct save : base<string>, settable<string> {
     base_s value;
     base_s target;
     char delimiter{'\n'};
 
     explicit operator string() const;
     base_s clone(clone_context&) const;
+    bool set(const string&);
 
       static std::shared_ptr<save>
     parse(parse_context&, parse_preprocessed&);
