@@ -43,8 +43,9 @@ node::wrapper_s parse_ini(std::istream& is, node::errorlist& err) {
       continue;
     } if (tstring key; err.extract_key(line, linecount, '=', key)) {
       // This is a key
+      context.current_path = prefix + key;
       try {
-        root->add(prefix + key, context, line);
+        root->add(context.current_path, context, line);
       } catch (const std::exception& e) {
         err.report_error(linecount, e.what());
       }
@@ -79,12 +80,14 @@ void write_ini(std::ostream& os, const node::wrapper_s& root, const string& pref
 struct indentpair {
   int indent;
   node::wrapper_s node;
-  indentpair(int indent, node::wrapper_s node) : indent(indent), node(node) {}
+  string path;
+  indentpair(int indent, node::wrapper_s node, const string& path)
+      : indent(indent), node(node), path(path) {}
 };
 
 node::wrapper_s parse_yml(std::istream& is, node::errorlist& err) {
   auto root = std::make_shared<node::wrapper>();
-  vector<indentpair> records{indentpair{-1, root}};
+  vector<indentpair> records{indentpair(-1, root, "")};
   string raw;
   node::parse_context context;
 
@@ -105,9 +108,10 @@ node::wrapper_s parse_yml(std::istream& is, node::errorlist& err) {
 
     try {
       context.parent = records.back().node ?: (records.back().node = context.get_current());
+      context.current_path = records.back().path.empty() ? (string)key : records.back().path + "." + key;
       if (line.empty()) {
         // Add an empty node and record it as a possible parent
-        records.emplace_back(indent, node::wrapper_s());
+        records.emplace_back(indent, node::wrapper_s(), context.current_path);
         context.place = &context.parent->add(key);
         continue;
       }
@@ -129,7 +133,7 @@ node::wrapper_s parse_yml(std::istream& is, node::errorlist& err) {
         LG_DBUG("HIDDEN");
       }
 
-      records.emplace_back(indent, nullptr);
+      records.emplace_back(indent, nullptr, context.current_path);
       node::base_s value;
       if (find(modes, '$') == tstring::npos)
         value = node::parse_raw<string>(context, line);

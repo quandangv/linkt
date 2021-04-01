@@ -178,7 +178,7 @@ namespace node {
   struct parse_context {
     bool parent_based_ref{false};
 
-    string raw;
+    string raw, current_path;
     wrapper_s parent, current;
     base_s* place{nullptr};
 

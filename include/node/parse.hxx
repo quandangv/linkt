@@ -78,7 +78,8 @@ parse_escaped(parse_context& context, tstring& value) {
   };
   auto make_operator = [&]()->std::shared_ptr<base<T>> {
     if (prep.token_count == 0)
-      throw parse_error("Empty reference string");
+      if constexpr(std::is_same<T, string>::value)
+        return std::make_shared<plain<string>>(string(context.current_path));
     if (prep.token_count == 1) {
       auto ancestor = context.parent_based_ref ? context.get_parent() : context.get_current();
       return std::make_shared<address_ref<T>>(ancestor, prep.tokens[0]);
@@ -158,7 +159,7 @@ parse_escaped(parse_context& context, tstring& value) {
       }
       return {};
     }
-    throw parse_error("Unsupported operator type: " + prep.tokens[0]);
+    throw parse_error("Unsupported operator or operator have the wrong type: " + prep.tokens[0]);
   };
   auto op = make_operator();
   if (op && prep.fallback)

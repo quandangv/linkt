@@ -112,11 +112,12 @@ TEST(Language, Yml) {
       {"bar.bat.unit", "%"},
       {"bar.bat.B.dumb", "hello"},
       {"bar.bat.B", "#FF54CB"},
+      {"bar.bat.path", "bar.bat.path"},
       {"bar.bat", "%{B#FF54CB} BAT 60%"},
       {"bar.F", "#fff"},
       {"bar", "%{F#fff}%{B#FF54CB} BAT 60% "},
     },
-    { "line 13, key B", "line 14", "line 15, key label", "line 17, key dumb2" }
+    { "line 15, key B", "line 16", "line 17, key label", "line 19, key dumb2" }
   });
 }
 
@@ -322,9 +323,7 @@ TEST(Strsub, time) {
   node::clone_context context;
   context.optimize = context.no_dependency = true;
   for (int i = 0; i < base_repeat * 10; i++) {
-    cout << "start clone" << endl;
     auto doc = std::dynamic_pointer_cast<node::wrapper>(src_doc->clone(context));
-    cout << "end clone" << endl;
     ASSERT_TRUE(context.errors.empty());
     auto time = get_time_milli();
     ASSERT_EQ(doc->get_child("appender"_ts, "fail"), "I eat.");
