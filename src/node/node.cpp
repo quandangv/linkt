@@ -166,7 +166,8 @@ poll::operator string() const {
 }
 
 base_s poll::clone(clone_context& context) const {
-  return std::make_shared<poll>(cmd, fallback ? checked_clone<string>(fallback, context, "poll::clone") : base_s());
+  return std::make_shared<poll>(checked_clone<string>(cmd, context, "poll::clone")
+      , fallback ? checked_clone<string>(fallback, context, "poll::clone") : base_s());
 }
 
 bool poll::set(const string& value) {
