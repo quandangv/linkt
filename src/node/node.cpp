@@ -96,7 +96,7 @@ base_s cmd::clone(clone_context& context) const {
   return meta::copy<cmd>(context);
 }
 
-poll::poll(const string& cmd, const base_s& fallback) : with_fallback(fallback), cmd(cmd) {}
+poll::poll(const base_s& cmd, const base_s& fallback) : with_fallback(fallback), cmd(cmd) {}
 
 void poll::start_cmd() const {
   int pipes[2];
@@ -112,7 +112,7 @@ void poll::start_cmd() const {
       dup2(pipes[1], STDIN_FILENO);
       close(pipes[0]);
       close(pipes[1]);
-      execl("/usr/bin/sh", "sh", "-c", cmd.data(), nullptr);
+      execl("/usr/bin/bash", "bash", "-c", cmd->get().data(), nullptr);
       throw std::runtime_error("execl failed");
   }
   // Parent case
@@ -168,12 +168,6 @@ poll::operator string() const {
 
 base_s poll::clone(clone_context& context) const {
   return std::make_shared<poll>(cmd, fallback ? checked_clone<string>(fallback, context, "poll::clone") : base_s());
-}
-
-std::shared_ptr<poll> poll::parse(parse_context&, parse_preprocessed& prep) {
-  if (prep.token_count != 2)
-    THROW_ERROR(parse, "poll: Expected 1 components");
-  return std::make_shared<poll>(prep.tokens[1], move(prep.fallback));
 }
 
 save::operator string() const {

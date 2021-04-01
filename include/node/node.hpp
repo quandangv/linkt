@@ -60,18 +60,15 @@ namespace node {
   };
 
   struct poll : base<string>, with_fallback<string> {
-    string cmd;
+    base_s cmd;
     mutable pollfd pfd{0, POLLIN, 0};
 
-    poll(const string& cmd, const base_s& fallback);
+    poll(const base_s& cmd, const base_s& fallback);
     ~poll();
     explicit operator string() const;
     base_s clone(clone_context&) const;
     void start_cmd() const;
     bool is_fixed() const { return false; }
-
-      static std::shared_ptr<poll>
-    parse(parse_context&, parse_preprocessed&);
   };
 
   struct file : public meta, settable<string> {

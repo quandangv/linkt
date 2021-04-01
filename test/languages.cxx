@@ -185,8 +185,8 @@ TEST_P(Misc, wrapper) {
   doc->add("manual"_ts, std::make_shared<node::plain<string>>("hello"));
   EXPECT_EQ(doc->get_child("manual"_ts, "fail"), "hello");
   EXPECT_FALSE((*doc->get_child_place("multiplier"_ts))->is_fixed());
-  EXPECT_EQ(node::parse<float>("3.0"), 3.0f);
-  EXPECT_ANY_THROW(node::parse<float>("3.0a"));
+  EXPECT_EQ(node::parse<float>("3.0", "test.Misc.wrapper"), 3.0f);
+  EXPECT_ANY_THROW(node::parse<float>("3.0a", "test.Misc.wrapper"));
 }
 
 TEST_P(Misc, poll) {
