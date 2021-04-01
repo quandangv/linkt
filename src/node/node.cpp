@@ -172,7 +172,7 @@ base_s poll::clone(clone_context& context) const {
 
 save::operator string() const {
   auto str = value->get();
-  auto sep = str.rfind('\n');
+  auto sep = str.rfind(delimiter);
   string result;
   if (sep == string::npos) {
     result = str;
@@ -190,15 +190,21 @@ base_s save::clone(clone_context& context) const {
   auto result = std::make_shared<save>();
   result->value = checked_clone<string>(value, context, "save::clone");
   result->target = checked_clone<string>(target, context, "save::clone");
+  result->delimiter = delimiter;
   return result;
 }
 
 std::shared_ptr<save> save::parse(parse_context& context, parse_preprocessed& prep) {
-  if (prep.token_count != 3)
-    THROW_ERROR(parse, "save: Expected 2 components");
+  if (prep.token_count != 3 && prep.token_count != 4)
+    THROW_ERROR(parse, "save: Expected 2 or 3 components, actual: " + std::to_string(prep.token_count - 1));
   auto result = std::make_shared<save>();
   result->target = std::make_shared<address_ref<string>>(context.get_current(), prep.tokens[1]);
   result->value = checked_parse_raw<string>(context, prep.tokens[2]);
+  if (prep.token_count == 4) {
+    if (prep.tokens[3].size() != 1)
+      THROW_ERROR(parse, "save: Only single character delimiters are accepted");
+    result->delimiter = prep.tokens[3].front();
+  }
   return result;
 }
 

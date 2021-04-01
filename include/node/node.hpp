@@ -82,6 +82,7 @@ namespace node {
   struct save : base<string> {
     base_s value;
     base_s target;
+    char delimiter{'\n'};
 
     explicit operator string() const;
     base_s clone(clone_context&) const;
