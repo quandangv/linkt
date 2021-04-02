@@ -18,10 +18,6 @@ namespace node {
     nested(std::shared_ptr<base<T>> value) : value(value) {
       if (!value) throw required_field_null_error("nested::nested");
     }
-
-    bool is_fixed() const {
-      return value->is_fixed();
-    }
   };
 
   struct meta : base<string>, nested<string>, with_fallback<string> {
@@ -33,16 +29,27 @@ namespace node {
         return std::make_shared<T>(checked_clone<string>(value, context, "meta::copy")
             , fallback ? fallback->clone(context) : base_s());
     }
-    bool is_fixed() const { return nested::is_fixed(); }
+    bool is_fixed() const { return value->is_fixed(); }
   };
 
-  struct color : public meta {
+  struct color : meta {
     using meta::meta;
     cspace::processor processor;
 
     explicit operator string() const;
     base_s clone(clone_context&) const;
       static std::shared_ptr<color>
+    parse(parse_context&, parse_preprocessed&);
+  };
+
+  struct gradient : base<string>, nested<float> {
+    cspace::gradient<3> base;
+
+    using nested<float>::nested;
+    explicit operator string() const;
+    base_s clone(clone_context&) const;
+    bool is_fixed() const { return value->is_fixed(); }
+      static std::shared_ptr<gradient>
     parse(parse_context&, parse_preprocessed&);
   };
 
@@ -101,7 +108,7 @@ namespace node {
     using nested<float>::nested;
     explicit operator float() const;
     base_s clone(clone_context&) const;
-    bool is_fixed() const { return nested::is_fixed(); }
+    bool is_fixed() const { return value->is_fixed(); }
 
       static std::shared_ptr<map>
     parse(parse_context&, parse_preprocessed&);
@@ -114,7 +121,7 @@ namespace node {
     using nested<float>::nested;
     explicit operator float() const;
     base_s clone(clone_context&) const;
-    bool is_fixed() const { return nested::is_fixed(); }
+    bool is_fixed() const { return value->is_fixed(); }
 
       static std::shared_ptr<smooth>
     parse(parse_context&, parse_preprocessed&);

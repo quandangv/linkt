@@ -132,6 +132,10 @@ parse_escaped(parse_context& context, tstring& value) {
       if constexpr(std::is_same<T, string>::value)
         return color::parse(context, prep);
 
+    } else if (prep.tokens[0] == "gradient"_ts) {
+      if constexpr(std::is_same<T, string>::value)
+        return gradient::parse(context, prep);
+
     } else if (prep.tokens[0] == "var"_ts) {
       if (prep.token_count == 2)
         return parse_plain<settable_plain<T>, T>(trim_quotes(prep.tokens[1]));

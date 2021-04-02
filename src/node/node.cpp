@@ -2,6 +2,7 @@
 #include "wrapper.hpp"
 #include "parse.hpp"
 #include "common.hpp"
+#include "token_iterator.hpp"
 
 #include <fstream>
 #include <cstdlib>
@@ -35,6 +36,34 @@ std::shared_ptr<color> color::parse(parse_context& context, parse_preprocessed& 
       result->processor.inter = cspace::stospace(prep.tokens[1]);
     result->processor.add_modification(trim_quotes(prep.tokens[prep.token_count - 2]));
   }
+  return result;
+}
+
+gradient::operator string() const {
+  return base.get_hex(value->operator float());
+}
+
+base_s gradient::clone(clone_context& context) const {
+  auto result = std::make_shared<gradient>(checked_clone<float>(value, context, "gradient::clone"));
+  result->base = base;
+  return result;
+}
+
+std::shared_ptr<gradient> gradient::parse(parse_context& context, parse_preprocessed& prep) {
+  if (prep.token_count != 3)
+    THROW_ERROR(parse, "gradient: Expected 2 components");
+  auto result = std::make_shared<gradient>(parse_raw<float>(context, prep.tokens[2]));
+  tstring point;
+  trim_quotes(prep.tokens[1]);
+  while (!(point = get_word(prep.tokens[1])).untouched()) {
+    if (auto at = cut_front(point, ':'); !at.untouched())
+      result->base.add_hex(node::parse<float>(at.begin(), at.size()), point, false);
+    else
+      THROW_ERROR(parse, "gradient: invalid point: " + point);
+  }
+  result->base.convert(cspace::colorspaces::rgb, cspace::colorspaces::cielab);
+  result->base.auto_add(10);
+  result->base.convert(cspace::colorspaces::cielab, cspace::colorspaces::rgb);
   return result;
 }
 
