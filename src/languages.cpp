@@ -118,11 +118,13 @@ node::wrapper_s parse_yml(std::istream& is, node::errorlist& err) {
       auto modes = cut_front(line, ' ');
       
       // Assign a new value to an existing node
-      if (find(modes, '=') != tstring::npos && !context.parent->set(key, line)) {
-        auto ptr = context.parent->get_child_place(key);
-        err.report_error(linecount, key, !ptr || !*ptr ? "Key to be set doesn't exist." :
-            ("Can't set value of type: "s + typeid(*ptr).name()));
-        continue;
+      if (find(modes, '=') != tstring::npos) {
+        if (!context.parent->set<string>(key, line)) {
+          auto ptr = context.parent->get_child_place(key);
+          err.report_error(linecount, key, !ptr || !*ptr ? "Key to be set doesn't exist." :
+              ("Can't set value of type: "s + typeid(*ptr).name()));
+          continue;
+        } else continue;
       }
       context.parent->add(key);
       context.place = context.parent->get_child_place(key);
