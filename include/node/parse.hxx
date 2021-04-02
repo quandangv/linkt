@@ -73,8 +73,10 @@ parse_escaped(parse_context& context, tstring& value) {
   if (!fb_str.untouched())
     prep.fallback = fallback = parse_raw<T>(context, fb_str);
 
-  auto merge_tokens = [&]()->tstring& {
-    return prep.tokens[prep.token_count - 1].merge(prep.tokens[1]);
+  auto single_token = [&](const string& type)->tstring& {
+    if (prep.token_count != 2)
+      throw parse_error("parse_error: " + type + ": Only accept 1 component");
+    return prep.tokens[1];
   };
   auto make_operator = [&]()->std::shared_ptr<base<T>> {
     if (prep.token_count == 0)
@@ -84,23 +86,23 @@ parse_escaped(parse_context& context, tstring& value) {
       auto ancestor = context.parent_based_ref ? context.get_parent() : context.get_current();
       return std::make_shared<address_ref<T>>(ancestor, prep.tokens[0]);
     } else if (prep.tokens[0] == "dep"_ts) {
-      return std::make_shared<address_ref<T>>(context.get_parent(), merge_tokens());
+      return std::make_shared<address_ref<T>>(context.get_parent(), single_token("dep"));
     } else if (prep.tokens[0] == "rel"_ts) {
-      return std::make_shared<address_ref<T>>(context.get_current(), merge_tokens());
+      return std::make_shared<address_ref<T>>(context.get_current(), single_token("rel"));
 
     } else if (prep.tokens[0] == "file"_ts) {
       if constexpr(std::is_same<T, string>::value)
-        return std::make_shared<file>(parse_raw<T>(context, merge_tokens()), prep.fallback);
+        return std::make_shared<file>(parse_raw<T>(context, single_token("file")), prep.fallback);
     } else if (prep.tokens[0] == "cmd"_ts) {
       if constexpr(std::is_same<T, string>::value)
-        return std::make_shared<cmd>(parse_raw<T>(context, merge_tokens()), prep.fallback);
+        return std::make_shared<cmd>(parse_raw<T>(context, single_token("cmd")), prep.fallback);
     } else if (prep.tokens[0] == "poll"_ts) {
       if constexpr(std::is_same<T, string>::value)
-        return std::make_shared<poll>(parse_raw<string>(context, merge_tokens()), prep.fallback);
+        return std::make_shared<poll>(parse_raw<string>(context, single_token("")), prep.fallback);
 
     } else if (prep.tokens[0] == "env"_ts) {
       if constexpr(std::is_same<T, string>::value)
-        return std::make_shared<env>(parse_raw<T>(context, merge_tokens()), prep.fallback);
+        return std::make_shared<env>(parse_raw<T>(context, single_token("env")), prep.fallback);
     } else if (prep.tokens[0] == "clock"_ts) {
       if constexpr(std::is_same<int, T>::value || std::is_same<string, T>::value)
         return clock::parse(context, prep);

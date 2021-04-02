@@ -1,27 +1,27 @@
-lemonbar: '%{O40}${options} %{c} ${wm} %{r} ${status} ${frame} %{B- O40}'
-  sep: '%{B- O10}'
+lemonbar: "%{O40}${options} %{c} ${wm} %{r} ${status} ${frame} %{B- O40}"
+  sep: "%{B- O10}"
 
   dynamic_base:H ${dep sep}${format} ${text}
     percentage:$ cache ${dep cache_time ? 1000} ${dep calculation}
     smooth_level:$i cache 5 ${smooth 0.3 ${dep level}}
     background:$ color cielch(${map 30 0.9:0.4 ${dep smooth_level}}, ${map 30 0.2:0.6 ${dep smooth_level}}, ${map 30 90:30 ${dep smooth_level}})
     foreground:$ color cielch(${map 30 0.3:2 ${dep smooth_level}}, 0.4, ${map 30 60:30 ${dep smooth_level}})
-    format:$ arrcache 31 ${dep smooth_level} '%{B${dep background} F${dep foreground}}'
+    format:$ arrcache 31 ${dep smooth_level} "%{B${dep background} F${dep foreground}}"
 
-  options:$ refcache '${raw.mode}${greeting.datetime.mode}' 20000 '${dep sep}%{F#522}${raw}${dep sep}'
-    raw:$ save ${mode} ${cmd ./scripts/options.sh ${} ${mode} ${dep greeting} ? N/A}
+  options:$ refcache "${raw.mode}${greeting.datetime.mode}" 20000 "${dep sep}%{F#522}${raw}${dep sep}"
+    raw:$ save ${mode} ${cmd "./scripts/options.sh ${} ${mode} ${dep greeting}" ? N/A}
       mode:$ var closed
     greeting:$ refcache ${datetime.mode} 10000 ${raw}
       raw: %{B- F#522 U#522}Hi %{T2}${env USER}%{T-}, ${dep datetime}
-      datetime:$ save ${mode} ${cmd ./scripts/date.sh ${} ${mode} ${dep stonks} ? N/A}
+      datetime:$ save ${mode} ${cmd "./scripts/date.sh ${} ${mode} ${dep stonks}" ? N/A}
         mode:$ var stonks
-      stonks:$ save ${cache} ${poll ./scripts/stonks.sh GME ? ${cache}}
-        cache:$ var ''
+      stonks:$ save ${cache} ${poll "./scripts/stonks.sh GME" ? ${cache}}
+        cache:$ var ""
 
 
   wm:$ cache 200 ${raw}
     raw:$ save ${cache} ${poll ./scripts/bspwm.sh ? ${cache}}
-      cache:$ var ''
+      cache:$ var ""
 
   status:$ clone dynamic_base
     text:$ save ${dep state} ${save ${cache} ${poll}} ;
@@ -52,10 +52,10 @@ lemonbar: '%{O40}${options} %{c} ${wm} %{r} ${status} ${frame} %{B- O40}'
     calculation:$ var float -1
     level:$ map 2.5:2.6 30 ${dep percentage}
 
-lemonbar.cpu.calculation:$ save ${last_status} ${cmd ./scripts/cpu.sh ${last_status} ? N/A}
-  last_status:$ var '0 0'
-lemonbar.memory.calculation:$ cmd ./scripts/memory.sh ? N/A
-lemonbar.temp.calculation:$ cmd ./scripts/temp.sh ${zone} ? N/A
+lemonbar.cpu.calculation:$ save ${last_status} ${cmd "./scripts/cpu.sh ${last_status}" ? N/A}
+  last_status:$ var "0 0"
+lemonbar.memory.calculation:$ cmd "./scripts/memory.sh" ? N/A
+lemonbar.temp.calculation:$ cmd "./scripts/temp.sh ${zone}" ? N/A
   zone: 0
-lemonbar.battery.calculation:$ cmd ./scripts/battery.sh ${bat_name} ? N/A
+lemonbar.battery.calculation:$ cmd "./scripts/battery.sh ${bat_name}" ? N/A
   bat_name: BAT1

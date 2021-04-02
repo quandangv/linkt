@@ -61,17 +61,17 @@ TEST(Node, Simple) {
 TEST(Node, Cmd) {
   test_nodes({
     {"msg", "1.000", "1.000"},
-    {"cmd", "${cmd echo ${msg}}", "1.000", false},
+    {"cmd", "${cmd 'echo ${msg}'}", "1.000", false},
     {"cmd-ref", "${map 1 2 ${cmd}}", "2", false},
     {"cmd-msg", "result is ${cmd-ref}", "result is 2", false},
   }, base_repeat / 100);
-  test_nodes({{"cmd1", "${cmd echo 'hello  world'}", "hello  world", false}}, base_repeat / 100);
-  test_nodes({{"cmd2", "${cmd echo hello world}", "hello world", false}}, base_repeat / 100);
+  test_nodes({{"cmd1", "${cmd \"echo 'hello  world'\"}", "hello  world", false}}, base_repeat / 100);
+  test_nodes({{"cmd2", "${cmd 'echo hello world'}", "hello world", false}}, base_repeat / 100);
   test_nodes({{"cmd3", "${cmd nexist}", "", false, false, true}}, base_repeat / 100);
   test_nodes({{"cmd4", "${cmd nexist ? fail}", "fail", false}}, base_repeat / 100);
   test_nodes({{"cmd4", "${cmd nexist ?}", "", false}}, base_repeat / 100);
   test_nodes({
-    {"greeting", "${cmd echo Hello ${rel name}}", "Hello quan", false},
+    {"greeting", "${cmd 'echo Hello ${rel name}'}", "Hello quan", false},
     {"greeting.name", "quan", "quan"},
   }, base_repeat / 100);
 }
