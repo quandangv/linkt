@@ -5,17 +5,18 @@
 
 #include <chrono>
 #include <cspace/processor.hpp>
+#include <cspace/gradient.hpp>
 #include <poll.h>
 
 namespace node {
   using steady_time = std::chrono::time_point<std::chrono::steady_clock>;
 
     template<class T>
-  struct base_deep : base<T> {
+  struct nested {
     const std::shared_ptr<base<T>> value;
 
-    base_deep(std::shared_ptr<base<T>> value) : value(value) {
-      if (!value) throw required_field_null_error("base_deep::base_deep");
+    nested(std::shared_ptr<base<T>> value) : value(value) {
+      if (!value) throw required_field_null_error("nested::nested");
     }
 
     bool is_fixed() const {
@@ -23,15 +24,16 @@ namespace node {
     }
   };
 
-  struct meta : base_deep<string>, with_fallback<string> {
+  struct meta : base<string>, nested<string>, with_fallback<string> {
     meta(const base_s& value, const base_s& fallback)
-        : base_deep(value), with_fallback(fallback) {}
+        : nested(value), with_fallback(fallback) {}
 
       template<class T> std::shared_ptr<T>
     copy(clone_context& context) const {
         return std::make_shared<T>(checked_clone<string>(value, context, "meta::copy")
             , fallback ? fallback->clone(context) : base_s());
     }
+    bool is_fixed() const { return nested::is_fixed(); }
   };
 
   struct color : public meta {
@@ -93,24 +95,26 @@ namespace node {
     parse(parse_context&, parse_preprocessed&);
   };
 
-  struct map : base_deep<float> {
+  struct map : base<float>, nested<float> {
     float from_min{0}, from_range{0}, to_min{0}, to_range{0};
 
-    using base_deep<float>::base_deep;
+    using nested<float>::nested;
     explicit operator float() const;
     base_s clone(clone_context&) const;
+    bool is_fixed() const { return nested::is_fixed(); }
 
       static std::shared_ptr<map>
     parse(parse_context&, parse_preprocessed&);
   };
 
-  struct smooth : base_deep<float> {
+  struct smooth : base<float>, nested<float> {
     float spring, drag;
     mutable float current{0}, velocity{0};
 
-    using base_deep<float>::base_deep;
+    using nested<float>::nested;
     explicit operator float() const;
     base_s clone(clone_context&) const;
+    bool is_fixed() const { return nested::is_fixed(); }
 
       static std::shared_ptr<smooth>
     parse(parse_context&, parse_preprocessed&);
