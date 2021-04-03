@@ -11,18 +11,8 @@
 namespace node {
   using steady_time = std::chrono::time_point<std::chrono::steady_clock>;
 
-    template<class T>
-  struct nested {
-    const std::shared_ptr<base<T>> value;
-
-    nested(std::shared_ptr<base<T>> value) : value(value) {
-      if (!value) throw required_field_null_error("nested::nested");
-    }
-  };
-
-  struct meta : base<string>, nested<string>, with_fallback<string> {
-    meta(const base_s& value, const base_s& fallback)
-        : nested(value), with_fallback(fallback) {}
+  struct meta : base<string>, with_fallback<string> {
+    base_s value;
 
       template<class T> std::shared_ptr<T>
     copy(clone_context& context) const {
@@ -30,6 +20,8 @@ namespace node {
             , fallback ? fallback->clone(context) : base_s());
     }
     bool is_fixed() const { return value->is_fixed(); }
+    meta(const base_s& value, const base_s& fallback)
+        : with_fallback(fallback), value(value) {}
   };
 
   struct color : meta {
@@ -42,10 +34,10 @@ namespace node {
     parse(parse_context&, parse_preprocessed&);
   };
 
-  struct gradient : base<string>, nested<float> {
+  struct gradient : base<string> {
+    std::shared_ptr<base<float>> value;
     cspace::gradient<3> base;
 
-    using nested<float>::nested;
     explicit operator string() const;
     base_s clone(clone_context&) const;
     bool is_fixed() const { return value->is_fixed(); }
@@ -102,10 +94,10 @@ namespace node {
     parse(parse_context&, parse_preprocessed&);
   };
 
-  struct map : base<float>, nested<float> {
+  struct map : base<float> {
+    std::shared_ptr<base<float>> value;
     float from_min{0}, from_range{0}, to_min{0}, to_range{0};
 
-    using nested<float>::nested;
     explicit operator float() const;
     base_s clone(clone_context&) const;
     bool is_fixed() const { return value->is_fixed(); }
@@ -114,11 +106,11 @@ namespace node {
     parse(parse_context&, parse_preprocessed&);
   };
 
-  struct smooth : base<float>, nested<float> {
+  struct smooth : base<float> {
+    std::shared_ptr<base<float>> value;
     float spring, drag;
     mutable float current{0}, velocity{0};
 
-    using nested<float>::nested;
     explicit operator float() const;
     base_s clone(clone_context&) const;
     bool is_fixed() const { return value->is_fixed(); }

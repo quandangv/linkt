@@ -44,7 +44,8 @@ gradient::operator string() const {
 }
 
 base_s gradient::clone(clone_context& context) const {
-  auto result = std::make_shared<gradient>(checked_clone<float>(value, context, "gradient::clone"));
+  auto result = std::make_shared<gradient>();
+  result->value = checked_clone<float>(value, context, "gradient::clone");
   result->base = base;
   return result;
 }
@@ -52,7 +53,8 @@ base_s gradient::clone(clone_context& context) const {
 std::shared_ptr<gradient> gradient::parse(parse_context& context, parse_preprocessed& prep) {
   if (prep.token_count != 3)
     THROW_ERROR(parse, "gradient: Expected 2 components");
-  auto result = std::make_shared<gradient>(parse_raw<float>(context, prep.tokens[2]));
+  auto result = std::make_shared<gradient>();
+  result->value = parse_raw<float>(context, prep.tokens[2]);
   tstring point;
   trim_quotes(prep.tokens[1]);
   while (!(point = get_word(prep.tokens[1])).untouched()) {
@@ -61,9 +63,9 @@ std::shared_ptr<gradient> gradient::parse(parse_context& context, parse_preproce
     else
       THROW_ERROR(parse, "gradient: invalid point: " + point);
   }
-  result->base.convert(cspace::colorspaces::rgb, cspace::colorspaces::cielab);
+  result->base.convert(cspace::colorspaces::rgb, cspace::colorspaces::cielch);
   result->base.auto_add(10);
-  result->base.convert(cspace::colorspaces::cielab, cspace::colorspaces::rgb);
+  result->base.convert(cspace::colorspaces::cielch, cspace::colorspaces::rgb);
   return result;
 }
 
@@ -268,7 +270,8 @@ map::operator float() const {
 base_s map::clone(clone_context& context) const {
   if (context.optimize && is_fixed())
       return std::make_shared<plain<float>>(operator float());
-  auto result = std::make_shared<map>(checked_clone<float>(value, context, "map::clone"));
+  auto result = std::make_shared<map>();
+  result->value = checked_clone<float>(value, context, "map::clone");
   result->from_min = from_min;
   result->from_range = from_range;
   result->to_min = to_min;
@@ -279,7 +282,8 @@ base_s map::clone(clone_context& context) const {
 std::shared_ptr<map> map::parse(parse_context& context, parse_preprocessed& prep) {
   if (prep.token_count != 4)
     THROW_ERROR(parse, "map: Expected 3 components");
-  auto result = std::make_shared<map>(parse_raw<float>(context, prep.tokens[prep.token_count - 1]));
+  auto result = std::make_shared<map>();
+  result->value = parse_raw<float>(context, prep.tokens[prep.token_count - 1]);
   if (auto min = cut_front(prep.tokens[1], ':'); !min.untouched())
     result->from_min = convert<float, strtof>(min);
   result->from_range = convert<float, strtof>(prep.tokens[1]) - result->from_min;
@@ -298,7 +302,8 @@ std::shared_ptr<smooth> smooth::parse(parse_context& context, parse_preprocessed
   std::shared_ptr<smooth> result;
   if (prep.token_count < 3)
     goto wrong_token_count;
-  result = std::make_shared<smooth>(parse_raw<float>(context, prep.tokens[prep.token_count - 1]));
+  result = std::make_shared<smooth>();
+  result->value = parse_raw<float>(context, prep.tokens[prep.token_count - 1]);
   result->drag = node::parse<float>(prep.tokens[1], "smooth::parse");
   if (prep.token_count == 3)
     // In this case, drag shouldn't be greater than 1.2, or the resulting smooth will be jagged
@@ -316,7 +321,8 @@ base_s smooth::clone(clone_context& context) const {
   if (context.optimize && is_fixed()) {
     return std::make_shared<plain<float>>(value->operator float());
   }
-  auto result = std::make_shared<smooth>(checked_clone<float>(value, context, "smooth::clone"));
+  auto result = std::make_shared<smooth>();
+  result->value = checked_clone<float>(value, context, "smooth::clone");
   result->spring = spring;
   result->drag = drag;
   return result;
