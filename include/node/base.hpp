@@ -65,11 +65,11 @@ namespace node {
 
       virtual bool
     is_fixed() const {
-        return false;
+      return false;
     }
 
     string get() const {
-        return operator string();
+      return operator string();
     }
   };
 

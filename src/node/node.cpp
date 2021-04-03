@@ -12,6 +12,13 @@
 
 NAMESPACE(node)
 
+  template<class T>
+nested<T>::nested(parse_context& context, parse_preprocessed& prep)
+    : value(checked_parse_raw<T>(context, prep.tokens[prep.token_count - 1])) {}
+  template<class T>
+nested<T>::nested(const nested<T>& other, clone_context& context)
+    : value(checked_clone<T>(other.value, context, "nested::nested")) {}
+
 color::operator string() const {
   try {
     auto result = processor.operate(value->get());
@@ -24,19 +31,17 @@ color::operator string() const {
 base_s color::clone(clone_context& context) const {
   if (context.optimize && is_fixed())
     return std::make_shared<plain<string>>(operator string());
-  auto result = meta::copy<color>(context);
+  auto result = std::make_shared<color>(*this, context);
   result->processor = processor;
   return result;
 }
 
-std::shared_ptr<color> color::parse(parse_context& context, parse_preprocessed& prep) {
-  auto result = std::make_shared<color>(parse_raw<string>(context, prep.tokens[prep.token_count - 1]), move(prep.fallback));
+color::color(parse_context& context, parse_preprocessed& prep) : meta(context, prep) {
   if (prep.token_count > 2) {
     if (prep.token_count > 3)
-      result->processor.inter = cspace::stospace(prep.tokens[1]);
-    result->processor.add_modification(trim_quotes(prep.tokens[prep.token_count - 2]));
+      processor.inter = cspace::stospace(prep.tokens[1]);
+    processor.add_modification(trim_quotes(prep.tokens[prep.token_count - 2]));
   }
-  return result;
 }
 
 gradient::operator string() const {
@@ -50,23 +55,21 @@ base_s gradient::clone(clone_context& context) const {
   return result;
 }
 
-std::shared_ptr<gradient> gradient::parse(parse_context& context, parse_preprocessed& prep) {
+gradient::gradient(parse_context& context, parse_preprocessed& prep) : nested(context, prep) {
   if (prep.token_count != 3)
     THROW_ERROR(parse, "gradient: Expected 2 components");
-  auto result = std::make_shared<gradient>();
-  result->value = parse_raw<float>(context, prep.tokens[2]);
+  value = checked_parse_raw<float>(context, prep.tokens[2]);
   tstring point;
   trim_quotes(prep.tokens[1]);
   while (!(point = get_word(prep.tokens[1])).untouched()) {
     if (auto at = cut_front(point, ':'); !at.untouched())
-      result->base.add_hex(node::parse<float>(at.begin(), at.size()), point, false);
+      base.add_hex(node::parse<float>(at.begin(), at.size()), point, false);
     else
       THROW_ERROR(parse, "gradient: invalid point: " + point);
   }
-  result->base.convert(cspace::colorspaces::rgb, cspace::colorspaces::cielch);
-  result->base.auto_add(10);
-  result->base.convert(cspace::colorspaces::cielch, cspace::colorspaces::rgb);
-  return result;
+  base.convert(cspace::colorspaces::rgb, cspace::colorspaces::cielch);
+  base.auto_add(10);
+  base.convert(cspace::colorspaces::cielch, cspace::colorspaces::rgb);
 }
 
 env::operator string() const {
@@ -80,7 +83,7 @@ bool env::set(const string& newval) {
 }
 
 base_s env::clone(clone_context& context) const {
-  return meta::copy<env>(context);
+  return std::make_shared<env>(*this, context);
 }
 
 file::operator string() const {
@@ -95,15 +98,16 @@ file::operator string() const {
 
 bool file::set(const string& content) {
   std::ofstream ofs(value->get().data(), std::ios_base::trunc);
-  if (ofs.fail())
+  if (ofs.fail()) {
     return false;
+  }
   ofs << content;
   ofs.close();
   return true;
 }
 
 base_s file::clone(clone_context& context) const {
-  return meta::copy<file>(context);
+  return std::make_shared<file>(*this, context);
 }
 
 cmd::operator string() const {
@@ -124,10 +128,8 @@ cmd::operator string() const {
 }
 
 base_s cmd::clone(clone_context& context) const {
-  return meta::copy<cmd>(context);
+  return std::make_shared<cmd>(*this, context);
 }
-
-poll::poll(const base_s& cmd, const base_s& fallback) : with_fallback(fallback), cmd(cmd) {}
 
 void poll::start_cmd() const {
   int pipes[2];
@@ -144,7 +146,7 @@ void poll::start_cmd() const {
       dup2(pipes[1], STDIN_FILENO);
       close(pipes[0]);
       close(pipes[1]);
-      execl("/usr/bin/bash", "bash", "-c", cmd->get().data(), nullptr);
+      execl("/usr/bin/bash", "bash", "-c", value->get().data(), nullptr);
       throw std::runtime_error("execl failed");
   }
   // Parent case
@@ -197,8 +199,7 @@ poll::operator string() const {
 }
 
 base_s poll::clone(clone_context& context) const {
-  return std::make_shared<poll>(checked_clone<string>(cmd, context, "poll::clone")
-      , fallback ? checked_clone<string>(fallback, context, "poll::clone") : base_s());
+  return std::make_shared<poll>(*this, context);
 }
 
 bool poll::set(const string& value) {
@@ -245,18 +246,16 @@ base_s save::clone(clone_context& context) const {
   return result;
 }
 
-std::shared_ptr<save> save::parse(parse_context& context, parse_preprocessed& prep) {
+save::save(parse_context& context, parse_preprocessed& prep) {
   if (prep.token_count != 3 && prep.token_count != 4)
     THROW_ERROR(parse, "save: Expected 2 or 3 components, actual: " + std::to_string(prep.token_count - 1));
-  auto result = std::make_shared<save>();
-  result->target = checked_parse_raw<string>(context, prep.tokens[1]);
-  result->value = checked_parse_raw<string>(context, prep.tokens[2]);
+  target = checked_parse_raw<string>(context, prep.tokens[1]);
+  value = checked_parse_raw<string>(context, prep.tokens[2]);
   if (prep.token_count == 4) {
     if (prep.tokens[3].size() != 1)
       THROW_ERROR(parse, "save: Only single character delimiters are accepted");
-    result->delimiter = prep.tokens[3].front();
+    delimiter = prep.tokens[3].front();
   }
-  return result;
 }
 
 inline float clamp(float value) {
@@ -283,7 +282,7 @@ std::shared_ptr<map> map::parse(parse_context& context, parse_preprocessed& prep
   if (prep.token_count != 4)
     THROW_ERROR(parse, "map: Expected 3 components");
   auto result = std::make_shared<map>();
-  result->value = parse_raw<float>(context, prep.tokens[prep.token_count - 1]);
+  result->value = checked_parse_raw<float>(context, prep.tokens[prep.token_count - 1]);
   if (auto min = cut_front(prep.tokens[1], ':'); !min.untouched())
     result->from_min = convert<float, strtof>(min);
   result->from_range = convert<float, strtof>(prep.tokens[1]) - result->from_min;
@@ -303,7 +302,7 @@ std::shared_ptr<smooth> smooth::parse(parse_context& context, parse_preprocessed
   if (prep.token_count < 3)
     goto wrong_token_count;
   result = std::make_shared<smooth>();
-  result->value = parse_raw<float>(context, prep.tokens[prep.token_count - 1]);
+  result->value = checked_parse_raw<float>(context, prep.tokens[prep.token_count - 1]);
   result->drag = node::parse<float>(prep.tokens[1], "smooth::parse");
   if (prep.token_count == 3)
     // In this case, drag shouldn't be greater than 1.2, or the resulting smooth will be jagged

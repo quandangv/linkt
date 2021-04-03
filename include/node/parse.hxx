@@ -90,19 +90,20 @@ parse_escaped(parse_context& context, tstring& value) {
     } else if (prep.tokens[0] == "rel"_ts) {
       return std::make_shared<address_ref<T>>(context.get_current(), single_token("rel"));
 
-    } else if (prep.tokens[0] == "file"_ts) {
-      if constexpr(std::is_same<T, string>::value)
-        return std::make_shared<file>(parse_raw<T>(context, single_token("file")), prep.fallback);
-    } else if (prep.tokens[0] == "cmd"_ts) {
-      if constexpr(std::is_same<T, string>::value)
-        return std::make_shared<cmd>(parse_raw<T>(context, single_token("cmd")), prep.fallback);
-    } else if (prep.tokens[0] == "poll"_ts) {
-      if constexpr(std::is_same<T, string>::value)
-        return std::make_shared<poll>(parse_raw<string>(context, single_token("")), prep.fallback);
+    #define SINGLE_TOKEN(type) \
+    } else if (prep.tokens[0] == #type##_ts) { \
+      if (prep.token_count != 2) \
+        throw parse_error("parse_error: " #type " only accept 1 component"); \
+      if constexpr(std::is_same<T, string>::value) \
+        return std::make_shared<type>(context, prep)
 
-    } else if (prep.tokens[0] == "env"_ts) {
-      if constexpr(std::is_same<T, string>::value)
-        return std::make_shared<env>(parse_raw<T>(context, single_token("env")), prep.fallback);
+    SINGLE_TOKEN(cmd);
+    SINGLE_TOKEN(file);
+    SINGLE_TOKEN(env);
+    SINGLE_TOKEN(poll);
+
+    #undef SINGLE_TOKEN
+
     } else if (prep.tokens[0] == "clock"_ts) {
       if constexpr(std::is_same<int, T>::value || std::is_same<string, T>::value)
         return clock::parse(context, prep);
@@ -118,7 +119,7 @@ parse_escaped(parse_context& context, tstring& value) {
 
     } else if (prep.tokens[0] == "save"_ts) {
       if constexpr(std::is_same<T, string>::value)
-        return save::parse(context, prep);
+        return std::make_shared<save>(context, prep);
 
     } else if (prep.tokens[0] == "map"_ts) {
       if constexpr(std::is_convertible<float, T>::value || std::is_same<string, T>::value)
@@ -130,11 +131,11 @@ parse_escaped(parse_context& context, tstring& value) {
 
     } else if (prep.tokens[0] == "color"_ts) {
       if constexpr(std::is_same<T, string>::value)
-        return color::parse(context, prep);
+        return std::make_shared<color>(context, prep);
 
     } else if (prep.tokens[0] == "gradient"_ts) {
       if constexpr(std::is_same<T, string>::value)
-        return gradient::parse(context, prep);
+        return std::make_shared<gradient>(context, prep);
 
     } else if (prep.tokens[0] == "var"_ts) {
       if (prep.token_count == 2)

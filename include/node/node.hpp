@@ -11,60 +11,67 @@
 namespace node {
   using steady_time = std::chrono::time_point<std::chrono::steady_clock>;
 
-  struct meta : base<string>, with_fallback<string> {
-    base_s value;
+    template<class T>
+  struct nested {
+    std::shared_ptr<base<T>> value;
 
-      template<class T> std::shared_ptr<T>
-    copy(clone_context& context) const {
-        return std::make_shared<T>(checked_clone<string>(value, context, "meta::copy")
-            , fallback ? fallback->clone(context) : base_s());
-    }
+    nested(parse_context& context, parse_preprocessed& prep);
+    nested(const nested<T>& other, clone_context& context);
+    nested() {}
+  };
+
+  struct meta : base<string>, nested<string>, with_fallback<string> {
     bool is_fixed() const { return value->is_fixed(); }
-    meta(const base_s& value, const base_s& fallback)
-        : with_fallback(fallback), value(value) {}
+    meta(parse_context& context, parse_preprocessed& prep)
+        : nested(context, prep)
+        , with_fallback(move(prep.fallback)) {}
+    meta(const meta& other, clone_context& context)
+        : nested(other, context)
+        , with_fallback(other.fallback ? other.fallback->clone(context) : base_s()) {}
   };
 
   struct color : meta {
-    using meta::meta;
     cspace::processor processor;
 
+    color(parse_context&, parse_preprocessed&);
     explicit operator string() const;
     base_s clone(clone_context&) const;
-      static std::shared_ptr<color>
-    parse(parse_context&, parse_preprocessed&);
+  protected:
+    using meta::meta;
   };
 
-  struct gradient : base<string> {
-    std::shared_ptr<base<float>> value;
+  struct gradient : base<string>, nested<float> {
     cspace::gradient<3> base;
 
     explicit operator string() const;
     base_s clone(clone_context&) const;
     bool is_fixed() const { return value->is_fixed(); }
-      static std::shared_ptr<gradient>
-    parse(parse_context&, parse_preprocessed&);
+    gradient(parse_context&, parse_preprocessed&);
+  protected:
+    using nested<float>::nested;
   };
 
   struct env : public meta, settable<string> {
-    using meta::meta;
     explicit operator string() const;
     bool set  (const string& value);
     base_s clone(clone_context&) const;
     bool is_fixed() const { return false; }
+  protected:
+    using meta::meta;
   };
 
   struct cmd : meta {
-    using meta::meta;
     explicit operator string() const;
     base_s clone(clone_context&) const;
     bool is_fixed() const { return false; }
+  protected:
+    using meta::meta;
   };
 
-  struct poll : base<string>, with_fallback<string>, settable<string> {
-    base_s cmd;
+  struct poll : meta, settable<string> {
     mutable pollfd pfd{0, POLLIN, 0};
 
-    poll(const base_s& cmd, const base_s& fallback);
+    using meta::meta;
     ~poll();
     explicit operator string() const;
     base_s clone(clone_context&) const;
@@ -74,11 +81,12 @@ namespace node {
   };
 
   struct file : public meta, settable<string> {
-    using meta::meta;
     explicit operator string() const;
     bool set(const string& value);
     base_s clone(clone_context&) const;
     bool is_fixed() const { return false; }
+  protected:
+    using meta::meta;
   };
 
   struct save : base<string>, settable<string> {
@@ -86,12 +94,11 @@ namespace node {
     base_s target;
     char delimiter{'\n'};
 
+    save(parse_context&, parse_preprocessed&);
+    save() {}
     explicit operator string() const;
     base_s clone(clone_context&) const;
     bool set(const string&);
-
-      static std::shared_ptr<save>
-    parse(parse_context&, parse_preprocessed&);
   };
 
   struct map : base<float> {
