@@ -5,11 +5,11 @@ lemonbar: "%{O40}${options} %{c} ${wm} %{r} ${status} ${frame} %{B- O40}"
     smooth_level:$i cache 5 ${smooth 0.3 ${map 1 30 ${dep level}}}
     #smooth_level: 30
     background:$ gradient "0:${norm} 30:${warn}" ${dep smooth_level}
-      norm:$ var #EDB
-      warn:$ var #B32
+      norm: #EDB
+      warn: #B32
     foreground:$ gradient "0:${norm} 30:${warn}" ${dep smooth_level}
-      norm:$ var #522
-      warn:$ var #FFF
+      norm: #532
+      warn: #FFF
     format:$ arrcache 31 ${dep smooth_level} "%{B${dep background} F${dep foreground}}"
 
   simple_module:H$ clone warn_module
@@ -20,7 +20,7 @@ lemonbar: "%{O40}${options} %{c} ${wm} %{r} ${status} ${frame} %{B- O40}"
     raw:$ save ${mode} ${cmd "./scripts/options.sh ${} ${mode} ${dep greeting}" ? N/A}
       mode:$ var closed
     greeting:$ refcache ${datetime.mode} 10000 ${raw}
-      raw: %{B- F#522 U#522}Hi %{T2}${env USER}%{T-}, ${dep datetime}
+      raw: %{B- F#532 U#532}Hi %{T2}${env USER}%{T-}, ${dep datetime}
       datetime:$ save ${mode} ${cmd "./scripts/date.sh ${} ${mode} ${dep stonks}" ? N/A}
         mode:$ var stonks
       stonks:$ save ${cache} ${poll "./scripts/stonks.sh GME" ? ${cache}}
@@ -58,6 +58,7 @@ lemonbar: "%{O40}${options} %{c} ${wm} %{r} ${status} ${frame} %{B- O40}"
   frame:$ clone simple_module
     background.norm:= #CDB
     background.warn:= #B32
+    foreground.norm:= #342
     text: %{T2}${dep calculation}%{T-}ms
     calculation:$ var float -1
     level:$ map 2.5:2.6 1 ${dep percentage}

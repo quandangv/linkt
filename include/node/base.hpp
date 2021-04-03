@@ -121,9 +121,7 @@ namespace node {
 
     template<class T>
   struct plain : base<T> {
-  protected:
     T value;
-  public:
     plain(T&& value) : value(value) {}
 
     explicit operator T  () const {
