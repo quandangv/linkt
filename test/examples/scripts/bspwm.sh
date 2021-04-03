@@ -8,15 +8,11 @@ do
       "f")
         array[$index]='o'
         ;;
-      "F")
-        array[$index]='%{T2}O%{T-}'
-        focused=$index
-        ;;
       "o")
         array[$index]="${array[$index]:1}"
         array[$index]="${array[$index],,}"
         ;;
-      "O")
+      "O" | "F")
         array[$index]="${array[$index]:1}"
         array[$index]="%{T2}${array[$index]^^}%{T-}"
         focused=$index

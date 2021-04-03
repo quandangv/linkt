@@ -1,12 +1,15 @@
 lemonbar: "%{O40}${options} %{c} ${wm} %{r} ${status} ${frame} %{B- O40}"
   sep: "%{B- O10}"
 
-  dynamic_base:H ${dep sep}${format} ${text}
-    percentage:$ cache ${dep cache_time ? 1000} ${dep calculation}
-    smooth_level:$i cache 5 ${smooth 0.3 ${dep level}}
-    background:$ color cielch(${map 30 0.9:0.4 ${dep smooth_level}}, ${map 30 0.2:0.6 ${dep smooth_level}}, ${map 30 90:30 ${dep smooth_level}})
-    foreground:$ color cielch(${map 30 0.3:2 ${dep smooth_level}}, 0.4, ${map 30 60:30 ${dep smooth_level}})
+  warn_module:H ${dep sep}${format} ${text}
+    smooth_level:$i cache 5 ${smooth 0.3 ${map 1 30 ${dep level}}}
+    background:$ gradient "0:#EDB 30:#B32" ${dep smooth_level}
+    foreground:$ gradient "0:#522 30:#FFF" ${dep smooth_level}
     format:$ arrcache 31 ${dep smooth_level} "%{B${dep background} F${dep foreground}}"
+
+  simple_module:H$ clone warn_module
+    percentage:L$ cache ${dep cache_time} ${dep calculation}
+    cache_time:$ var 1000
 
   options:$ refcache "${raw.mode}${greeting.datetime.mode}" 20000 "${dep sep}%{F#522}${raw}${dep sep}"
     raw:$ save ${mode} ${cmd "./scripts/options.sh ${} ${mode} ${dep greeting}" ? N/A}
@@ -23,7 +26,7 @@ lemonbar: "%{O40}${options} %{c} ${wm} %{r} ${status} ${frame} %{B- O40}"
     raw:$ save ${cache} ${poll ./scripts/bspwm.sh ? ${cache}}
       cache:$ var ""
 
-  status:$ clone dynamic_base
+  status:$ clone warn_module
     text:$ save ${dep state} ${save ${cache} ${poll}} ;
       poll:$ poll "./scripts/performance.sh ${} ${reload_time} ${bat_type} ${thermal_zone}"  ? ${dep cache}
         reload_time: 1
@@ -31,26 +34,26 @@ lemonbar: "%{O40}${options} %{c} ${wm} %{r} ${status} ${frame} %{B- O40}"
         thermal_zone: 0
       cache:$ var ""
     state:$ var 0
-    level:$ map 1 30 ${dep state}
+    level: ${dep state}
 
-  memory:$ clone dynamic_base
+  memory:$ clone simple_module
     text: RAM %{T2}${dep percentage}%{T-}
-    cache_time: 2000
-    level:$ map 89:90 30 ${dep percentage}
+    cache_time:= 2000
+    level:$ map 89:90 1 ${dep percentage}
 
-  temp:$ clone dynamic_base
+  temp:$ clone simple_module
     text: %{T2}${dep percentage}%{T-}°C
-    level:$ map 69:70 30 ${dep percentage}
+    level:$ map 69:70 1 ${dep percentage}
 
-  battery:$ clone dynamic_base
+  battery:$ clone simple_module
     text: BAT %{T2}${dep percentage}%{T-}
-    cache_time: 20000
-    level:$ map 21:20 30 ${dep percentage}
+    cache_time:= 20000
+    level:$ map 21:20 1 ${dep percentage}
 
-  frame:$ clone dynamic_base
+  frame:$ clone simple_module
     text: %{T2}${dep calculation}%{T-}ms
     calculation:$ var float -1
-    level:$ map 2.5:2.6 30 ${dep percentage}
+    level:$ map 2.5:2.6 1 ${dep percentage}
 
 lemonbar.cpu.calculation:$ save ${last_status} ${cmd "./scripts/cpu.sh ${last_status}" ? N/A}
   last_status:$ var "0 0"
