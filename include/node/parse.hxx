@@ -91,8 +91,6 @@ parse_escaped(parse_context& context, tstring& value) {
 
     #define SINGLE_TOKEN(type) \
     } else if (prep.tokens[0] == #type##_ts) { \
-      if (prep.token_count != 2) \
-        throw parse_error("parse_error: " #type " only accept 1 component"); \
       if constexpr(std::is_same<T, string>::value) \
         return std::make_shared<type>(context, prep)
 
@@ -100,6 +98,9 @@ parse_escaped(parse_context& context, tstring& value) {
     SINGLE_TOKEN(file);
     SINGLE_TOKEN(env);
     SINGLE_TOKEN(poll);
+    SINGLE_TOKEN(save);
+    SINGLE_TOKEN(color);
+    SINGLE_TOKEN(gradient);
 
     #undef SINGLE_TOKEN
 
@@ -116,10 +117,6 @@ parse_escaped(parse_context& context, tstring& value) {
     } else if (prep.tokens[0] == "arrcache"_ts) {
       return arrcache<T>::parse(context, prep);
 
-    } else if (prep.tokens[0] == "save"_ts) {
-      if constexpr(std::is_same<T, string>::value)
-        return std::make_shared<save>(context, prep);
-
     } else if (prep.tokens[0] == "map"_ts) {
       if constexpr(std::is_convertible<float, T>::value || std::is_same<string, T>::value)
         return map::parse(context, prep);
@@ -127,14 +124,6 @@ parse_escaped(parse_context& context, tstring& value) {
     } else if (prep.tokens[0] == "smooth"_ts) {
       if constexpr(std::is_convertible<float, T>::value || std::is_same<string, T>::value)
         return smooth::parse(context, prep);
-
-    } else if (prep.tokens[0] == "color"_ts) {
-      if constexpr(std::is_same<T, string>::value)
-        return std::make_shared<color>(context, prep);
-
-    } else if (prep.tokens[0] == "gradient"_ts) {
-      if constexpr(std::is_same<T, string>::value)
-        return std::make_shared<gradient>(context, prep);
 
     } else if (prep.tokens[0] == "var"_ts) {
       if (prep.token_count == 2)

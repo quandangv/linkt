@@ -30,6 +30,14 @@ namespace node {
         , with_fallback(other.fallback ? other.fallback->clone(context) : base_s()) {}
   };
 
+  struct simple_meta : meta {
+    using meta::meta;
+    simple_meta(parse_context& context, parse_preprocessed& prep) : meta(context, prep) {
+      if (prep.token_count != 2)
+        throw parse_error("parse_error: Only accept 1 component");
+    }
+  };
+
   struct color : meta {
     cspace::processor processor;
 
@@ -51,27 +59,27 @@ namespace node {
     using nested<float>::nested;
   };
 
-  struct env : public meta, settable<string> {
+  struct env : simple_meta, settable<string> {
     explicit operator string() const;
     bool set  (const string& value);
     base_s clone(clone_context&) const;
     bool is_fixed() const { return false; }
   protected:
-    using meta::meta;
+    using simple_meta::simple_meta;
   };
 
-  struct cmd : meta {
+  struct cmd : simple_meta {
     explicit operator string() const;
     base_s clone(clone_context&) const;
     bool is_fixed() const { return false; }
   protected:
-    using meta::meta;
+    using simple_meta::simple_meta;
   };
 
-  struct poll : meta, settable<string> {
+  struct poll : simple_meta, settable<string> {
     mutable pollfd pfd{0, POLLIN, 0};
 
-    using meta::meta;
+    using simple_meta::simple_meta;
     ~poll();
     explicit operator string() const;
     base_s clone(clone_context&) const;
@@ -80,13 +88,13 @@ namespace node {
     bool set(const string& value);
   };
 
-  struct file : public meta, settable<string> {
+  struct file : simple_meta, settable<string> {
     explicit operator string() const;
     bool set(const string& value);
     base_s clone(clone_context&) const;
     bool is_fixed() const { return false; }
   protected:
-    using meta::meta;
+    using simple_meta::simple_meta;
   };
 
   struct save : base<string>, settable<string> {
