@@ -49,7 +49,22 @@ namespace node {
   };
 
   struct gradient : base<string>, nested<float> {
-    cspace::gradient<3> base;
+    using processor = cspace::gradient<3>;
+    struct wrapper {
+      virtual processor& get() const = 0;
+    };
+    struct complete_wrapper : wrapper {
+      mutable processor base;
+      processor& get() const { return base; }
+      complete_wrapper() {}
+      explicit complete_wrapper(const processor& processor) : base(processor) {}
+    };
+    struct lazy_wrapper : complete_wrapper {
+      base_s text;
+      processor& get() const;
+      explicit lazy_wrapper(const base_s& text) : text(text) {}
+    };
+    std::unique_ptr<wrapper> base;
 
     explicit operator string() const;
     base_s clone(clone_context&) const;

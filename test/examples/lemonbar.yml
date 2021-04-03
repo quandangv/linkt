@@ -3,8 +3,13 @@ lemonbar: "%{O40}${options} %{c} ${wm} %{r} ${status} ${frame} %{B- O40}"
 
   warn_module:H ${dep sep}${format} ${text}
     smooth_level:$i cache 5 ${smooth 0.3 ${map 1 30 ${dep level}}}
-    background:$ gradient "0:#EDB 30:#B32" ${dep smooth_level}
-    foreground:$ gradient "0:#522 30:#FFF" ${dep smooth_level}
+    #smooth_level: 30
+    background:$ gradient "0:${norm} 30:${warn}" ${dep smooth_level}
+      norm:$ var #EDB
+      warn:$ var #B32
+    foreground:$ gradient "0:${norm} 30:${warn}" ${dep smooth_level}
+      norm:$ var #522
+      warn:$ var #FFF
     format:$ arrcache 31 ${dep smooth_level} "%{B${dep background} F${dep foreground}}"
 
   simple_module:H$ clone warn_module
@@ -51,6 +56,8 @@ lemonbar: "%{O40}${options} %{c} ${wm} %{r} ${status} ${frame} %{B- O40}"
     level:$ map 21:20 1 ${dep percentage}
 
   frame:$ clone simple_module
+    background.norm:= #CDB
+    background.warn:= #B32
     text: %{T2}${dep calculation}%{T-}ms
     calculation:$ var float -1
     level:$ map 2.5:2.6 1 ${dep percentage}

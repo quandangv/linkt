@@ -31,7 +31,6 @@ multiplier = ${save ${rel last} "${rel last} ${cmd "echo $((${rel source}*10))"}
 multiplier.last = ${var 0}
 multiplier.source = ${var int 1}
 arrcache = ${arrcache 3 ${multiplier.source} ${multiplier}}
-arrcache2 = ${arrcache arrcache ${multiplier.source} ${multiplier}}
 
 float = ${var float 1}
 smooth = ${smooth 0.5 0.2 ${float}}

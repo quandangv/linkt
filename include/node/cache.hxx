@@ -74,9 +74,9 @@ arrcache<T>::operator T() const {
 
   template<class T>
 T arrcache<T>::get(size_t index) const {
-  if (index >= cache_arr->size())
-    throw node_error("Index larger than cache maximum: " + std::to_string(index) + " > " + std::to_string(cache_arr->size() - 1));
-  auto& result = cache_arr->operator[](index);
+  if (index >= cache_arr.size())
+    throw node_error("Index larger than cache maximum: " + std::to_string(index) + " > " + std::to_string(cache_arr.size() - 1));
+  auto& result = cache_arr.operator[](index);
   if (!result) {
     result = calculator->operator T();
   }
@@ -88,7 +88,9 @@ base_s arrcache<T>::clone(clone_context& context) const {
   auto result = std::make_shared<arrcache>();
   result->source = checked_clone<int>(source, context, "arrcache::clone");
   result->calculator = checked_clone<T>(calculator, context, "arrcache::clone");
-  result->cache_arr = cache_arr;
+  result->cache_arr.reserve(cache_arr.size() + 1);
+  for (size_t i = 0; i < cache_arr.size(); i++)
+    result->cache_arr.emplace_back();
   return result;
 }
 
@@ -106,15 +108,11 @@ std::shared_ptr<arrcache<T>> arrcache<T>::parse(parse_context& context, parse_pr
     auto result = std::make_shared<arrcache>();
     auto size = parse_ulong(prep.tokens[1].begin(), prep.tokens[1].size());
     if (size) {
-      result->cache_arr = std::make_shared<std::vector<std::optional<T>>>(*size + 1);
+      result->cache_arr.reserve(*size + 1);
       for (size_t i = 0; i < size; i++)
-        result->cache_arr->emplace_back();
-    } else {
-      auto cache_base = context.get_parent()->get_child_ptr(prep.tokens[1]);
-      if (auto cache = std::dynamic_pointer_cast<arrcache>(cache_base))
-        result->cache_arr = cache->cache_arr;
-      else throw parse_error("1st argument must be the size of the cache or a parent path to another arrcache: " + context.raw);
-    }
+        result->cache_arr.emplace_back();
+    } else
+      throw parse_error("1st argument must be the size of the cache: " + context.raw);
     result->source = checked_parse_raw<int>(context, prep.tokens[2]);
     result->calculator = checked_parse_raw<T>(context, prep.tokens[3]);
     return result;

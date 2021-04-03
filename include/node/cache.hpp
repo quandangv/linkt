@@ -40,7 +40,7 @@ namespace node {
   struct arrcache : base<T> {
     std::shared_ptr<base<int>> source;
     std::shared_ptr<base<T>> calculator;
-    mutable std::shared_ptr<std::vector<std::optional<T>>> cache_arr;
+    mutable std::vector<std::optional<T>> cache_arr;
 
     explicit operator T() const;
     T get  (size_t index) const;

@@ -44,32 +44,47 @@ color::color(parse_context& context, parse_preprocessed& prep) : meta(context, p
   }
 }
 
+gradient::processor& gradient::lazy_wrapper::get() const {
+  if (!base.points.size()) {
+    auto str = text->get();
+    LG_DBUG("text: " << str);
+    tstring ts(str);
+    tstring point;
+    trim_quotes(ts);
+    while (!(point = get_word(ts)).untouched()) {
+      if (auto at = cut_front(point, ':'); !at.untouched()) {
+        LG_DBUG("add point " << at << ", " << point);
+        base.add_hex(node::parse<float>(at.begin(), at.size()), point, false);
+      } else
+        THROW_ERROR(parse, "gradient: invalid point: " + point);
+    }
+    base.convert(cspace::colorspaces::rgb, cspace::colorspaces::cielch);
+    base.auto_add(10);
+    base.convert(cspace::colorspaces::cielch, cspace::colorspaces::rgb);
+  }
+  return base;
+}
+
 gradient::operator string() const {
-  return base.get_hex(value->operator float());
+  return base->get().get_hex(value->operator float());
 }
 
 base_s gradient::clone(clone_context& context) const {
-  auto result = std::make_shared<gradient>();
-  result->value = checked_clone<float>(value, context, "gradient::clone");
-  result->base = base;
+  auto result = std::make_shared<gradient>(*this, context);
+
+  if (auto lazy = dynamic_cast<lazy_wrapper*>(base.get())) {
+    if (context.optimize)
+      result->base = std::make_unique<complete_wrapper>(lazy->get());
+    else result->base = std::make_unique<lazy_wrapper>(checked_clone<string>(lazy->text, context, "gradient::clone"));
+  } else if (auto complete = dynamic_cast<complete_wrapper*>(base.get()))
+    result->base = std::make_unique<complete_wrapper>(*complete);
   return result;
 }
 
 gradient::gradient(parse_context& context, parse_preprocessed& prep) : nested(context, prep) {
   if (prep.token_count != 3)
     THROW_ERROR(parse, "gradient: Expected 2 components");
-  value = checked_parse_raw<float>(context, prep.tokens[2]);
-  tstring point;
-  trim_quotes(prep.tokens[1]);
-  while (!(point = get_word(prep.tokens[1])).untouched()) {
-    if (auto at = cut_front(point, ':'); !at.untouched())
-      base.add_hex(node::parse<float>(at.begin(), at.size()), point, false);
-    else
-      THROW_ERROR(parse, "gradient: invalid point: " + point);
-  }
-  base.convert(cspace::colorspaces::rgb, cspace::colorspaces::cielch);
-  base.auto_add(10);
-  base.convert(cspace::colorspaces::cielch, cspace::colorspaces::rgb);
+  base = std::make_unique<lazy_wrapper>(checked_parse_raw<string>(context, prep.tokens[1]));
 }
 
 env::operator string() const {

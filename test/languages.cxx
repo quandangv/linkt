@@ -257,7 +257,6 @@ TEST_P(Misc, arrcache) {
   EXPECT_EQ(doc->get_child("arrcache"_ts, "fail"), "0 10 10");
   set_key<int>(doc, "multiplier.source", 2);
   EXPECT_EQ(doc->get_child("arrcache"_ts, "fail"), "0 10 10 20");
-  EXPECT_EQ(doc->get_child("arrcache2"_ts, "fail"), "0 10 10 20");
   EXPECT_EQ(doc->get_child("multiplier.last"_ts, "fail"), "0 10 10 20");
   EXPECT_EQ(doc->get_child("multiplier"_ts, "fail"), "0 10 10 20 20");
   EXPECT_EQ(doc->get_child("multiplier.last"_ts, "fail"), "0 10 10 20 20");
