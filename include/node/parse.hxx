@@ -69,9 +69,8 @@ checked_parse_raw(parse_context& context, tstring& value) {
 parse_escaped(parse_context& context, tstring& value) {
   parse_preprocessed prep;
   auto fb_str = prep.process(value);
-  std::shared_ptr<base<T>> fallback;
   if (!fb_str.untouched())
-    prep.fallback = fallback = parse_raw<T>(context, fb_str);
+    prep.set_fallback(parse_raw<T>(context, fb_str));
 
   auto single_token = [&](const string& type)->tstring& {
     if (prep.token_count != 2)
@@ -169,8 +168,8 @@ parse_escaped(parse_context& context, tstring& value) {
     throw parse_error("Unsupported operator or operator have the wrong type: " + prep.tokens[0]);
   };
   auto op = make_operator();
-  if (op && prep.fallback)
-    return std::make_shared<fallback_wrapper<T>>(op, fallback);
+  if (op && prep.has_fallback())
+    return std::make_shared<fallback_wrapper<T>>(op, std::dynamic_pointer_cast<base<T>>(prep.pop_fallback()));
   return op;
 }
 

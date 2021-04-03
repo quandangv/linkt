@@ -24,7 +24,7 @@ namespace node {
     bool is_fixed() const { return value->is_fixed(); }
     meta(parse_context& context, parse_preprocessed& prep)
         : nested(context, prep)
-        , with_fallback(move(prep.fallback)) {}
+        , with_fallback(prep.pop_fallback()) {}
     meta(const meta& other, clone_context& context)
         : nested(other, context)
         , with_fallback(other.fallback ? other.fallback->clone(context) : base_s()) {}

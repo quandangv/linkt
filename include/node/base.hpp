@@ -188,10 +188,14 @@ namespace node {
     friend struct parse_context_base;
   };
 
-  struct parse_preprocessed {
+  class parse_preprocessed {
+    base_s fallback;
+  public:
     std::array<tstring, 7> tokens;
     unsigned char token_count{0};
-    base_s fallback;
     tstring process(tstring&);
+    void set_fallback(base_s fb) { fallback = fb; }
+    bool has_fallback() { return fallback.get(); }
+    base_s pop_fallback() { auto result = std::move(fallback); return result; }
   };
 }
