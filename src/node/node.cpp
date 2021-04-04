@@ -44,29 +44,24 @@ color::color(parse_context& context, parse_preprocessed& prep) : meta(context, p
   }
 }
 
-template<class From, class To, class Processor>
-lazy_node<From, To, Processor>::lazy_node(parse_context& context, parse_preprocessed& prep)
-    : loaded_node<From, To, Processor>(context, prep) {
+template<class To, class Processor>
+lazy_node<To, Processor>::lazy_node(parse_context& context, parse_preprocessed& prep)
+    : loaded_node_impl<To, Processor>(context, prep) {
   if (prep.token_count != 3)
-    THROW_ERROR(parse, "gradient: Expected 2 components");
+    THROW_ERROR(parse, "lazy_node: Expected 2 components");
   base_raw = checked_parse_raw<string>(context, prep.tokens[1]);
 }
 
-template<class From, class To, class Processor>
-base_s lazy_node<From, To, Processor>::clone(clone_context& context) const {
+template<class To, class Processor>
+base_s lazy_node<To, Processor>::clone(clone_context& context) const {
   if (context.optimize) {
-    auto result = std::make_unique<loaded_node<From, To, Processor>>(*this, context);
-    result->base = loaded_node<From, To, Processor>::get_base();
+    auto result = std::make_unique<loaded_node_impl<To, Processor>>(*this, context);
+    result->base = get_base();
     return result;
   }
-  auto result = std::make_shared<lazy_node<From, To, Processor>>(*this, context);
-  result->base_raw = checked_clone<string>(base_raw, context, "gradient::clone");
+  auto result = std::make_shared<lazy_node<To, Processor>>(*this, context);
+  result->base_raw = checked_clone<string>(base_raw, context, "lazy_node::clone");
   return result;
-}
-
-template<>
-loaded_node<float, string, cspace::gradient<3>>::operator string() const {
-  return get_base().get_hex(value->operator float());
 }
 
 template<>

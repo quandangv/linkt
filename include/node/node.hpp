@@ -48,32 +48,43 @@ namespace node {
     using meta::meta;
   };
 
-  template<class From, class To, class Processor>
-  struct loaded_node : base<To>, nested<From> {
+  template<class To, class Processor>
+  struct loaded_node : base<To> {
     mutable Processor base;
 
-    explicit operator To() const;
     virtual Processor& get_base() const { return base; }
-    bool is_fixed() const { return nested<From>::value->is_fixed(); }
-
     base_s clone(clone_context&) const
     { throw clone_error("clone_error: This node is optimized and can't be cloned"); }
-  protected:
-    using nested<From>::nested;
   };
 
-  template<class From, class To, class Processor>
-  struct lazy_node : loaded_node<From, To, Processor> {
+  template<class To, class Processor>
+  struct loaded_node_impl : loaded_node<To, Processor> {};
+
+  template<>
+  struct loaded_node_impl<string, cspace::gradient<3>>
+      : loaded_node<string, cspace::gradient<3>>, nested<float> {
+    using loaded_node<string, cspace::gradient<3>>::loaded_node;
+    bool is_fixed() const { return value->is_fixed(); }
+    explicit operator string() const {
+      return get_base().get_hex(value->operator float());
+    }
+  protected:
+    using nested<float>::nested;
+  };
+
+  template<class To, class Processor>
+  struct lazy_node : loaded_node_impl<To, Processor> {
     base_s base_raw;
 
     Processor& get_base() const;
     base_s clone(clone_context&) const;
     lazy_node(parse_context&, parse_preprocessed&);
   protected:
-    using loaded_node<From, To, Processor>::loaded_node;
+    using loaded_node_impl<To, Processor>::loaded_node_impl;
   };
 
-  using gradient = lazy_node<float, string, cspace::gradient<3>>;
+  using gradient = lazy_node<string, cspace::gradient<3>>;
+  //using poll = lazy_node<string, string, pollfd>;
 
   struct env : simple_meta, settable<string> {
     explicit operator string() const;
