@@ -3,7 +3,6 @@ lemonbar: "%{O40}${options} %{c} ${wm} %{r} ${status} ${frame} %{B- O40}"
 
   warn_module:H ${dep sep}${format} ${text}
     smooth_level:$i cache 5 ${smooth 0.3 ${map 1 30 ${dep level}}}
-    #smooth_level: 30
     background:$ gradient "0:${norm} 30:${warn}" ${dep smooth_level}
       norm: #EDB
       warn: #B32

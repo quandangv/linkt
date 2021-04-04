@@ -44,16 +44,39 @@ color::color(parse_context& context, parse_preprocessed& prep) : meta(context, p
   }
 }
 
-gradient::processor& gradient::lazy_wrapper::get() const {
+template<class From, class To, class Processor>
+lazy_node<From, To, Processor>::lazy_node(parse_context& context, parse_preprocessed& prep)
+    : loaded_node<From, To, Processor>(context, prep) {
+  if (prep.token_count != 3)
+    THROW_ERROR(parse, "gradient: Expected 2 components");
+  base_raw = checked_parse_raw<string>(context, prep.tokens[1]);
+}
+
+template<class From, class To, class Processor>
+base_s lazy_node<From, To, Processor>::clone(clone_context& context) const {
+  if (context.optimize) {
+    auto result = std::make_unique<loaded_node<From, To, Processor>>(*this, context);
+    result->base = loaded_node<From, To, Processor>::get_base();
+    return result;
+  }
+  auto result = std::make_shared<gradient>(*this, context);
+  result->base_raw = checked_clone<string>(base_raw, context, "gradient::clone");
+  return result;
+}
+
+template<>
+loaded_node<float, string, cspace::gradient<3>>::operator string() const {
+  return get_base().get_hex(value->operator float());
+}
+
+cspace::gradient<3>& gradient::get_base() const {
   if (!base.points.size()) {
-    auto str = text->get();
-    LG_DBUG("text: " << str);
+    auto str = base_raw->get();
     tstring ts(str);
     tstring point;
     trim_quotes(ts);
     while (!(point = get_word(ts)).untouched()) {
       if (auto at = cut_front(point, ':'); !at.untouched()) {
-        LG_DBUG("add point " << at << ", " << point);
         base.add_hex(node::parse<float>(at.begin(), at.size()), point, false);
       } else
         THROW_ERROR(parse, "gradient: invalid point: " + point);
@@ -63,28 +86,6 @@ gradient::processor& gradient::lazy_wrapper::get() const {
     base.convert(cspace::colorspaces::cielch, cspace::colorspaces::rgb);
   }
   return base;
-}
-
-gradient::operator string() const {
-  return base->get().get_hex(value->operator float());
-}
-
-base_s gradient::clone(clone_context& context) const {
-  auto result = std::make_shared<gradient>(*this, context);
-
-  if (auto lazy = dynamic_cast<lazy_wrapper*>(base.get())) {
-    if (context.optimize)
-      result->base = std::make_unique<complete_wrapper>(lazy->get());
-    else result->base = std::make_unique<lazy_wrapper>(checked_clone<string>(lazy->text, context, "gradient::clone"));
-  } else if (auto complete = dynamic_cast<complete_wrapper*>(base.get()))
-    result->base = std::make_unique<complete_wrapper>(*complete);
-  return result;
-}
-
-gradient::gradient(parse_context& context, parse_preprocessed& prep) : nested(context, prep) {
-  if (prep.token_count != 3)
-    THROW_ERROR(parse, "gradient: Expected 2 components");
-  base = std::make_unique<lazy_wrapper>(checked_parse_raw<string>(context, prep.tokens[1]));
 }
 
 env::operator string() const {

@@ -48,30 +48,34 @@ namespace node {
     using meta::meta;
   };
 
-  struct gradient : base<string>, nested<float> {
-    using processor = cspace::gradient<3>;
-    struct wrapper {
-      virtual processor& get() const = 0;
-    };
-    struct complete_wrapper : wrapper {
-      mutable processor base;
-      processor& get() const { return base; }
-      complete_wrapper() {}
-      explicit complete_wrapper(const processor& processor) : base(processor) {}
-    };
-    struct lazy_wrapper : complete_wrapper {
-      base_s text;
-      processor& get() const;
-      explicit lazy_wrapper(const base_s& text) : text(text) {}
-    };
-    std::unique_ptr<wrapper> base;
+  template<class From, class To, class Processor>
+  struct loaded_node : base<To>, nested<From> {
+    mutable Processor base;
 
     explicit operator string() const;
-    base_s clone(clone_context&) const;
-    bool is_fixed() const { return value->is_fixed(); }
-    gradient(parse_context&, parse_preprocessed&);
+    virtual Processor& get_base() const { return base; }
+    bool is_fixed() const { return nested<From>::value->is_fixed(); }
+
+    base_s clone(clone_context&) const
+    { throw clone_error("clone_error: This node is optimized and can't be cloned"); }
   protected:
     using nested<float>::nested;
+  };
+
+  template<class From, class To, class Processor>
+  struct lazy_node : loaded_node<From, To, Processor> {
+    base_s base_raw;
+
+    base_s clone(clone_context&) const;
+    lazy_node(parse_context&, parse_preprocessed&);
+  protected:
+    using loaded_node<From, To, Processor>::loaded_node;
+  };
+
+  struct gradient : lazy_node<float, string, cspace::gradient<3>> {
+    cspace::gradient<3>& get_base() const;
+  protected:
+    using lazy_node<float, string, cspace::gradient<3>>::lazy_node;
   };
 
   struct env : simple_meta, settable<string> {
