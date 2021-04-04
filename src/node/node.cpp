@@ -59,7 +59,7 @@ base_s lazy_node<From, To, Processor>::clone(clone_context& context) const {
     result->base = loaded_node<From, To, Processor>::get_base();
     return result;
   }
-  auto result = std::make_shared<gradient>(*this, context);
+  auto result = std::make_shared<lazy_node<From, To, Processor>>(*this, context);
   result->base_raw = checked_clone<string>(base_raw, context, "gradient::clone");
   return result;
 }
@@ -69,6 +69,7 @@ loaded_node<float, string, cspace::gradient<3>>::operator string() const {
   return get_base().get_hex(value->operator float());
 }
 
+template<>
 cspace::gradient<3>& gradient::get_base() const {
   if (!base.points.size()) {
     auto str = base_raw->get();

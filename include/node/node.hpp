@@ -52,31 +52,28 @@ namespace node {
   struct loaded_node : base<To>, nested<From> {
     mutable Processor base;
 
-    explicit operator string() const;
+    explicit operator To() const;
     virtual Processor& get_base() const { return base; }
     bool is_fixed() const { return nested<From>::value->is_fixed(); }
 
     base_s clone(clone_context&) const
     { throw clone_error("clone_error: This node is optimized and can't be cloned"); }
   protected:
-    using nested<float>::nested;
+    using nested<From>::nested;
   };
 
   template<class From, class To, class Processor>
   struct lazy_node : loaded_node<From, To, Processor> {
     base_s base_raw;
 
+    Processor& get_base() const;
     base_s clone(clone_context&) const;
     lazy_node(parse_context&, parse_preprocessed&);
   protected:
     using loaded_node<From, To, Processor>::loaded_node;
   };
 
-  struct gradient : lazy_node<float, string, cspace::gradient<3>> {
-    cspace::gradient<3>& get_base() const;
-  protected:
-    using lazy_node<float, string, cspace::gradient<3>>::lazy_node;
-  };
+  using gradient = lazy_node<float, string, cspace::gradient<3>>;
 
   struct env : simple_meta, settable<string> {
     explicit operator string() const;
