@@ -3,11 +3,13 @@
 
 path=$1
 show_cpu() {
-  echo %{+u A:save $path=ram:}CPU %{T2}${cpu[1]}%{A -u T-}
+  [[ -n "$1" ]] && label=CPU || label=cpu
+  echo %{+u A:save $path=ram:}$label %{T2}${cpu[1]}%{A -u T-}
 }
 
 show_memory() {
-  echo %{+u A:save $path=temp:}RAM %{T2}$memory%{A -u T-}
+  [[ -n "$1" ]] && label=RAM || label=ram
+  echo %{+u A:save $path=temp:}$label %{T2}$memory%{A -u T-}
 }
 
 show_temperature() {
@@ -15,7 +17,8 @@ show_temperature() {
 }
 
 show_battery() {
-  echo %{+u A:save $path=cpu:}BAT %{T2}$battery%{T- A -u}
+  if $1; then label=bat; else label=BAT; fi
+  echo %{+u A:save $path=cpu:}$label %{T2}$battery%{T- A -u}
 }
 
 cpu[0]="0 0"
@@ -35,13 +38,13 @@ while :; do
   fi
 
   if (( $(echo "$battery < 20" | bc -l) )); then
-    echo "1;$(show_battery)"
+    echo "1;$(show_battery true)"
   elif (( $(echo "$temperature > 70" | bc -l) )); then
     echo "1;$(show_temperature)"
   elif (( $(echo "$memory > 80" | bc -l) )); then
-    echo "1;$(show_memory)"
+    echo "1;$(show_memory true)"
   elif (( $(echo "${cpu[1]} > 90" | bc -l) )); then
-    echo "1;$(show_cpu)"
+    echo "1;$(show_cpu true)"
   else
     case $mode in
       cpu)

@@ -1,4 +1,4 @@
-lemonbar: "%{O40}${options} %{c} ${wm} %{r} ${status} ${frame} %{B- O40}"
+lemonbar: "%{O40}${options} %{c} ${wm} %{r} ${wifi} ${volume} ${status} %{B- O40}"
   sep: "%{B- O10}"
 
   warn_module:H ${dep sep}${format} ${text}
@@ -30,6 +30,14 @@ lemonbar: "%{O40}${options} %{c} ${wm} %{r} ${status} ${frame} %{B- O40}"
     raw:$ save ${cache} ${poll ./scripts/bspwm.sh ? ${cache}}
       cache:$ var ""
 
+  wifi: ${dep sep}%{F#532 B-} ${raw}
+    raw:$ save ${cache} ${poll "./scripts/wifi.sh 4 %{F#A86}" ? ${cache}}
+      cache:$ var ""
+
+  volume: ${dep sep}%{F#532 B-} ${raw}
+    raw:$ save ${cache} ${poll "./scripts/volume.sh 10 %{F#A86}" ? ${cache}}
+      cache:$ var ""
+
   status:$ clone warn_module
     text:$ save ${dep state} ${save ${cache} ${poll}} ;
       poll:$ poll "./scripts/performance.sh ${} ${reload_time} ${bat_type} ${thermal_zone}"  ? ${dep cache}
@@ -40,8 +48,12 @@ lemonbar: "%{O40}${options} %{c} ${wm} %{r} ${status} ${frame} %{B- O40}"
     state:$ var 0
     level: ${dep state}
 
+  cpu:$ clone simple_module
+    text: cpu %{T2}${dep percentage}%{T-}
+    level:$ map 79:80 1 ${dep percentage}
+
   memory:$ clone simple_module
-    text: RAM %{T2}${dep percentage}%{T-}
+    text: ram %{T2}${dep percentage}%{T-}
     cache_time:= 2000
     level:$ map 89:90 1 ${dep percentage}
 
@@ -50,14 +62,11 @@ lemonbar: "%{O40}${options} %{c} ${wm} %{r} ${status} ${frame} %{B- O40}"
     level:$ map 69:70 1 ${dep percentage}
 
   battery:$ clone simple_module
-    text: BAT %{T2}${dep percentage}%{T-}
+    text: bat %{T2}${dep percentage}%{T-}
     cache_time:= 20000
     level:$ map 21:20 1 ${dep percentage}
 
   frame:$ clone simple_module
-    background.norm:= #CDB
-    background.warn:= #B32
-    foreground.norm:= #342
     text: %{T2}${dep calculation}%{T-}ms
     calculation:$ var float -1
     level:$ map 2.5:2.6 1 ${dep percentage}
