@@ -7,23 +7,6 @@
 #include <poll.h>
 #include <sys/socket.h>
 
-struct fps_display {
-  float current_sum{0}, avg{0};;
-  unsigned int count{0}, loop;
-
-  fps_display(unsigned int loop) : loop(loop) {}
-  float feed(double value) {
-    current_sum += value;
-    count++;
-    if (count == loop) {
-      avg = current_sum / loop;
-      count = 0;
-      current_sum = 0.0;
-    }
-    return avg;
-  }
-};
-
 int lemonbar_pipe;
 
 void sighandle(int signal) {
@@ -89,7 +72,6 @@ int main(int argc, char** argv) {
   close(pipes[1]);
   pollfd pollin{pipes[0], POLLIN, 0};
 
-  fps_display fps(40);
   auto node = wrapper->get_child_ptr("lemonbar"_ts);
   if (!node)
     std::cerr << "Failed to retrieve the key at path 'lemonbar'";
@@ -131,9 +113,6 @@ int main(int argc, char** argv) {
     auto now = std::chrono::steady_clock::now();
     try {
       auto result = node->get();
-      auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - now).count() / 1000000.0;
-      if (!wrapper->set<float>("lemonbar.frame.calculation"_ts, round(10*fps.feed(elapsed))/10))
-        std::cerr << "Can't set frame time" << std::endl;
       //std::cout << result << std::endl;
       write(lemonbar_pipe, result.data(), result.size());
     } catch (const std::exception& e) {

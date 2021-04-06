@@ -20,10 +20,11 @@ lemonbar: "%{O40}${options} %{c} ${wm} %{r} ${wifi} ${volume} ${status} %{B- O40
       mode:$ var closed
     greeting:$ refcache ${datetime.mode} 10000 ${raw}
       raw: %{B- F#532 U#532}Hi %{T2}${env USER}%{T-}, ${dep datetime}
-      datetime:$ save ${mode} ${cmd "./scripts/date.sh ${} ${mode} ${dep stonks}" ? N/A}
-        mode:$ var stonks
-      stonks:$ save ${cache} ${poll "./scripts/stonks.sh GME" ? ${cache}}
-        cache:$ var ""
+      datetime:$ save ${mode} ${cmd "./scripts/date.sh ${} ${mode} ${stonks}" ? N/A}
+        mode:$ var time
+        stonks:$ save ${cache} ${poll "./scripts/stonks.sh ${name}" ? ${cache}}
+          cache:$ var ""
+          name: GME
 
 
   wm:$ cache 200 ${raw}
@@ -51,30 +52,24 @@ lemonbar: "%{O40}${options} %{c} ${wm} %{r} ${wifi} ${volume} ${status} %{B- O40
   cpu:$ clone simple_module
     text: cpu %{T2}${dep percentage}%{T-}
     level:$ map 79:80 1 ${dep percentage}
+    calculation:$ save ${last_status} ${cmd "./scripts/cpu.sh ${last_status}" ? N/A}
+      last_status:$ var "0 0"
 
   memory:$ clone simple_module
     text: ram %{T2}${dep percentage}%{T-}
     cache_time:= 2000
     level:$ map 89:90 1 ${dep percentage}
+    calculation:$ cmd "./scripts/memory.sh" ? N/A
 
   temp:$ clone simple_module
     text: %{T2}${dep percentage}%{T-}°C
     level:$ map 69:70 1 ${dep percentage}
+    calculation:$ cmd "./scripts/temp.sh ${zone}" ? N/A
+      zone: 0
 
   battery:$ clone simple_module
     text: bat %{T2}${dep percentage}%{T-}
     cache_time:= 20000
     level:$ map 21:20 1 ${dep percentage}
-
-  frame:$ clone simple_module
-    text: %{T2}${dep calculation}%{T-}ms
-    calculation:$ var float -1
-    level:$ map 2.5:2.6 1 ${dep percentage}
-
-lemonbar.cpu.calculation:$ save ${last_status} ${cmd "./scripts/cpu.sh ${last_status}" ? N/A}
-  last_status:$ var "0 0"
-lemonbar.memory.calculation:$ cmd "./scripts/memory.sh" ? N/A
-lemonbar.temp.calculation:$ cmd "./scripts/temp.sh ${zone}" ? N/A
-  zone: 0
-lemonbar.battery.calculation:$ cmd "./scripts/battery.sh ${bat_name}" ? N/A
-  bat_name: BAT1
+    calculation:$ cmd "./scripts/battery.sh ${bat_name}" ? N/A
+      bat_name: BAT1
