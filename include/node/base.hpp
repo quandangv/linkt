@@ -22,7 +22,7 @@ namespace node {
   struct clone_error : std::logic_error { using logic_error::logic_error; };
   struct parse_error : std::logic_error { using logic_error::logic_error; };
 
-  struct errorlist : std::vector<std::pair<std::string, std::string>> {
+  struct errorlist : std::vector<std::pair<string, string>> {
     void report_error(int line, const std::string& msg) {
         emplace_back("line " +std::to_string(line), msg);
     }

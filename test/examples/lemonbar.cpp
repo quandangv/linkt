@@ -75,6 +75,7 @@ int main(int argc, char** argv) {
   auto node = wrapper->get_child_ptr("lemonbar"_ts);
   if (!node)
     std::cerr << "Failed to retrieve the key at path 'lemonbar'";
+  string last_output = "";
   while (true) {
     if (poll(&pollin, 1, 0) > 0 && pollin.revents & POLLIN) {
       char buffer[128];
@@ -114,7 +115,10 @@ int main(int argc, char** argv) {
     try {
       auto result = node->get();
       //std::cout << result << std::endl;
-      write(lemonbar_pipe, result.data(), result.size());
+      if (result != last_output) {
+        write(lemonbar_pipe, result.data(), result.size());
+        last_output = result;
+      }
     } catch (const std::exception& e) {
       std::cerr << "Error while retrieving key: " << e.what() << std::endl;
     }

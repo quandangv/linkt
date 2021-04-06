@@ -4,25 +4,26 @@
 path=$1
 show_cpu() {
   [[ -n "$1" ]] && label=CPU || label=cpu
-  echo %{+u A:save $path=ram:}$label %{T2}${cpu[1]}%{A -u T-}
+  echo %{+u}$label %{T2}${cpu[1]}%{-u T-}
 }
 
 show_memory() {
   [[ -n "$1" ]] && label=RAM || label=ram
-  echo %{+u A:save $path=temp:}$label %{T2}$memory%{A -u T-}
+  echo %{+u}$label %{T2}$memory%{-u T-}
 }
 
 show_temperature() {
-  echo %{+u A:save $path=bat: T2}$temperature%{T-}°C%{A -u}
+  echo %{+u T2}$temperature%{T-}°C%{-u}
 }
 
 show_battery() {
   if $1; then label=bat; else label=BAT; fi
-  echo %{+u A:save $path=cpu:}$label %{T2}$battery%{T- A -u}
+  echo %{+u}$label %{T2}$battery%{T- -u}
 }
 
 cpu[0]="0 0"
-mode=bat
+mode=0
+mode_count=4
 count=0
 while :; do
   mapfile -t cpu < <(./scripts/cpu.sh ${cpu[0]})
@@ -37,28 +38,27 @@ while :; do
     battery=$(./scripts/battery.sh $3)
   fi
 
+  status=1
   if (( $(echo "$battery < 20" | bc -l) )); then
-    echo "1;$(show_battery true)"
+    msg="$(show_battery true)"
   elif (( $(echo "$temperature > 70" | bc -l) )); then
-    echo "1;$(show_temperature)"
+    msg="$(show_temperature)"
   elif (( $(echo "$memory > 80" | bc -l) )); then
-    echo "1;$(show_memory true)"
+    msg="$(show_memory true)"
   elif (( $(echo "${cpu[1]} > 90" | bc -l) )); then
-    echo "1;$(show_cpu true)"
+    msg="$(show_cpu true)"
   else
+    status=0
     case $mode in
-      cpu)
-        echo "0;$(show_cpu)"; ;;
-      ram)
-        echo "0;$(show_memory)"; ;;
-      temp)
-        echo "0;$(show_temperature)"; ;;
-      bat)
-        echo "0;$(show_battery)"; ;;
+      0) msg="$(show_battery)"; ;;
+      1) msg="$(show_cpu)"; ;;
+      2) msg="$(show_temperature)"; ;;
+      3) msg="$(show_memory)"; ;;
       *)
-        mode=bat
+        mode=0
     esac
   fi
+  echo "$status;%{A:save $path=$(((mode+1)%mode_count)): A3:save $path=$(((mode+mode_count-1)%mode_count)):}$msg%{A A3}"
 
   read -t $2 newmode
   if [ -n "$newmode" ]; then

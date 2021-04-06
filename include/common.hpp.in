@@ -1,6 +1,5 @@
 #pragma once
 
-#include <string_view>
 #include <string>
 #include <iostream>
 #include <vector>
@@ -9,8 +8,6 @@
 
 using namespace std::literals;
 using std::vector, std::endl, std::string, std::move;
-
-constexpr auto DEBUG_SCOPES{"@DEBUG_SCOPES@"sv};
 
 #define NAMESPACE(name) namespace name {
 #define NAMESPACE_END }

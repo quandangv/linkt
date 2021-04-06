@@ -9,17 +9,13 @@ while read raw; do
     # Display each desktop differently based on its status
     case $dsk_status in
       # unfocused empty
-      "f")
-        desktop_info[$index]='o'; ;;
+      "f") desktop_info[$index]='o'; ;;
       # unfocused occupied
-      "o")
-        desktop_info[$index]="${dsk_name,,}"; ;;
+      "o") desktop_info[$index]="${dsk_name,,}"; ;;
       # focused
-      "O" | "F" | "U")
-        focused=$index; ;&
+      "O" | "F" | "U") focused=$index; ;&
       # urgent
-      "u")
-        desktop_info[$index]="%{T2}${dsk_name^^}%{T-}"; ;;
+      "u") desktop_info[$index]="%{T2}${dsk_name^^}%{T-}"; ;;
     esac
 
     # Clicking will switch to that desktop
@@ -33,6 +29,6 @@ while read raw; do
 
   # Scroll through desktops
   scroll_cmd="A4:bspc desktop ^$(((focused)%10 + 1)) -f: A5:bspc desktop ^$(((focused + 8)%10 + 1))"
-  echo "%{+u +o $scroll_cmd -f:}${ordered[0]}${ordered[1]}${ordered[2]}${ordered[3]}${ordered[4]}${ordered[5]}${ordered[6]}${ordered[7]}${ordered[8]}${ordered[9]}%{-u A4 -o}"
+  echo "%{+u +o $scroll_cmd -f:}${ordered[0]}${ordered[1]}${ordered[2]}${ordered[3]}${ordered[4]}${ordered[5]}${ordered[6]}${ordered[7]}${ordered[8]}${ordered[9]}%{-u A4 A5 -o}"
 done < <(bspc subscribe)
 

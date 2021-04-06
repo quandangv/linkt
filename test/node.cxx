@@ -6,6 +6,8 @@ struct parse_test_single {
   string path, value, parsed;
   bool is_fixed{true}, fail{false}, exception{false}, clone_fail{false};
 };
+bool operator==(const std::pair<string, string>& pair, const parse_test_single& test)
+{ return test.path == pair.first; }
 using parse_test = vector<parse_test_single>;
 
 void test_nodes(parse_test testset, int repeat = base_repeat) {
@@ -32,7 +34,9 @@ void test_nodes(parse_test testset, int repeat = base_repeat) {
     for (auto test : testset) {
       // Skip key if it is expected to fail in the previous step
       if (test.fail || test.clone_fail) {
-        std::erase_if(errs, [&](auto pair) { return pair.first == test.path; });
+        if (auto pos = std::find(errs.begin(), errs.end(), test); pos != errs.end())
+          errs.erase(pos);
+        //std::erase_if(errs, [&](auto pair) { return pair.first == test.path; });
       } else {
         check_key(*doc, test.path, test.parsed, test.exception, test.is_fixed);
       }
@@ -44,8 +48,9 @@ void test_nodes(parse_test testset, int repeat = base_repeat) {
   node::clone_context clone_ctx;
   doc->optimize(clone_ctx);
   for (auto test : testset) {
-    bool found_error = (bool)std::erase_if(clone_ctx.errors, [&](auto pair) { return pair.first == test.path; });
-    EXPECT_TRUE(!found_error || test.fail || test.clone_fail) << "Key: " << test.path;
+    auto found_error = std::find(clone_ctx.errors.begin(), clone_ctx.errors.end(), test);
+    EXPECT_TRUE(found_error == clone_ctx.errors.end() || test.fail || test.clone_fail)
+        << "Key: " << test.path;
   }
 }
 

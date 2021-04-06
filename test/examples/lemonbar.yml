@@ -20,8 +20,7 @@ lemonbar: "%{O40}${options} %{c} ${wm} %{r} ${wifi} ${volume} ${status} %{B- O40
       mode:$ var closed
     greeting:$ refcache ${datetime.mode} 10000 ${raw}
       raw: %{B- F#532 U#532}Hi %{T2}${env USER}%{T-}, ${dep datetime}
-      datetime:$ save ${mode} ${cmd "./scripts/date.sh ${} ${mode} ${stonks}" ? N/A}
-        mode:$ var time
+      datetime:$ save mode ${cmd "./scripts/date.sh ${} ${mode} ${stonks}" ? N/A}
         stonks:$ save cache ${poll "./scripts/stonks.sh ${name}" ? ${cache}}
           name: GME
 
@@ -38,7 +37,7 @@ lemonbar: "%{O40}${options} %{c} ${wm} %{r} ${wifi} ${volume} ${status} %{B- O40
   status:$ clone warn_module
     text:$ save ${dep state} ${save cache ${poll}} ;
       poll:$ poll "./scripts/performance.sh ${} ${reload_time} ${bat_type} ${thermal_zone}"  ? ${dep cache}
-        reload_time: 1
+        reload_time: 2
         bat_type: BAT1
         thermal_zone: 0
     state:$ var 0
