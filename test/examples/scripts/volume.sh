@@ -11,7 +11,7 @@ while :; do
     empty_count=$(bc <<< "$char_count - $filled_count")
     filled=$(printf '%*s' $filled_count "")
     empty=$(printf '%*s' $empty_count "")
-    echo "%{+u A:amixer -q sset Master toggle:}vol%{T2 A A:amixer -q sset Master 9%-:} ${filled// /·}%{A A:amixer -q sset Master 9%+:}$2${empty// /·} %{A -u T-}"
+    echo "%{+u A4:amixer -q sset Master 5%+: A5:amixer -q sset Master 5%-: A:amixer -q sset Master toggle:}vol%{T2 A A:amixer -q sset Master 9%-:} ${filled// /·}%{A A:amixer -q sset Master 9%+:}$2${empty// /·} %{A A4 A5 -u T-}"
   fi
 
   read
