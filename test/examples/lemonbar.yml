@@ -22,30 +22,25 @@ lemonbar: "%{O40}${options} %{c} ${wm} %{r} ${wifi} ${volume} ${status} %{B- O40
       raw: %{B- F#532 U#532}Hi %{T2}${env USER}%{T-}, ${dep datetime}
       datetime:$ save ${mode} ${cmd "./scripts/date.sh ${} ${mode} ${stonks}" ? N/A}
         mode:$ var time
-        stonks:$ save ${cache} ${poll "./scripts/stonks.sh ${name}" ? ${cache}}
-          cache:$ var ""
+        stonks:$ save cache ${poll "./scripts/stonks.sh ${name}" ? ${cache}}
           name: GME
 
 
   wm:$ cache 200 ${raw}
-    raw:$ save ${cache} ${poll ./scripts/bspwm.sh ? ${cache}}
-      cache:$ var ""
+    raw:$ save cache ${poll ./scripts/bspwm.sh ? ${cache}}
 
   wifi: ${dep sep}%{F#532 B-} ${raw}
-    raw:$ save ${cache} ${poll "./scripts/wifi.sh 4 %{F#A86}" ? ${cache}}
-      cache:$ var ""
+    raw:$ save cache ${poll "./scripts/wifi.sh 4 %{F#A86}" ? ${cache}}
 
   volume: ${dep sep}%{F#532 B-} ${raw}
-    raw:$ save ${cache} ${poll "./scripts/volume.sh 10 %{F#A86}" ? ${cache}}
-      cache:$ var ""
+    raw:$ save cache ${poll "./scripts/volume.sh 10 %{F#A86}" ? ${cache}}
 
   status:$ clone warn_module
-    text:$ save ${dep state} ${save ${cache} ${poll}} ;
+    text:$ save ${dep state} ${save cache ${poll}} ;
       poll:$ poll "./scripts/performance.sh ${} ${reload_time} ${bat_type} ${thermal_zone}"  ? ${dep cache}
         reload_time: 1
         bat_type: BAT1
         thermal_zone: 0
-      cache:$ var ""
     state:$ var 0
     level: ${dep state}
 

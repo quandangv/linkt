@@ -229,9 +229,11 @@ TEST_P(Misc, save_cache) {
   EXPECT_EQ(doc->get_child("cache_too_short"_ts, "fail"), "I eat eat eat eat.");
   EXPECT_EQ(doc->get_child("cache_too_short"_ts, "fail"), "I eat eat eat eat eat.");
 
-  EXPECT_EQ(doc->get_child("appender_delim"_ts, "fail"), "I eat.");
-  EXPECT_EQ(doc->get_child("appender_delim"_ts, "fail"), "I eat eat.");
-  EXPECT_EQ(doc->get_child("appender_delim"_ts, "fail"), "I eat eat eat.");
+  EXPECT_EQ(doc->get_child("appender_delim"_ts, "fail"), " eat.");
+  EXPECT_EQ(doc->get_child("appender_delim.last"_ts, "fail"), " eat");
+  EXPECT_EQ(doc->get_child("appender_delim"_ts, "fail"), " eat eat.");
+  EXPECT_EQ(doc->get_child("appender_delim.last"_ts, "fail"), " eat eat");
+  EXPECT_EQ(doc->get_child("appender_delim"_ts, "fail"), " eat eat eat.");
   EXPECT_TRUE(doc->set<string>("appender_delim"_ts, "hello"));
   EXPECT_EQ(doc->get_child("appender_delim.last"_ts, "fail"), "hello");
 }

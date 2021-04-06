@@ -239,6 +239,7 @@ save::operator string() const {
       !conv_target || !conv_target->set(str)) {
     THROW_ERROR(node, "save: Can't set value to target");
   }
+  LG_DBUG(target->get() << " value " << value->get());
   return result;
 }
 
@@ -262,6 +263,12 @@ save::save(parse_context& context, parse_preprocessed& prep) {
   if (prep.token_count != 3 && prep.token_count != 4)
     THROW_ERROR(parse, "save: Expected 2 or 3 components, actual: " + std::to_string(prep.token_count - 1));
   target = checked_parse_raw<string>(context, prep.tokens[1]);
+  if (std::dynamic_pointer_cast<plain<string>>(target)
+      && !std::dynamic_pointer_cast<settable<string>>(target)) {
+    // first component is a plain string, add our own target based off it
+    context.get_current()->add(prep.tokens[1], std::make_shared<settable_plain<string>>(""));
+    target = std::make_shared<address_ref<string>>(context.get_current(), prep.tokens[1]);
+  }
   value = checked_parse_raw<string>(context, prep.tokens[2]);
   if (prep.token_count == 4) {
     if (prep.tokens[3].size() != 1)
