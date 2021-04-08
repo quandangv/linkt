@@ -1,17 +1,17 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.12)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
 project(linked_nodes VERSION 1.1.0)
 
-list(PREPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
-include(file_list)
-include(cmake/targets)
+list(TRANSFORM CMAKE_MODULE_PATH PREPEND ${CMAKE_CURRENT_SOURCE_DIR})
+include(file_list.cmake)
+include(cmake/targets.cmake)
 add_shared_lib("linked_nodes_node" "${NODE_SOURCES}" "${INCLUDE_DIRS};include/node" "${NODE_HEADERS}" "linked_nodes/node")
 add_shared_lib("linked_nodes" "${LINI_SOURCES}" "${INCLUDE_DIRS};include" "${LINI_HEADERS}" "linked_nodes")
 
 if(BUILD_TESTS)
-  include(cmake/test)
+  include(cmake/test.cmake)
 endif()
 set(BUILD_TESTS OFF)
 
