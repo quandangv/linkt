@@ -23,6 +23,8 @@ else()
   message("Cspace library not found, building it...")
   execute_process(WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
     COMMAND git submodule update --init --rebase lib/cspace)
+  execute_process(WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/lib/cspace
+    COMMAND git submodule update --init --rebase cmake)
   add_subdirectory(lib/cspace)
   target_link_libraries(linked_nodes_node cspace)
   target_include_directories(linked_nodes_node PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/include")
