@@ -12,9 +12,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Create Build Environment
-      run: |
-        cmake -E make_directory ${{github.workspace}}/lib/cspace
     - name: Install GCC 10
       shell: bash
       run: |
