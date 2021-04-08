@@ -14,8 +14,7 @@ jobs:
 
     - name: Create Build Environment
       run: |
-        git submodule update --init --rebase -- cmake
-        cmake -E make_directory ${{github.workspace}}/build ${{github.workspace}}/lib/cspace
+        cmake -E make_directory ${{github.workspace}}/lib/cspace
     - name: Install GCC 10
       shell: bash
       run: |
