@@ -29,7 +29,7 @@ node::wrapper_s parse_ini(std::istream& is, node::errorlist& err) {
   string raw;
   auto root = std::make_shared<node::wrapper>();
   node::parse_context context;
-  context.parent = root;
+  context.parent = context.root = root;
   context.parent_based_ref = true;
   // Iterate through lines
   for (int linecount = 1; std::getline(is, context.raw); linecount++, raw.clear()) {
@@ -90,6 +90,7 @@ node::wrapper_s parse_yml(std::istream& is, node::errorlist& err) {
   vector<indentpair> records{indentpair(-1, root, "")};
   string raw;
   node::parse_context context;
+  context.root = root;
 
   // Iterate the lines
   for (int linecount = 1; std::getline(is, context.raw); linecount++, raw.clear()) {

@@ -1,9 +1,9 @@
-bar: '%{F${F}}${bat} '
-  base:H %{B${B}} ${label} ${stat}${unit}
+bar: '%{F${child F}}${child bat} '
+  base:H %{B${child B}} ${child label} ${child stat}${child unit}
     B.L.value:$ dep stat ? 0
-    B:$ color cielch(${L}, 1, ${H}) ?
+    B:$ color cielch(${child L}, 1, ${child H}) ?
       dumb: hello
-      L:$ map 100 0.5:1 ${value}
+      L:$ map 100 0.5:1 ${child value}
   bat:$ clone base
     B.H: 0
     label: BAT

@@ -14,7 +14,7 @@ void test_nodes(parse_test testset, int repeat = base_repeat) {
   auto doc = std::make_shared<node::wrapper>();
 
   node::parse_context context;
-  context.parent = doc;
+  context.root = context.parent = doc;
   context.parent_based_ref = true;
   // Add keys to doc
   for(auto test : testset) {

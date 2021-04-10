@@ -177,7 +177,7 @@ namespace node {
     bool parent_based_ref{false};
 
     string raw, current_path;
-    wrapper_s parent, current;
+    wrapper_s parent, current, root;
     base_s* place{nullptr};
 
     wrapper_s get_current();

@@ -82,12 +82,11 @@ parse_escaped(parse_context& context, tstring& value) {
       if constexpr(std::is_same<T, string>::value)
         return std::make_shared<plain<string>>(string(context.current_path));
     if (prep.token_count == 1) {
-      auto ancestor = context.parent_based_ref ? context.get_parent() : context.get_current();
-      return std::make_shared<address_ref<T>>(ancestor, prep.tokens[0]);
-    } else if (prep.tokens[0] == "dep"_ts) {
-      return std::make_shared<address_ref<T>>(context.get_parent(), single_token("dep"));
-    } else if (prep.tokens[0] == "rel"_ts) {
-      return std::make_shared<address_ref<T>>(context.get_current(), single_token("rel"));
+      return std::make_shared<address_ref<T>>(context.root, prep.tokens[0]);
+    } else if (prep.tokens[0] == "dep"_ts || prep.tokens[0] == "sibling"_ts) {
+      return std::make_shared<address_ref<T>>(context.get_parent(), single_token(prep.tokens[0]));
+    } else if (prep.tokens[0] == "rel"_ts || prep.tokens[0] == "child"_ts) {
+      return std::make_shared<address_ref<T>>(context.get_current(), single_token(prep.tokens[0]));
 
     #define SINGLE_TOKEN(type) \
     } else if (prep.tokens[0] == #type##_ts) { \
