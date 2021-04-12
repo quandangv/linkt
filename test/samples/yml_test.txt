@@ -10,7 +10,7 @@ bar: '%{F${child F}}${child bat} '
     stat: 60
     unit: %
     path: ${}
-
+    empty:
 
     B:= invalid assignment
     invalid = hello

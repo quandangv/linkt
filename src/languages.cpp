@@ -113,7 +113,7 @@ node::wrapper_s parse_yml(std::istream& is, node::errorlist& err) {
       if (line.empty()) {
         // Add an empty node and record it as a possible parent
         records.emplace_back(indent, node::wrapper_s(), context.current_path);
-        context.place = &context.parent->add(key);
+        context.place = &context.parent->add(key, std::make_shared<node::plain<string>>(""));
         continue;
       }
       auto modes = cut_front(line, ' ');

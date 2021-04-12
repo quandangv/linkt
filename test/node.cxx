@@ -61,6 +61,7 @@ TEST(Node, Simple) {
     {"a.ref-space", "${ key }", "foo"},
     {"newline", "hello\\nworld", "hello\nworld"},
   });
+  test_nodes({{"empty", "", ""}});
 }
 
 TEST(Node, Cmd) {
@@ -98,8 +99,8 @@ TEST(Node, Ref) {
     {"test2.not-escape", "\\$${test.key-a}", "\\$a"},
   });
   test_nodes({
-    {"ref-cyclic-1", "${.ref-cyclic-2}", "${ref-cyclic-1}", true, false, true, true},
-    {"ref-cyclic-2", "${.ref-cyclic-1}", "${ref-cyclic-1}", true, false, true, true},
+    {"ref-cyclic-1", "${ref-cyclic-2}", "${ref-cyclic-1}", true, false, true, true},
+    {"ref-cyclic-2", "${ref-cyclic-1}", "${ref-cyclic-1}", true, false, true, true},
   });
   test_nodes({
     {"ref-cyclic-1", "${.ref-cyclic-2}", "${ref-cyclic-1}", true, false, true, true},
@@ -107,6 +108,10 @@ TEST(Node, Ref) {
     {"ref-cyclic-3", "${.ref-cyclic-1}", "${ref-cyclic-1}", true, false, true, true},
     {"ref-not-cyclic-1", "${ref-not-cyclic-2}", ""},
     {"ref-not-cyclic-2", "", ""}
+  });
+  test_nodes({
+    {"ref-empty", "${empty}", ""},
+    {"empty", "", ""},
   });
   test_nodes({{"dep", "${dep fail fail2}", "", false, true}});
   test_nodes({{"dep", "${rel fail fail2}", "", false, true}});

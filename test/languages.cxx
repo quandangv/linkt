@@ -106,6 +106,7 @@ TEST(Language, Functional_ini) {
 TEST(Language, Yml) {
   test_language({"yml_test", "yml",
     {
+      {"bar.bat.empty", ""},
       {"bar.bat.B.L.value", "60"},
       {"bar.bat.B.L", "0.8"},
       {"bar.bat.stat", "60"},
@@ -194,7 +195,7 @@ TEST_P(Misc, poll) {
   auto doc = GetParam();
   EXPECT_EQ(doc->get_child("poll-cmd"_ts, "fallback"), "hello\nworld");
   EXPECT_EQ(doc->get_child("poll"_ts, "fallback"), "");
-  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
   EXPECT_EQ(doc->get_child("poll"_ts, "fallback"), "hello");
   EXPECT_EQ(doc->get_child("poll"_ts, "fallback"), "");
   EXPECT_TRUE(doc->set<string>("poll"_ts, "next"));

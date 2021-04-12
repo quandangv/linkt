@@ -10,6 +10,7 @@ bar: "%{F#fff}%{B#FF54CB} BAT 60% "
         value: 60
       dumb: hello
     dumb: invalid
+    empty:
     label: BAT
     path: bar.bat.path
     stat: 60
