@@ -84,7 +84,6 @@ namespace node {
   };
 
   using gradient = lazy_node<string, cspace::gradient<3>>;
-  //using poll = lazy_node<string, string, pollfd>;
 
   struct env : simple_meta, settable<string> {
     explicit operator string() const;

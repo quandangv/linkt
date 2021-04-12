@@ -15,6 +15,7 @@ namespace node {
     std::vector<replace_spot> spots;
 
     explicit operator string() const;
+    string substitute(bool full) const;
     base_s clone  (clone_context&) const;
     bool is_fixed() const;
   };

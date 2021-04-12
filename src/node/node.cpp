@@ -154,7 +154,6 @@ void poll::start_cmd() const {
       throw std::runtime_error("fork failed");
     case 0: // Child case
       dup2(pipes[1], STDOUT_FILENO);
-      dup2(pipes[1], STDERR_FILENO);
       dup2(pipes[1], STDIN_FILENO);
       close(pipes[0]);
       close(pipes[1]);

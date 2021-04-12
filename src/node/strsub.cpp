@@ -6,9 +6,19 @@
 namespace node {
 
 strsub::operator string() const {
+  return substitute(true);
+}
+
+string strsub::substitute(bool full) const {
   size_t base_i = 0;
   bool copied = false;
   for (auto& spot : spots) {
+    if (!full && !spot.replacement->is_fixed()) {
+      if (copied)
+        tmp.append(base, base_i, spot.start - base_i);
+      base_i = spot.start + spot.length;
+      continue;
+    }
     auto replacement = spot.replacement->get();
     if (copied) {
       tmp.append(base, base_i, spot.start - base_i);
@@ -36,7 +46,7 @@ base_s strsub::clone(clone_context& context) const {
   auto result = std::make_unique<strsub>();
 
   if (context.optimize) {
-    operator string();
+    substitute(true);
     for (auto& spot : spots) {
       if (!spot.replacement->is_fixed()) {
         auto replacement = checked_clone<string>(spot.replacement, context, "strsub::clone");

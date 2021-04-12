@@ -49,7 +49,7 @@ address_ref<T>::get_source_direct() const {
 address_ref<T>::operator T() const {
   try {
     auto src = get_source();
-    if (!src) throw node_error("Referenced key not found: " + get_path());
+    if (!src) throw node_error("Get: Referenced key not found: " + get_path());
     if (auto convert = std::dynamic_pointer_cast<base<T>>(src))
       return convert->operator T();
     return parse<T>(src->get(), "address_ref::operator T");
@@ -132,7 +132,7 @@ address_ref<T>::clone(clone_context& context) const {
   template<class T> bool
 address_ref<T>::is_fixed() const {
   auto src = get_source();
-  if (!src) throw node_error("Referenced key not found: " + get_path());
+  if (!src) throw node_error("is_fixed: Referenced key not found: " + get_path());
   return src->is_fixed();
 }
 
