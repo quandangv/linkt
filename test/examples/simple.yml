@@ -1,30 +1,8 @@
-status: Hello ${name} | CPU Usage: ${cpu} | Memory Usage: ${memory} | Battery level: ${battery} | ${date}
-  name:$ cmd echo $USER
-  cpu:$ save last-param ${cmd ./scripts/cpu.sh ${last-param}}
-    last-param: 0 0
+status: Hello ${status.name} | CPU Usage: ${.cpu} | Memory Usage: ${.memory} | Battery level: ${.battery} | ${.date}
+  name:$ cmd 'echo $USER'
+  cpu:$ save ${.last-param} ${cmd './scripts/cpu.sh ${.last-param}' ? N/A}
+    last-param:$ var '0 0'
   memory:$ cmd ./scripts/memory.sh ? N/A
-  battery:$ cmd ./scripts/battery.sh ${bat_name} ? N/A
+  battery:$ cmd './scripts/battery.sh ${.bat_name}' ? N/A
     bat_name: BAT1
-  date:$ cmd date +%H:%M
-
-lemonbar.greeting.text: Hello ${dep status.name}
-lemonbar.cpu.text: CPU ${dep status.cpu}
-lemonbar.memory.text: RAM ${dep status.memory}
-lemonbar.battery.text: BAT ${dep status.battery}
-lemonbar.date.text: ${dep status.date}
-lemonbar: '${greeting} ${cpu} ${memory} ${sep}%{r}${battery} ${date} ${sep}%{B-}'
-  sep: '%{B#fff} '
-  base: ${dep sep}%{B${B}} ${text}
-    B.base:$ color cielch(${L}, 1, ${H})
-      L: 0.7
-      H:$ cmd ./scripts/anim-base.sh 60
-  greeting:$ clone base
-    B:$ color cielch 'h + 0' ${base}
-  cpu:$ clone base
-    B:$ color cielch 'h + 72' ${base}
-  memory:$ clone base
-    B:$ color cielch 'h + 144' ${base}
-  battery:$ clone base
-    B:$ color cielch 'h + -144' ${base}
-  date:$ clone base
-    B:$ color cielch 'h + -72' ${base}
+  date:$ cmd 'date +%H:%M'

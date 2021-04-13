@@ -1,4 +1,4 @@
-#include <linked_nodes/languages.hpp>
+#include <linked/languages.hpp>
 #include <iostream>
 #include <fstream>
 
@@ -26,7 +26,6 @@ int main() {
   std::cout << "  status.memory\n";
   std::cout << "  status.battery\n";
   std::cout << "  status.date\n";
-  std::cout << "  lemonbar\n";
   while (true) {
     std::cout << "Enter key to get value: ";
     std::string path;
