@@ -1,4 +1,4 @@
-# linked_nodes
+# linked
 Convert configuration files into dynamic tree structures
 
 [![codecov](https://codecov.io/gh/quandangv/linked_nodes/branch/main/graph/badge.svg)](https://codecov.io/gh/quandangv/linked_nodes)
