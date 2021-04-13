@@ -14,9 +14,12 @@ string strsub::substitute(bool full) const {
   bool copied = false;
   for (auto& spot : spots) {
     if (!full && !spot.replacement->is_fixed()) {
-      if (copied)
-        tmp.append(base, base_i, spot.start - base_i);
+      auto old_base_i = base_i;
       base_i = spot.start + spot.length;
+      if (copied) {
+        tmp.append(base, old_base_i, base_i - old_base_i);
+        spot.start = tmp.size() - spot.length;
+      }
       continue;
     }
     auto replacement = spot.replacement->get();
@@ -46,7 +49,7 @@ base_s strsub::clone(clone_context& context) const {
   auto result = std::make_unique<strsub>();
 
   if (context.optimize) {
-    substitute(true);
+    substitute(false);
     for (auto& spot : spots) {
       if (!spot.replacement->is_fixed()) {
         auto replacement = checked_clone<string>(spot.replacement, context, "strsub::clone");
