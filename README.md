@@ -1,10 +1,11 @@
 # linked
 Convert configuration files into dynamic tree structures
 
-[![codecov](https://codecov.io/gh/quandangv/linked/branch/main/graph/badge.svg)](https://codecov.io/gh/quandangv/linked)
-[![release](https://img.shields.io/github/release/quandangv/linked.svg)](https://github.com/quandangv/linked/releases)
-[![CI](https://github.com/quandangv/linked/actions/workflows/ci.yml/badge.svg)](https://github.com/quandangv/linked/actions/workflows/ci.yml)
-[![license](https://img.shields.io/github/license/quandangv/linked.svg)](https://github.com/quandangv/linked/blob/master/LICENSE)
+![Codecov](https://img.shields.io/codecov/c/gh/quandangv/linked?style=for-the-badge)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/quandangv/linked?style=for-the-badge)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/quandangv/linked/CI?style=for-the-badge)
+![GitHub](https://img.shields.io/github/license/quandangv/linked?style=for-the-badge)
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/quandangv/linked?style=for-the-badge)
 
 ## Building the project
 Run `./build.sh -A` in the project root to build and install the project with default settings. To view other build options, run `./build.sh -h`.
