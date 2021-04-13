@@ -58,4 +58,6 @@ set(COPIED_FILES
   yml_test_output.txt
   lemonbar_test.txt
   lemonbar_test_output.txt
+  replace_test.txt
+  replace_test_output.txt
 )

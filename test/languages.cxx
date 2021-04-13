@@ -12,6 +12,14 @@ struct file_test_param {
   vector<string> err;
 };
 
+void diff(const string& path) {
+  auto command = "diff '" + path + "_output.txt' '" + path + "_export.txt' 2>&1";
+  auto file = popen(command.data(), "r");
+  ASSERT_TRUE(file);
+  EXPECT_EQ(fgetc(file), EOF) << "Output of command not empty: " << command;
+  pclose(file);
+}
+
 void test_language(file_test_param testset) {
   std::ifstream ifs{testset.path + ".txt"};
   ASSERT_FALSE(ifs.fail());
@@ -54,11 +62,7 @@ void test_language(file_test_param testset) {
   }
 
   // Check the export result
-  auto command = "diff '" + testset.path + "_output.txt' '" + testset.path + "_export.txt' 2>&1";
-  auto file = popen(command.data(), "r");
-  ASSERT_TRUE(file);
-  EXPECT_EQ(fgetc(file), EOF) << "Output of command not empty: " << command;
-  pclose(file);
+  diff(testset.path);
 }
 
 TEST(Language, Plain_ini) {
@@ -178,7 +182,7 @@ set_key(node::wrapper_s& doc, const string& key, const T& newval) {
 TEST_P(Misc, wrapper) {
   auto doc = GetParam();
   // Test wrapper functionalities
-  EXPECT_FALSE(doc->get_child("nexist"_ts));
+  EXPECT_FALSE(doc->get_child_safe("nexist"_ts));
   EXPECT_EQ(doc->get_child("nexist"_ts, "fallback"), "fallback");
   EXPECT_EQ(doc->get_child_place("nexist"_ts), nullptr);
   EXPECT_EQ(doc->get_child("key-a"_ts, "fail"), "a");
@@ -291,14 +295,15 @@ TEST_P(Misc, assign_ref) {
   set_key<string>(doc, "key-a", "a");
   set_key<string>(doc, "ref-a", "foo");
   set_key<string>(doc, "ref-ref-a", "bar");
-  EXPECT_EQ("bar", *doc->get_child("key-a"_ts));
-  EXPECT_EQ("Hello quan", *doc->get_child("greeting"_ts));
+  EXPECT_EQ("bar", doc->get_child("key-a"_ts, "fail"));
+  EXPECT_EQ("Hello quan", doc->get_child("greeting"_ts, "fail"));
 
   // Test fallback assignments
   set_key<string>(doc, "ref-default-a", "foobar");
-  EXPECT_EQ("foobar", *doc->get_child("key-a"_ts));
+  EXPECT_EQ("foobar", doc->get_child("key-a"_ts, "fail"));
+  set_key<string>(doc, "ref-default-a", "a");
   EXPECT_FALSE(doc->set("cmd-ref"_ts, "hello"));
-  EXPECT_EQ("Hello quan", *doc->get_child("greeting"_ts));
+  EXPECT_EQ("Hello quan", doc->get_child("greeting"_ts, "fail"));
 }
 
 TEST_P(Misc, assign_file_env) {
@@ -325,6 +330,16 @@ TEST_P(Misc, gradient) {
   EXPECT_EQ(doc->get_child("gradient"_ts, "fail"), "#ffffff");
   set_key<float>(doc, "gradient_var", 0.5);
   EXPECT_EQ(doc->get_child("gradient"_ts, "fail"), "#777777");
+}
+
+TEST_P(Misc, replace_text) {
+  auto doc = GetParam();
+  std::ifstream ifs{"replace_test.txt"};
+  std::ofstream ofs{"replace_test_export.txt"};
+  replace_text(ifs, ofs, doc);
+  ifs.close();
+  ofs.close();
+  diff("replace_test");
 }
 
 TEST_P(Misc, other) {

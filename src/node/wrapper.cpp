@@ -34,14 +34,19 @@ base_s* wrapper::get_child_place(tstring path) {
   return nullptr;
 }
 
-std::optional<string> wrapper::get_child(const tstring& path) const {
+std::optional<string> wrapper::get_child_safe(const tstring& path) const {
   auto ptr = get_child_ptr(path);
   return ptr ? ptr->get() : std::optional<string>{};
 }
 
+string wrapper::get_child(const tstring& path) const {
+  auto ptr = get_child_ptr(path);
+  return ptr ? ptr->get() : throw std::logic_error("Child does not exist: " + path);
+}
+
 string wrapper::get_child(const tstring& path, string&& fallback) const {
   try {
-    auto result = get_child(path);
+    auto result = get_child_safe(path);
     return result ? *result : move(fallback);
   } catch (const std::exception& e) {
     LG_DBUG("Error: " << e.what());

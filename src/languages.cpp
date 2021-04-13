@@ -24,10 +24,9 @@ void write_key(std::ostream& os, const string& prefix, string&& value) {
     os << prefix << ' ' << value << endl;
 }
 
-node::wrapper_s parse_ini(std::istream& is, node::errorlist& err) {
+void parse_ini(std::istream& is, node::errorlist& err, node::wrapper_s& root) {
   string prefix;
   string raw;
-  auto root = std::make_shared<node::wrapper>();
   node::parse_context context;
   context.parent = context.root = root;
   context.parent_based_ref = true;
@@ -51,7 +50,6 @@ node::wrapper_s parse_ini(std::istream& is, node::errorlist& err) {
       }
     }
   }
-  return root;
 }
 
 void write_ini(std::ostream& os, const node::wrapper_s& root, const string& prefix) {
@@ -85,8 +83,7 @@ struct indentpair {
       : indent(indent), node(node), path(path) {}
 };
 
-node::wrapper_s parse_yml(std::istream& is, node::errorlist& err) {
-  auto root = std::make_shared<node::wrapper>();
+void parse_yml(std::istream& is, node::errorlist& err, node::wrapper_s& root) {
   vector<indentpair> records{indentpair(-1, root, "")};
   string raw;
   node::parse_context context;
@@ -133,7 +130,6 @@ node::wrapper_s parse_yml(std::istream& is, node::errorlist& err) {
 
       if (find(modes, 'H') != tstring::npos) {
         context.get_current()->map[".hidden"] = std::make_shared<node::plain<string>>("true");
-        LG_DBUG("HIDDEN");
       }
 
       records.emplace_back(indent, nullptr, context.current_path);
@@ -153,7 +149,6 @@ node::wrapper_s parse_yml(std::istream& is, node::errorlist& err) {
       err.report_error(linecount, key, e.what());
     }
   }
-  return root;
 }
 
 void write_yml(std::ostream& os, const node::wrapper_s& root, int indent) {
@@ -171,4 +166,16 @@ void write_yml(std::ostream& os, const node::wrapper_s& root, int indent) {
       write_key(os, name + ":", child->get());
     }
   });
+}
+
+void replace_text(std::istream& is, std::ostream& os, node::wrapper_s& replacements) {
+  string raw;
+  for (int linecount = 1; std::getline(is, raw); linecount++, raw.clear()) {
+    tstring ts(raw);
+    size_t start, end;
+    while(find_enclosed(ts, raw, "${", "{", "}", start, end)) {
+      ts.replace(raw, start, end - start, replacements->get_child(ts.interval(start+2, end-1)));
+    }
+    os << raw << std::endl;
+  }
 }

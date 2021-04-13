@@ -32,7 +32,8 @@ namespace node {
     base_s get_child_ptr(tstring path) const;
     base_s* get_child_place(tstring path);
     string get_child(const tstring& path, string&& fallback) const;
-    std::optional<string> get_child(const tstring& path) const;
+    string get_child(const tstring& path) const;
+    std::optional<string> get_child_safe(const tstring& path) const;
     wrapper_s get_wrapper(const string& path) const;
 
     void iterate_children(std::function<void(const string&, const base_s&)> processor) const;
