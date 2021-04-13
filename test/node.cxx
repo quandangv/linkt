@@ -142,6 +142,12 @@ TEST(Node, strsub_nested) {
   }, base_repeat * 10);
 }
 
+TEST(Node, gradient) {
+  test_nodes({{"gradient", "${gradient '#000 1:#FFF' ${gradient_var}}", "", false, true}});
+  test_nodes({{"gradient", "${gradient '#000 1:#FFF' ${gradient_var} 0}", "", false, true}});
+  test_nodes({{"gradient", "${gradient '0:#000 1:#FFF' 0.5}", "#777777"}});
+}
+
 TEST(Node, File) {
   test_nodes({
     {"ext", "txt", "txt"},

@@ -40,3 +40,6 @@ test2 = ${var ""}
 
 poll = ${poll "./poll.sh"}
 poll-cmd = ${cmd "echo hello && sleep 0.005 && echo world"}
+
+gradient = ${gradient "0:#000 1:#FFF" ${gradient_var}}
+gradient_var = ${var float 0}

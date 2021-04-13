@@ -201,6 +201,12 @@ TEST_P(Misc, poll) {
   EXPECT_TRUE(doc->set<string>("poll"_ts, "next"));
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   EXPECT_EQ(doc->get_child("poll"_ts, "fallback"), "world");
+  EXPECT_TRUE(doc->set<string>("poll"_ts, "next"));
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  EXPECT_EQ(doc->get_child("poll"_ts, "fallback"), "");
+  EXPECT_TRUE(doc->set<string>("poll"_ts, "next"));
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  EXPECT_EQ(doc->get_child("poll"_ts, "fallback"), "bye");
 }
 
 TEST_P(Misc, parse_errors) {
@@ -310,6 +316,15 @@ TEST_P(Misc, assign_file_env) {
   // Test env_ref assignments
   set_key<string>(doc, "env", "foo");
   set_key<string>(doc, "file-parse", "content");
+}
+
+TEST_P(Misc, gradient) {
+  auto doc = GetParam();
+  EXPECT_EQ(doc->get_child("gradient"_ts, "fail"), "#000000");
+  set_key<float>(doc, "gradient_var", 1);
+  EXPECT_EQ(doc->get_child("gradient"_ts, "fail"), "#ffffff");
+  set_key<float>(doc, "gradient_var", 0.5);
+  EXPECT_EQ(doc->get_child("gradient"_ts, "fail"), "#777777");
 }
 
 TEST_P(Misc, other) {
