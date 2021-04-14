@@ -36,3 +36,11 @@ add_library(linked INTERFACE)
 target_link_libraries(linked INTERFACE linked_lang)
 
 configure_file(${PUBLIC_HEADERS_DIR}/common.hpp.in  ${GENERATED_HEADERS_DIR}/common.hpp)
+
+add_executable(linked_replace ${SRC_DIR}/linked_replace.cpp)
+target_link_libraries(linked_replace linked)
+target_include_directories(linked_replace PUBLIC "${PUBLIC_HEADERS_DIR}" "${INCLUDE_DIRS}")
+install(TARGETS linked_replace DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT runtime)
+set_target_properties(linked_replace PROPERTIES VERSION ${PROJECT_VERSION}
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+

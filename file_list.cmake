@@ -47,6 +47,8 @@ set(LINI_SOURCES
 
 set(INTERNAL_TESTS)
 set(EXTERNAL_TESTS node languages)
+set(EXECUTABLES ${SRC_DIR}/linked_replace.cpp)
+set(EXECUTABLE_LINK linked_lang)
 set(COPIED_FILES
   poll.sh
   key_file.txt
