@@ -174,7 +174,22 @@ void replace_text(std::istream& is, std::ostream& os, node::wrapper_s& replaceme
     tstring ts(raw);
     size_t start, end;
     while(find_enclosed(ts, raw, "${", "{", "}", start, end)) {
-      ts.replace(raw, start, end - start, replacements->get_child(ts.interval(start+2, end-1)));
+      auto expression = ts.interval(start+2, end-1);
+      int offset = -1, length = -1;
+      if (auto comp = cut_back(expression, ':'); !comp.untouched()) {
+        offset = node::parse<int>(comp.begin(), comp.size());
+        if (comp = cut_back(expression, ':'); !comp.untouched()) {
+          length = offset;
+          offset = node::parse<int>(comp.begin(), comp.size());
+        }
+      }
+      auto _str = replacements->get_child_safe(expression);
+      if (!_str)
+        continue;
+      auto str = *_str;
+      if (offset >= 0)
+        str = str.substr(offset, length);
+      ts.replace(raw, start, end - start, str);
     }
     os << raw << std::endl;
   }
