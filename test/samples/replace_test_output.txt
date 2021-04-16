@@ -1,2 +1,4 @@
 Hello quan, you are quan
 key-a is 'a'
+substr: uan, qu
+nexist: ${nexist}

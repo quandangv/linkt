@@ -184,12 +184,14 @@ void replace_text(std::istream& is, std::ostream& os, node::wrapper_s& replaceme
         }
       }
       auto _str = replacements->get_child_safe(expression);
-      if (!_str)
-        continue;
-      auto str = *_str;
-      if (offset >= 0)
-        str = str.substr(offset, length);
-      ts.replace(raw, start, end - start, str);
+      if (_str) {
+        auto str = *_str;
+        if (offset >= 0)
+          str = str.substr(offset, length);
+        ts.replace(raw, start, end - start, str);
+        end = start + str.size();
+      }
+      ts.erase_front(end);
     }
     os << raw << std::endl;
   }
