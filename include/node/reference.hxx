@@ -165,7 +165,21 @@ ref<T>::set(const T& value) {
 
   template<class T> base_s
 ref<T>::clone(clone_context&) const {
-  throw clone_error("clone_error: This node is optimized and can't be cloned");
+  throw clone_error("Ref: is optimized and can't be cloned further");
+}
+
+inline base_s upref::clone(clone_context& context) const {
+  auto ancestor = source_w.lock();
+  if (!ancestor) throw ancestor_destroyed_error("clone");
+  // Find the corresponding ancestor in the clone result tree
+  auto ancestor_it = find_if(context.ancestors.rbegin(), context.ancestors.rend(), [&](auto& pair) { return pair.first == ancestor; });
+  if (ancestor_it != context.ancestors.rend()) {
+    return std::make_shared<upref>(ancestor_it->second);
+  } else if (context.no_dependency) {
+    throw clone_error("Ref: Can't find the cloned ancestor");
+  } else {
+    return std::make_shared<upref>(ancestor);
+  }
 }
 
   template<class T> bool

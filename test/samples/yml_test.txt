@@ -7,11 +7,11 @@ bar: '%{F${child F}}${child bat} '
   bat:$ clone base
     B.H: 0
     label: BAT
+      upref:$ ..
     stat: 60
     unit: %
     path: ${}
     empty:
-
     B:= invalid assignment
     invalid = hello
     label: invalid

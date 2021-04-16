@@ -39,6 +39,11 @@ namespace node {
     bool is_fixed() const;
     base_s get_source() const { return source_w.lock(); }
   };
+
+  struct upref : ref<string> {
+    using ref<string>::ref;
+    inline base_s clone(clone_context&) const;
+  };
   
     template<class T>
   struct adapter : ref<string>, base<T>, settable<T> {

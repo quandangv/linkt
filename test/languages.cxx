@@ -111,6 +111,7 @@ TEST(Language, Yml) {
   test_language({"yml_test", "yml",
     {
       {"bar.bat.empty", ""},
+      {"bar.bat.label.upref", "BAT"},
       {"bar.bat.B.L.value", "60"},
       {"bar.bat.B.L", "0.8"},
       {"bar.bat.stat", "60"},

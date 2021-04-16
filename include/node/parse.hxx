@@ -82,7 +82,10 @@ parse_escaped(parse_context& context, tstring& value) {
       if constexpr(std::is_same<T, string>::value)
         return std::make_shared<plain<string>>(string(context.current_path));
     if (prep.token_count == 1) {
-      if (prep.tokens[0].front() == '.') {
+      if (prep.tokens[0] == ".."_ts) {
+        if constexpr(std::is_same<T, string>::value)
+          return std::make_shared<upref>(context.get_parent());
+      } else if (prep.tokens[0].front() == '.') {
         prep.tokens[0].erase_front();
         return std::make_shared<address_ref<T>>(context.get_current(), prep.tokens[0]);
       }
