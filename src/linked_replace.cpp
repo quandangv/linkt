@@ -25,7 +25,7 @@ bool merge_file(const char* path, node::wrapper_s doc) {
   node::errorlist err;
   if (ends_with(path, ".yml") || ends_with(path, ".yaml"))
     parse_yml(ifs, err, doc);
-  if (ends_with(path, ".ini"))
+  else if (ends_with(path, ".ini"))
     parse_ini(ifs, err, doc);
   else {
     cerr << "Unsupported file type: " << path << endl;
@@ -33,7 +33,7 @@ bool merge_file(const char* path, node::wrapper_s doc) {
   }
 
   if (!err.empty()) {
-    cerr << "Parse errors:" << endl;
+    cerr << "Parse errors of file:" << path << endl;
     for(auto& e : err)
       cerr << "At " << e.first << ": " << e.second << endl;
     return true;
@@ -51,8 +51,7 @@ int main(int argc, char** argv) {
   for (int ch; (ch = getopt(argc, argv, "i:")) != -1;) {
     switch (ch) {
       case 'i':
-        if (merge_file(optarg, replacements))
-          return 1;
+        merge_file(optarg, replacements);
         break;
       case 'h':
         print_help(*argv);
@@ -62,6 +61,14 @@ int main(int argc, char** argv) {
   for (; optind < argc-1; optind+=2) {
     std::ifstream ifs(argv[optind]);
     std::ofstream ofs(argv[optind+1]);
-    replace_text(ifs, ofs, replacements);
+    if (ifs.fail()) {
+      cerr << "Failed to open file: " << argv[optind] << endl;
+    } else if (ofs.fail()) {
+      cerr << "Failed to open file: " << argv[optind+1] << endl;
+    } else try {
+      replace_text(ifs, ofs, replacements);
+    } catch(const std::exception& e) {
+      cerr << "Replace error in file: " << argv[optind] << "->" << argv[optind+1] << endl << e.what();
+    }
   }
 }
