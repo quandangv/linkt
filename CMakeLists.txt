@@ -34,7 +34,6 @@ endif()
 target_link_libraries(linkt_lang linkt_node)
 add_library(linkt INTERFACE)
 target_link_libraries(linkt INTERFACE linkt_lang)
-target_include_directories(linkt INTERFACE "${CMAKE_CURRENT_BINARY_DIR}/include")
 
 configure_file(${PUBLIC_HEADERS_DIR}/common.hpp.in  ${GENERATED_HEADERS_DIR}/common.hpp)
 
