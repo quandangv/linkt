@@ -48,7 +48,7 @@ void print_help(const char* name) {
 int main(int argc, char** argv) {
   auto replacements = std::make_shared<node::wrapper>();
 
-  for (int ch; (ch = getopt(argc, argv, "i:")) != -1;) {
+  for (int ch; (ch = getopt(argc, argv, "i:h")) != -1;) {
     switch (ch) {
       case 'i':
         merge_file(optarg, replacements);
