@@ -40,7 +40,7 @@ configure_file(${PUBLIC_HEADERS_DIR}/common.hpp.in  ${GENERATED_HEADERS_DIR}/com
 add_executable(linkt_replace ${SRC_DIR}/linkt_replace.cpp)
 target_link_libraries(linkt_replace linkt)
 target_include_directories(linkt_replace PUBLIC "${PUBLIC_HEADERS_DIR};${INCLUDE_DIRS}")
-install(TARGETS linkt_replace DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT runtime)
+install(TARGETS linkt_replace RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT runtime)
 set_target_properties(linkt_replace PROPERTIES VERSION ${PROJECT_VERSION}
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
