@@ -20,6 +20,7 @@ unset(DEBUG_SCOPES CACHE)
 set(NODE_HEADERS
   ${PUBLIC_HEADERS_DIR}/node/base.hpp
   ${PUBLIC_HEADERS_DIR}/node/node.hpp
+  ${PUBLIC_HEADERS_DIR}/node/structs.hpp
   ${PUBLIC_HEADERS_DIR}/node/wrapper.hpp
   ${PUBLIC_HEADERS_DIR}/node/fallback.hpp
   ${PUBLIC_HEADERS_DIR}/node/reference.hpp
@@ -38,7 +39,7 @@ set(NODE_SOURCES
   ${SRC_DIR}/node/strsub.cpp
   ${SRC_DIR}/node/base.cpp
   ${SRC_DIR}/node/node.cpp
-  ${SRC_DIR}/node/parse.cpp
+  ${SRC_DIR}/node/structs.cpp
   ${SRC_DIR}/node/wrapper.cpp
   ${TSTRING_SOURCES}
 )
