@@ -26,11 +26,11 @@ void test_language(file_test_param testset) {
 
   // Parse the file
   node::errorlist err;
-  node::wrapper_s doc;
+  node::wrapper_s doc = std::make_shared<node::wrapper>();
   if (testset.language == "ini")
-    doc = parse_ini(ifs, err);
+    parse_ini(ifs, err, doc);
   else if (testset.language == "yml")
-    doc = parse_yml(ifs, err);
+    parse_yml(ifs, err, doc);
 
   // Check for unexpected errors
   for(auto& e : err) {
@@ -133,7 +133,8 @@ node::wrapper_s load_doc(string path = "misc_test.txt") {
   std::ifstream ifs{path};
   EXPECT_FALSE(ifs.fail());
   node::errorlist err;
-  auto doc = parse_ini(ifs, err);
+  auto doc = std::make_shared<node::wrapper>();
+  parse_ini(ifs, err, doc);
   ifs.close();
 
   if (!err.empty()) {
