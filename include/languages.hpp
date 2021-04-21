@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "node/wrapper.hpp"
+#include "node/parse.hpp"
 
 void parse_ini(std::istream&, node::errorlist&, node::wrapper_s& output);
 void write_ini(std::ostream&, const node::wrapper_s&, const string& prefix = "");

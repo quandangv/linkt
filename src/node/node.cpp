@@ -1,6 +1,7 @@
 #include "node.hpp"
 #include "wrapper.hpp"
 #include "parse.hpp"
+#include "parse.hxx"
 #include "common.hpp"
 #include "token_iterator.hpp"
 

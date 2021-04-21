@@ -38,6 +38,7 @@ set(NODE_SOURCES
   ${SRC_DIR}/node/strsub.cpp
   ${SRC_DIR}/node/base.cpp
   ${SRC_DIR}/node/node.cpp
+  ${SRC_DIR}/node/parse.cpp
   ${SRC_DIR}/node/wrapper.cpp
   ${TSTRING_SOURCES}
 )

@@ -2,6 +2,7 @@
 
 #include "base.hpp"
 #include "fallback.hpp"
+#include "parse.hpp"
 
 #include <chrono>
 #include <cspace/processor.hpp>

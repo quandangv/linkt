@@ -10,7 +10,6 @@
 
 namespace node {
   template<class T> struct base;
-  template<> struct base<string>;
   struct wrapper;
   using std::string;
   using base_s = std::shared_ptr<base<string>>;
@@ -172,28 +171,4 @@ namespace node {
   parse_plain(const tstring& value) {
     return std::make_shared<Type>(parse<Return>(value, "parse_plain"));
   }
-
-  struct parse_context {
-    bool parent_based_ref{false};
-
-    string raw, current_path;
-    wrapper_s parent, current, root;
-    base_s* place{nullptr};
-
-    wrapper_s get_current();
-    wrapper_s get_parent();
-    base_s& get_place();
-    friend struct parse_context_base;
-  };
-
-  class parse_preprocessed {
-    base_s fallback;
-  public:
-    std::array<tstring, 7> tokens;
-    unsigned char token_count{0};
-    tstring process(tstring&);
-    void set_fallback(base_s fb) { fallback = fb; }
-    bool has_fallback() { return fallback.get(); }
-    base_s pop_fallback() { auto result = std::move(fallback); return result; }
-  };
 }
