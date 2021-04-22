@@ -6,8 +6,11 @@ struct parse_test_single {
   string path, value, parsed;
   bool is_fixed{true}, fail{false}, exception{false}, clone_fail{false};
 };
-bool operator==(const std::pair<string, string>& pair, const parse_test_single& test)
-{ return test.path == pair.first; }
+
+bool operator==(const std::pair<string, string>& pair, const parse_test_single& test) {
+  return test.path == pair.first;
+}
+
 using parse_test = vector<parse_test_single>;
 
 void test_nodes(parse_test testset, int repeat = base_repeat) {
@@ -15,7 +18,6 @@ void test_nodes(parse_test testset, int repeat = base_repeat) {
 
   node::parse_context context;
   context.root = context.parent = doc;
-  context.parent_based_ref = true;
   // Add keys to doc
   for(auto test : testset) {
     auto last_count = get_test_part_count();

@@ -11,19 +11,19 @@ void parse_ini(std::istream& is, node::errorlist& err, node::wrapper_s& root) {
   string raw;
   node::parse_context context;
   context.parent = context.root = root;
-  context.parent_based_ref = true;
   // Iterate through lines
   for (int linecount = 1; std::getline(is, context.raw); linecount++, raw.clear()) {
     tstring line(context.raw);
+
     // skip empty and comment lines
     if (trim(line).empty() || strchr(comment_chars, line.front()))
       continue;
     if (cut_front_back(line, "["_ts, "]"_ts)) {
-      // This is a section
+      // It's is a section
       prefix = line + ".";
       continue;
     } if (tstring key; err.extract_key(line, linecount, '=', key)) {
-      // This is a key
+      // It's is a key
       context.current_path = prefix + key;
       try {
         root->add(context.current_path, context, line);
@@ -52,18 +52,23 @@ void parse_yml(std::istream& is, node::errorlist& err, node::wrapper_s& root) {
   for (int linecount = 1; std::getline(is, context.raw); linecount++, raw.clear()) {
     tstring line(context.raw);
     int indent = ltrim(line);
+
     // Skip empty and comment lines
     if (line.empty() || strchr(comment_chars, line.front()))
       continue;
-    // The nodes with larger indentation will be closed
+
+    // The preceding nodes with larger indentation will be closed
     while (records.back().indent >= indent)
       records.pop_back();
-    // Separate the key and the content
+
+    // Separate the key and the value
     tstring key;
     if (!err.extract_key(line, linecount, ':', key))
       continue;
 
+    // Parse the content of the key
     try {
+      // Get the parent of the current key, adding a new wrapper if necessary (other types of node don't hold children)
       context.parent = records.back().node ?: (records.back().node = context.get_current());
       context.current_path = records.back().path.empty() ? (string)key : records.back().path + "." + key;
       if (line.empty()) {
