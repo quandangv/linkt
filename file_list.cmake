@@ -31,7 +31,9 @@ set(NODE_HEADERS
   ${STRINGS_PUBLIC_HEADERS_DIR}/tstring.hpp
 )
 set(LINI_HEADERS
-  ${PUBLIC_HEADERS_DIR}/languages.hpp
+  ${PUBLIC_HEADERS_DIR}/parse.hpp
+  ${PUBLIC_HEADERS_DIR}/write.hpp
+  ${PUBLIC_HEADERS_DIR}/replace.hpp
 )
 
 # source files
@@ -44,7 +46,9 @@ set(NODE_SOURCES
   ${TSTRING_SOURCES}
 )
 set(LINI_SOURCES
-  ${SRC_DIR}/languages.cpp
+  ${SRC_DIR}/parse.cpp
+  ${SRC_DIR}/write.cpp
+  ${SRC_DIR}/replace.cpp
 )
 
 set(INTERNAL_TESTS)

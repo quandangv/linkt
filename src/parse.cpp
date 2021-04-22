@@ -1,28 +1,10 @@
-#include "languages.hpp"
+#include "node/parse.hpp"
+#include "node/parse.hxx"
 #include "common.hpp"
 #include "tstring.hpp"
-#include "node/parse.hpp"
-
 #include <vector>
-#include <cstring>
-#include <iostream>
 
 constexpr const char comment_chars[] = ";#";
-
-// Escape the value and write it and the prefix to the stream
-void write_key(std::ostream& os, const string& prefix, string&& value) {
-  size_t opening = 0;
-  while((opening = value.find("${", opening)) != string::npos) {
-    value.insert(value.begin() + opening, '\\');
-    opening += 2;
-  }
-  if (value.empty())
-    os << prefix << endl;
-  else if (isspace(value.front()) || isspace(value.back()))
-    os << prefix << " \"" << value << '"' << endl;
-  else
-    os << prefix << ' ' << value << endl;
-}
 
 void parse_ini(std::istream& is, node::errorlist& err, node::wrapper_s& root) {
   string prefix;
@@ -49,29 +31,6 @@ void parse_ini(std::istream& is, node::errorlist& err, node::wrapper_s& root) {
         err.report_error(linecount, e.what());
       }
     }
-  }
-}
-
-void write_ini(std::ostream& os, const node::wrapper_s& root, const string& prefix) {
-  vector<std::pair<string, const node::wrapper_s>> wrappers;
-  root->iterate_children([&](const string& name, const node::base_s& child) {
-    if (!child) return;
-    // The empty key is used as the value of the wrapper, skip it
-    if (name.empty())
-      return;
-    auto ctn = std::dynamic_pointer_cast<node::wrapper>(child);
-    if(ctn) {
-      // The keys with children will be written after the other keys
-      // Otherwise, they will break the section
-      wrappers.push_back(std::make_pair(name, ctn));
-      if (auto value = child->get(); !value.empty())
-        write_key(os, name + " =", move(value));
-    } else
-      write_key(os, name + " =", child->get());
-  });
-  for(auto pair : wrappers) {
-    os << endl << '[' << prefix << pair.first << ']' << endl;
-    write_ini(os, pair.second);
   }
 }
 
@@ -148,57 +107,5 @@ void parse_yml(std::istream& is, node::errorlist& err, node::wrapper_s& root) {
     } catch (const std::exception& e) {
       err.report_error(linecount, key, e.what());
     }
-  }
-}
-
-void write_yml(std::ostream& os, const node::wrapper_s& root, int indent) {
-  root->iterate_children([&](const string& name, const node::base_s& child) {
-    if (!child || name.empty() || name[0] == '.') return;
-    if(auto ctn = std::dynamic_pointer_cast<node::wrapper>(child)) {
-      if (ctn->map[".hidden"]) {
-        return;
-      }
-      std::fill_n(std::ostream_iterator<char>(os), indent, ' ');
-      write_key(os, name + ":", child->get());
-      write_yml(os, ctn, indent + 2);
-    } else {
-      std::fill_n(std::ostream_iterator<char>(os), indent, ' ');
-      write_key(os, name + ":", child->get());
-    }
-  });
-}
-
-void replace_text(std::istream& is, std::ostream& os, node::wrapper_s& replacements) {
-  string raw;
-  node::parse_context context;
-  context.parent = context.root = replacements;
-  context.parent_based_ref = true;
-  for (int linecount = 1; std::getline(is, raw); linecount++, raw.clear()) {
-    tstring ts(raw);
-    size_t start, end;
-    while(find_enclosed(ts, raw, "${", "{", "}", start, end)) {
-      auto expression = ts.interval(start+2, end-1);
-      int offset = -1, length = -1;
-      if (auto comp = cut_back(expression, ':'); !comp.untouched()) {
-        offset = node::parse<int>(comp.begin(), comp.size());
-        if (comp = cut_back(expression, ':'); !comp.untouched()) {
-          length = offset;
-          offset = node::parse<int>(comp.begin(), comp.size());
-        }
-      }
-      auto node = node::parse_escaped<string>(context, expression);
-      if (node) {
-        try {
-          auto str = node->get();
-          if (offset >= 0)
-            str = str.substr(offset, length);
-          ts.replace(raw, start, end - start, str);
-          end = start + str.size();
-        } catch (const std::exception& e) {
-        }
-      }
-      ts.erase_front(end);
-    }
-    os << raw << std::endl;
   }
 }

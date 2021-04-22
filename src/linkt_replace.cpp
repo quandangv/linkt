@@ -1,4 +1,5 @@
-#include "languages.hpp"
+#include "parse.hpp"
+#include "replace.hpp"
 #include <getopt.h>
 #include <fstream>
 
