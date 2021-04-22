@@ -95,20 +95,24 @@ parse_escaped(parse_context& context, tstring& value) {
     } else if (prep.tokens[0] == "rel"_ts || prep.tokens[0] == "child"_ts) {
       return std::make_shared<address_ref<T>>(context.get_current(), single_token(prep.tokens[0]));
 
-    #define SINGLE_TOKEN(type) \
+    #define SIMPLE_TYPE(type) \
     } else if (prep.tokens[0] == #type##_ts) { \
       if constexpr(std::is_same<T, string>::value) \
         return std::make_shared<type>(context, prep)
-
-    SINGLE_TOKEN(cmd);
-    SINGLE_TOKEN(file);
-    SINGLE_TOKEN(env);
-    SINGLE_TOKEN(poll);
-    SINGLE_TOKEN(save);
-    SINGLE_TOKEN(color);
-    SINGLE_TOKEN(gradient);
-
-    #undef SINGLE_TOKEN
+    #define SINGLE_COMPONENT(type) \
+    } else if (prep.tokens[0] == #type##_ts) { \
+      if (prep.token_count != 2) \
+        throw parse_error("parse_error: "#type": Only accept 1 component"); \
+      if constexpr(std::is_same<T, string>::value) \
+        return std::make_shared<type>(context, prep)
+    SINGLE_COMPONENT(cmd);
+    SINGLE_COMPONENT(file);
+    SINGLE_COMPONENT(env);
+    SINGLE_COMPONENT(poll);
+    SIMPLE_TYPE(save);
+    SIMPLE_TYPE(color);
+    SIMPLE_TYPE(gradient);
+    #undef SIMPLE_TYPE
 
     } else if (prep.tokens[0] == "clock"_ts) {
       if constexpr(std::is_same<int, T>::value || std::is_same<string, T>::value)

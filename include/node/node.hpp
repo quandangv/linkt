@@ -31,14 +31,6 @@ namespace node {
         , with_fallback(other.fallback ? other.fallback->clone(context) : base_s()) {}
   };
 
-  struct simple_meta : meta {
-    using meta::meta;
-    simple_meta(parse_context& context, parse_preprocessed& prep) : meta(context, prep) {
-      if (prep.token_count != 2)
-        throw parse_error("parse_error: Only accept 1 component");
-    }
-  };
-
   struct color : meta {
     cspace::processor processor;
 
@@ -86,42 +78,47 @@ namespace node {
 
   using gradient = lazy_node<string, cspace::gradient<3>>;
 
-  struct env : simple_meta, settable<string> {
+  struct env : meta, settable<string> {
     explicit operator string() const;
     bool set  (const string& value);
     base_s clone(clone_context&) const;
     bool is_fixed() const { return false; }
+    string type_name() const { return "env"; }
   protected:
-    using simple_meta::simple_meta;
+    using meta::meta;
   };
 
-  struct cmd : simple_meta {
+  struct cmd : meta {
     explicit operator string() const;
     base_s clone(clone_context&) const;
     bool is_fixed() const { return false; }
+    string type_name() const { return "cmd"; }
   protected:
-    using simple_meta::simple_meta;
+    using meta::meta;
   };
 
-  struct poll : simple_meta, settable<string> {
+  struct poll : meta, settable<string> {
     mutable pollfd pfd{0, POLLIN, 0};
 
-    using simple_meta::simple_meta;
     ~poll();
     explicit operator string() const;
     base_s clone(clone_context&) const;
     void start_cmd() const;
     bool is_fixed() const { return false; }
     bool set(const string& value);
+    string type_name() const { return "poll"; }
+  protected:
+    using meta::meta;
   };
 
-  struct file : simple_meta, settable<string> {
+  struct file : meta, settable<string> {
     explicit operator string() const;
     bool set(const string& value);
     base_s clone(clone_context&) const;
     bool is_fixed() const { return false; }
+    string type_name() const { return "file"; }
   protected:
-    using simple_meta::simple_meta;
+    using meta::meta;
   };
 
   struct save : base<string>, settable<string> {
