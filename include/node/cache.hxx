@@ -2,7 +2,7 @@
 
 namespace node {
 
-  template<class T>
+template<class T>
 cache<T>::operator T() const {
   if (auto now = std::chrono::steady_clock::now(); now > cache_expire) {
     cache_value = calculator->operator T();
@@ -11,8 +11,8 @@ cache<T>::operator T() const {
   return cache_value;
 }
 
-  template<class T>
-base_s cache<T>::clone(clone_context& context) const {
+template<class T> base_s
+cache<T>::clone(clone_context& context) const {
   auto result = std::make_shared<cache>();
   result->calculator = checked_clone<T>(calculator, context, "cache::clone");
   result->duration_ms = checked_clone<int>(duration_ms, context, "cache::clone");
@@ -21,8 +21,8 @@ base_s cache<T>::clone(clone_context& context) const {
   return result;
 }
 
-  template<class T>
-std::shared_ptr<cache<T>> cache<T>::parse(parse_context& context, parse_preprocessed& prep) {
+template<class T> std::shared_ptr<cache<T>>
+cache<T>::parse(parse_context& context, parse_preprocessed& prep) {
   if (prep.token_count != 3)
     throw parse_error("cache: Expected 2 components");
   auto result = std::make_shared<cache>();
@@ -31,7 +31,7 @@ std::shared_ptr<cache<T>> cache<T>::parse(parse_context& context, parse_preproce
   return result;
 }
 
-  template<class T>
+template<class T>
 refcache<T>::operator T() const {
   auto now = std::chrono::steady_clock::now();
   if (auto newsrc = source->get(); newsrc != prevsrc || now > cache_expire || unset) {
@@ -43,8 +43,8 @@ refcache<T>::operator T() const {
   return cache_value;
 }
 
-  template<class T>
-base_s refcache<T>::clone(clone_context& context) const {
+template<class T> base_s
+refcache<T>::clone(clone_context& context) const {
   auto result = std::make_shared<refcache>();
   result->source = checked_clone<string>(source, context, "refcache::clone");
   result->calculator = checked_clone<T>(calculator, context, "refcache::clone");
@@ -55,8 +55,8 @@ base_s refcache<T>::clone(clone_context& context) const {
   return result;
 }
 
-  template<class T>
-std::shared_ptr<refcache<T>> refcache<T>::parse(parse_context& context, parse_preprocessed& prep) {
+template<class T> std::shared_ptr<refcache<T>>
+refcache<T>::parse(parse_context& context, parse_preprocessed& prep) {
   if (prep.token_count != 4)
     throw parse_error("cache: Expected 4 components");
   auto result = std::make_shared<refcache>();
@@ -67,13 +67,13 @@ std::shared_ptr<refcache<T>> refcache<T>::parse(parse_context& context, parse_pr
   return result;
 }
 
-  template<class T>
+template<class T>
 arrcache<T>::operator T() const {
   return get(source->operator int());
 }
 
-  template<class T>
-T arrcache<T>::get(size_t index) const {
+template<class T> T
+arrcache<T>::get(size_t index) const {
   if (index >= cache_arr.size())
     throw node_error("Index larger than cache maximum: " + std::to_string(index) + " > " + std::to_string(cache_arr.size() - 1));
   auto& result = cache_arr.operator[](index);
@@ -83,8 +83,8 @@ T arrcache<T>::get(size_t index) const {
   return *result;
 }
 
-  template<class T>
-base_s arrcache<T>::clone(clone_context& context) const {
+template<class T> base_s
+arrcache<T>::clone(clone_context& context) const {
   auto result = std::make_shared<arrcache>();
   result->source = checked_clone<int>(source, context, "arrcache::clone");
   result->calculator = checked_clone<T>(calculator, context, "arrcache::clone");
@@ -102,8 +102,8 @@ inline std::optional<unsigned long int> parse_ulong(const char* str, size_t len)
   return result;
 }
 
-  template<class T>
-std::shared_ptr<arrcache<T>> arrcache<T>::parse(parse_context& context, parse_preprocessed& prep) {
+template<class T> std::shared_ptr<arrcache<T>>
+arrcache<T>::parse(parse_context& context, parse_preprocessed& prep) {
   if (prep.token_count == 4) {
     auto result = std::make_shared<arrcache>();
     auto size = parse_ulong(prep.tokens[1].begin(), prep.tokens[1].size());

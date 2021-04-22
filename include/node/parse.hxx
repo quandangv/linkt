@@ -9,7 +9,7 @@
 namespace node {
 
 // Parse an unescaped node string
-  template<class T> std::shared_ptr<base<T>>
+template<class T> std::shared_ptr<base<T>>
 parse_raw(parse_context& context, tstring& value) {
   trim_quotes(value);
   for (auto it = value.begin(); it < value.end() - 1; it++) {
@@ -58,14 +58,14 @@ parse_raw(parse_context& context, tstring& value) {
   return std::shared_ptr<base<T>>();
 }
 
-  template<class T> std::shared_ptr<base<T>>
+template<class T> std::shared_ptr<base<T>>
 checked_parse_raw(parse_context& context, tstring& value) {
   auto result = parse_raw<T>(context, value);
   return result ?: throw parse_error("Unexpected empty parse result");
 }
 
 // Parse an escaped node string
-  template<class T> std::shared_ptr<base<T>>
+template<class T> std::shared_ptr<base<T>>
 parse_escaped(parse_context& context, tstring& value) {
   parse_preprocessed prep;
   auto fb_str = prep.process(value);

@@ -4,7 +4,7 @@
 
 namespace node {
 
-  template<class T>
+template<class T>
 address_ref<T>::address_ref(std::weak_ptr<wrapper> ancestor, tstring path)
     : ancestor_w(ancestor), indirect_paths() {
   trim(path);
@@ -13,7 +13,7 @@ address_ref<T>::address_ref(std::weak_ptr<wrapper> ancestor, tstring path)
   direct_path = path;
 }
 
-  template<class T> string
+template<class T> string
 address_ref<T>::get_path() const {
   std::stringstream ss;
   for (auto& path : indirect_paths)
@@ -22,7 +22,7 @@ address_ref<T>::get_path() const {
   return ss.str();
 }
 
-  template<class T> base_s
+template<class T> base_s
 address_ref<T>::get_source() const {
   auto direct = get_source_direct();
   if (!direct || !*direct) {
@@ -32,7 +32,7 @@ address_ref<T>::get_source() const {
   return direct_wrapper ? direct_wrapper->map[""] : *direct;
 }
 
-  template<class T> base_s*
+template<class T> base_s*
 address_ref<T>::get_source_direct() const {
   auto ancestor = ancestor_w.lock();
   if (!ancestor) throw ancestor_destroyed_error("address_ref(" + get_path() + ")::get_source_direct");
@@ -45,7 +45,7 @@ address_ref<T>::get_source_direct() const {
   return nullptr;
 }
 
-  template<class T>
+template<class T>
 address_ref<T>::operator T() const {
   try {
     auto src = get_source();
@@ -58,7 +58,7 @@ address_ref<T>::operator T() const {
   }
 }
 
-  template<class T> bool
+template<class T> bool
 address_ref<T>::set(const T& val) {
   auto src = get_source();
   if (!src) return false;
@@ -70,7 +70,7 @@ address_ref<T>::set(const T& val) {
   return false;
 }
 
-  template<class T> base_s
+template<class T> base_s
 address_ref<T>::clone(clone_context& context) const {
   auto ancestor = ancestor_w.lock();
   if (!ancestor) throw ancestor_destroyed_error("clone");
@@ -129,14 +129,14 @@ address_ref<T>::clone(clone_context& context) const {
   return std::make_shared<address_ref<T>>(cloned_ancestor, string(get_path()));
 }
 
-  template<class T> bool
+template<class T> bool
 address_ref<T>::is_fixed() const {
   auto src = get_source();
   if (!src) throw node_error("is_fixed: Referenced key not found: " + get_path());
   return src->is_fixed();
 }
 
-  template<class T>
+template<class T>
 ref<T>::ref(std::weak_ptr<base<T>> source_w) : source_w(source_w) {
   start:
   auto source = source_w.lock();
@@ -147,14 +147,14 @@ ref<T>::ref(std::weak_ptr<base<T>> source_w) : source_w(source_w) {
   }
 }
 
-  template<class T>
+template<class T>
 ref<T>::operator T() const {
   auto source = source_w.lock();
   if (!source) throw ancestor_destroyed_error("ancestor_destroyed_error: ref::get");
   return source->operator T();
 }
 
-  template<class T> bool
+template<class T> bool
 ref<T>::set(const T& value) {
   auto source = this->source_w.lock();
   if (!source) throw ancestor_destroyed_error("ancestor_destroyed_error: ref::set");
@@ -163,7 +163,7 @@ ref<T>::set(const T& value) {
   return false;
 }
 
-  template<class T> base_s
+template<class T> base_s
 ref<T>::clone(clone_context&) const {
   throw clone_error("Ref: is optimized and can't be cloned further");
 }
@@ -182,14 +182,14 @@ inline base_s upref::clone(clone_context& context) const {
   }
 }
 
-  template<class T> bool
+template<class T> bool
 ref<T>::is_fixed() const {
   auto source = this->source_w.lock();
   if (!source) throw ancestor_destroyed_error("ancestor_destroyed_error: ref::is_fixed");
   return source->is_fixed();
 }
 
-  template<class T> bool
+template<class T> bool
 adapter<T>::set(const T& value) {
   auto source = source_w.lock();
   if (!source) return false;
@@ -201,7 +201,7 @@ adapter<T>::set(const T& value) {
   return false;
 }
 
-  template<class T>
+template<class T>
 adapter<T>::operator T() const {
   auto str = ref<string>::operator string();
   return parse<T>(str, "adapter::operator T");

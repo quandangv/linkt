@@ -12,8 +12,8 @@
 namespace node {
   using steady_time = std::chrono::time_point<std::chrono::steady_clock>;
 
-    template<class T>
-  struct nested {
+  template<class T> struct
+  nested {
     std::shared_ptr<base<T>> value;
 
     nested(parse_context& context, parse_preprocessed& prep);
@@ -41,8 +41,8 @@ namespace node {
     using meta::meta;
   };
 
-  template<class To, class Processor>
-  struct loaded_node : base<To> {
+  template<class To, class Processor> struct
+  loaded_node : base<To> {
     mutable Processor base;
 
     virtual Processor& get_base() const { return base; }
@@ -50,11 +50,11 @@ namespace node {
     { throw clone_error("clone_error: This node is optimized and can't be cloned"); }
   };
 
-  template<class To, class Processor>
-  struct loaded_node_impl : loaded_node<To, Processor> {};
+  template<class To, class Processor> struct
+  loaded_node_impl : loaded_node<To, Processor> {};
 
-  template<>
-  struct loaded_node_impl<string, cspace::gradient<3>>
+  template<> struct
+  loaded_node_impl<string, cspace::gradient<3>>
       : loaded_node<string, cspace::gradient<3>>, nested<float> {
     using loaded_node<string, cspace::gradient<3>>::loaded_node;
     bool is_fixed() const { return value->is_fixed(); }
@@ -65,8 +65,8 @@ namespace node {
     using nested<float>::nested;
   };
 
-  template<class To, class Processor>
-  struct lazy_node : loaded_node_impl<To, Processor> {
+  template<class To, class Processor> struct
+  lazy_node : loaded_node_impl<To, Processor> {
     base_s base_raw;
 
     Processor& get_base() const;
@@ -80,7 +80,7 @@ namespace node {
 
   struct env : meta, settable<string> {
     explicit operator string() const;
-    bool set  (const string& value);
+    bool set(const string& value);
     base_s clone(clone_context&) const;
     bool is_fixed() const { return false; }
     string type_name() const { return "env"; }
@@ -164,7 +164,7 @@ namespace node {
     mutable steady_time zero_point;
 
     explicit operator int() const;
-    base_s clone  (clone_context&) const;
+    base_s clone(clone_context&) const;
 
       static std::shared_ptr<clock>
     parse(parse_context&, parse_preprocessed&);

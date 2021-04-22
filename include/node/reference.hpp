@@ -5,14 +5,14 @@
 namespace node {
   struct ancestor_destroyed_error : std::logic_error { using logic_error::logic_error; };
 
-    template<class T>
-  struct ref_base : virtual base<T> {
+  template<class T> struct
+  ref_base : virtual base<T> {
   public:
     virtual base_s get_source() const = 0;
   };
 
-    template<class T>
-  struct address_ref : ref_base<T>, settable<T> {
+  template<class T> struct
+  address_ref : ref_base<T>, settable<T> {
     std::weak_ptr<wrapper> ancestor_w;
     std::vector<string> indirect_paths;
     string direct_path;
@@ -28,8 +28,8 @@ namespace node {
     base_s* get_source_direct() const;
   };
 
-    template<class T>
-  struct ref : ref_base<T>, settable<T> {
+  template<class T> struct
+  ref : ref_base<T>, settable<T> {
     std::weak_ptr<base<T>> source_w;
 
     ref(std::weak_ptr<base<T>> source_w);
@@ -45,8 +45,8 @@ namespace node {
     inline base_s clone(clone_context&) const;
   };
   
-    template<class T>
-  struct adapter : ref<string>, base<T>, settable<T> {
+  template<class T> struct
+  adapter : ref<string>, base<T>, settable<T> {
     using ref<string>::ref;
     explicit operator string() const { return ref<string>::get(); }
     explicit operator T() const;
