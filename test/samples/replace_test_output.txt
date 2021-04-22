@@ -1,4 +1,5 @@
 Hello quan, you are quan
 key-a is 'a'
 substr: uan, qu
+cmd: hello world
 nexist: ${nexist}

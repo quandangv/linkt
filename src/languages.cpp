@@ -170,6 +170,9 @@ void write_yml(std::ostream& os, const node::wrapper_s& root, int indent) {
 
 void replace_text(std::istream& is, std::ostream& os, node::wrapper_s& replacements) {
   string raw;
+  node::parse_context context;
+  context.parent = context.root = replacements;
+  context.parent_based_ref = true;
   for (int linecount = 1; std::getline(is, raw); linecount++, raw.clear()) {
     tstring ts(raw);
     size_t start, end;
@@ -183,13 +186,16 @@ void replace_text(std::istream& is, std::ostream& os, node::wrapper_s& replaceme
           offset = node::parse<int>(comp.begin(), comp.size());
         }
       }
-      auto _str = replacements->get_child_safe(expression);
-      if (_str) {
-        auto str = *_str;
-        if (offset >= 0)
-          str = str.substr(offset, length);
-        ts.replace(raw, start, end - start, str);
-        end = start + str.size();
+      auto node = node::parse_escaped<string>(context, expression);
+      if (node) {
+        try {
+          auto str = node->get();
+          if (offset >= 0)
+            str = str.substr(offset, length);
+          ts.replace(raw, start, end - start, str);
+          end = start + str.size();
+        } catch (const std::exception& e) {
+        }
       }
       ts.erase_front(end);
     }
