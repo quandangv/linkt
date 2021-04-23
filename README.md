@@ -42,7 +42,7 @@ Here is a list of expressions type, their values, and the condition for fallback
     * Available colorspaces are RGB, HSV, HSL, CIELab, CIELch, Jzazbz, and JzCzhz
 * `poll <poll-cmd>` - the command is executed once at the first call to the node
   * If the command prints to its output some time between a call and its previous call, returns the text of the last line of output. Otherwise, return the fallback
-* map <from-range> <range2> <value> - Linearly interpolate `value` from `from-range` to `to-range`
+* `map <from-range> <range2> <value>` - Linearly interpolate `value` from `from-range` to `to-range`
   * Ranges may take the form of either `from:to` or `to`. If `from` is omitted, the default of 0 will be used
 
 The arguments of the commands above are separated by spaces, unless that space is enclosed by quotes, brackets, or parenthesis.
