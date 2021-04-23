@@ -20,7 +20,7 @@ Searches input-file for escaped expression in the form of `${expr}` and replace 
 Escaped expressions may also take the form of `${expr ? fallback}`, if so, `fallback` will be returned if `expr` produces an exception. Some types of expression returns fallback in different conditions, which are documented below.
 
 Options:
-* `-i tree-file` parse `tree-file` to get the data tree that will help with the replacement.
+* `-i tree-file` - parse `tree-file` to get the data tree that will help with the replacement.
 
 ### Expression types
 Here is a list of expressions type, their values, and the condition for fallback to be returned:
@@ -40,6 +40,10 @@ Here is a list of expressions type, their values, and the condition for fallback
       * `?` may be one of the operators `+`, `-`, `*`, `/`, `=`, representing the corresponding operation to the component.
       * `amount` is the amount applied using the operator
     * Available colorspaces are RGB, HSV, HSL, CIELab, CIELch, Jzazbz, and JzCzhz
+* `poll <poll-cmd>` - the command is executed once at the first call to the node
+  * If the command prints to its output some time between a call and its previous call, returns the text of the last line of output. Otherwise, return the fallback
+* map <from-range> <range2> <value> - Linearly interpolate `value` from `from-range` to `to-range`
+  * Ranges may take the form of either `from:to` or `to`. If `from` is omitted, the default of 0 will be used
 
 The arguments of the commands above are separated by spaces, unless that space is enclosed by quotes, brackets, or parenthesis.
 
