@@ -10,6 +10,8 @@ Convert configuration files into dynamic tree structures
 ## Building the project
 Run `./build.sh -A` in the project root to build and install the project with default settings. To view other build options, run `./build.sh -h`.
 
+To use Linkt as a C++ library, you may need to set the prefix for installation as `/usr` instead of `/usr/lib`. Do this by adding the option `--prefix /usr`.
+
 ## Usage
 Examples of usages can be found in the directory `test/examples`
 

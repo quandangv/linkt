@@ -2,7 +2,9 @@
 
 #include "gtest/gtest.h"
 #include "gtest/gtest-test-part.h"
-#include <linkt/languages.hpp>
+#include <linkt/parse.hpp>
+#include <linkt/write.hpp>
+#include <linkt/replace.hpp>
 
 #include <iostream>
 #include <cmath>
